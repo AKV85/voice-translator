@@ -1,5 +1,6 @@
 <?php
 
+use App\DTO\AudioInput;
 use App\Enums\Language;
 use App\Services\SpeechTranslationService;
 use Tests\Fakes\FakeSpeechToTextProvider;
@@ -24,8 +25,13 @@ test('it translates speech through provider contracts', function () {
         textToSpeech: $textToSpeech,
     );
 
+    $audio = new AudioInput(
+        content: 'source-audio',
+        mimeType: 'audio/webm',
+    );
+
     $result = $service->translate(
-        audio: 'source-audio',
+        audio: $audio,
         sourceLanguage: Language::English,
         targetLanguage: Language::Russian,
     );
@@ -38,4 +44,23 @@ test('it translates speech through provider contracts', function () {
         ->toBe('translated-audio')
         ->and($result->speech->mimeType)
         ->toBe('audio/mpeg');
+
+    expect($speechToText->receivedAudio?->content)
+        ->toBe('source-audio')
+        ->and($speechToText->receivedAudio?->mimeType)
+        ->toBe('audio/webm')
+        ->and($speechToText->receivedLanguage)
+        ->toBe(Language::English)
+
+        ->and($translator->receivedText)
+        ->toBe('I need a truck')
+        ->and($translator->receivedSourceLanguage)
+        ->toBe(Language::English)
+        ->and($translator->receivedTargetLanguage)
+        ->toBe(Language::Russian)
+
+        ->and($textToSpeech->receivedText)
+        ->toBe('Мне нужен грузовик')
+        ->and($textToSpeech->receivedLanguage)
+        ->toBe(Language::Russian);
 });
