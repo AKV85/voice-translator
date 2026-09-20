@@ -3,6 +3,7 @@
 use App\Contracts\SpeechToTextProvider;
 use App\Contracts\TextToSpeechProvider;
 use App\Contracts\TranslationProvider;
+use App\DTO\AudioInput;
 use App\Enums\Language;
 use App\Services\SpeechTranslationService;
 use Tests\Fakes\FakeSpeechToTextProvider;
@@ -34,7 +35,10 @@ test('speech translation service can be resolved through provider contracts', fu
         ->toBeInstanceOf(SpeechTranslationService::class);
 
     $result = $service->translate(
-        audio: 'source-audio',
+        audio: new AudioInput(
+            content: 'source-audio',
+            mimeType: 'audio/webm',
+        ),
         sourceLanguage: Language::English,
         targetLanguage: Language::Russian,
     );

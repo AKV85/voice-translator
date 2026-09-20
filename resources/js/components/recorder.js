@@ -1,7 +1,13 @@
-export default () => ({
+export default (config = {}) => ({
     status: 'Idle',
     isRecording: false,
+    isTranscribing: false,
     error: null,
+
+    sourceLanguage: 'en',
+    transcription: '',
+
+    transcribeUrl: config.transcribeUrl ?? '/transcribe',
 
     mediaRecorder: null,
     mediaStream: null,
@@ -11,20 +17,24 @@ export default () => ({
     mimeType: null,
 
     async startRecording() {
-        if (this.isRecording) {
+        if (this.isRecording || this.isTranscribing) {
             return;
         }
 
         this.resetRecording();
 
         if (!navigator.mediaDevices?.getUserMedia) {
-            this.setError('Microphone access is not supported by this browser.');
+            this.setError(
+                'Microphone access is not supported by this browser.',
+            );
 
             return;
         }
 
         if (!window.MediaRecorder) {
-            this.setError('Audio recording is not supported by this browser.');
+            this.setError(
+                'Audio recording is not supported by this browser.',
+            );
 
             return;
         }
@@ -40,23 +50,32 @@ export default () => ({
                 ? new MediaRecorder(this.mediaStream, { mimeType })
                 : new MediaRecorder(this.mediaStream);
 
-            this.mediaRecorder.addEventListener('dataavailable', (event) => {
-                if (event.data.size > 0) {
-                    this.audioChunks.push(event.data);
-                }
-            });
+            this.mediaRecorder.addEventListener(
+                'dataavailable',
+                (event) => {
+                    if (event.data.size > 0) {
+                        this.audioChunks.push(event.data);
+                    }
+                },
+            );
 
-            this.mediaRecorder.addEventListener('stop', () => {
-                this.finishRecording();
-            });
+            this.mediaRecorder.addEventListener(
+                'stop',
+                async () => {
+                    await this.finishRecording();
+                },
+            );
 
-            this.mediaRecorder.addEventListener('error', (event) => {
-                this.setError(
-                    event.error?.message ?? 'Audio recording failed.',
-                );
+            this.mediaRecorder.addEventListener(
+                'error',
+                (event) => {
+                    this.setError(
+                        event.error?.message ?? 'Audio recording failed.',
+                    );
 
-                this.stopMediaStream();
-            });
+                    this.stopMediaStream();
+                },
+            );
 
             this.mediaRecorder.start();
 
@@ -80,7 +99,7 @@ export default () => ({
         this.mediaRecorder.stop();
     },
 
-    finishRecording() {
+    async finishRecording() {
         const recordedMimeType =
             this.mediaRecorder?.mimeType
             || this.audioChunks[0]?.type
@@ -98,10 +117,84 @@ export default () => ({
 
         this.audioUrl = URL.createObjectURL(this.audioBlob);
 
-        this.status = 'Recorded';
-
         this.stopMediaStream();
         this.mediaRecorder = null;
+
+        if (this.audioBlob.size === 0) {
+            this.setError('The recorded audio is empty.');
+
+            return;
+        }
+
+        await this.transcribeRecording();
+    },
+
+    async transcribeRecording() {
+        if (!this.audioBlob || this.isTranscribing) {
+            return;
+        }
+
+        this.error = null;
+        this.transcription = '';
+        this.isTranscribing = true;
+        this.status = 'Transcribing';
+
+        try {
+            const formData = new FormData();
+
+            formData.append(
+                'audio',
+                this.audioBlob,
+                this.getAudioFileName(),
+            );
+
+            formData.append(
+                'language',
+                this.sourceLanguage,
+            );
+
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+
+            if (!csrfToken) {
+                throw new Error('CSRF token is missing.');
+            }
+
+            const response = await fetch(this.transcribeUrl, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ?? 'Speech transcription failed.',
+                );
+            }
+
+            if (!data.text) {
+                throw new Error(
+                    'Speech transcription returned an empty result.',
+                );
+            }
+
+            this.transcription = data.text;
+            this.status = 'Transcribed';
+        } catch (error) {
+            this.setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Speech transcription failed.',
+            );
+        } finally {
+            this.isTranscribing = false;
+        }
     },
 
     getSupportedMimeType() {
@@ -115,6 +208,27 @@ export default () => ({
         return mimeTypes.find((mimeType) =>
             MediaRecorder.isTypeSupported(mimeType)
         ) ?? null;
+    },
+
+    getAudioFileName() {
+        const mimeType = this.mimeType
+            ?.split(';')[0]
+            ?.toLowerCase();
+
+        const extensions = {
+            'audio/webm': 'webm',
+            'video/webm': 'webm',
+            'audio/ogg': 'ogg',
+            'audio/mp4': 'mp4',
+            'video/mp4': 'mp4',
+            'audio/mpeg': 'mp3',
+            'audio/wav': 'wav',
+            'audio/x-wav': 'wav',
+        };
+
+        const extension = extensions[mimeType] ?? 'webm';
+
+        return `recording.${extension}`;
     },
 
     stopMediaStream() {
@@ -131,6 +245,7 @@ export default () => ({
 
     resetRecording() {
         this.error = null;
+        this.transcription = '';
         this.audioChunks = [];
         this.audioBlob = null;
         this.mimeType = null;
@@ -145,7 +260,8 @@ export default () => ({
         const messages = {
             NotAllowedError: 'Microphone permission was denied.',
             NotFoundError: 'No microphone was found.',
-            NotReadableError: 'The microphone is already in use or unavailable.',
+            NotReadableError:
+                'The microphone is already in use or unavailable.',
         };
 
         this.setError(
