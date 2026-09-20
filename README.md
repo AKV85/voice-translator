@@ -104,6 +104,24 @@ Stop containers:
 
     ./vendor/bin/sail down
 
+## Code Quality
+
+Run tests:
+
+    ./vendor/bin/sail pest
+
+Check code style:
+
+    ./vendor/bin/sail pint --test
+
+Run static analysis:
+
+    ./vendor/bin/sail php ./vendor/bin/phpstan analyse
+
+Validate Composer configuration:
+
+    ./vendor/bin/sail composer validate
+
 ## Architecture
 
 The application will use provider-neutral interfaces for external speech services.
