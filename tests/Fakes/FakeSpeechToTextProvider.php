@@ -3,12 +3,13 @@
 namespace Tests\Fakes;
 
 use App\Contracts\SpeechToTextProvider;
+use App\DTO\AudioInput;
 use App\DTO\TranscriptionResult;
 use App\Enums\Language;
 
 final class FakeSpeechToTextProvider implements SpeechToTextProvider
 {
-    public ?string $receivedAudio = null;
+    public ?AudioInput $receivedAudio = null;
 
     public ?Language $receivedLanguage = null;
 
@@ -17,7 +18,7 @@ final class FakeSpeechToTextProvider implements SpeechToTextProvider
     ) {}
 
     public function transcribe(
-        string $audio,
+        AudioInput $audio,
         Language $sourceLanguage,
     ): TranscriptionResult {
         $this->receivedAudio = $audio;

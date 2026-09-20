@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'google' => [
+        'speech' => [
+            'project_id' => env('GOOGLE_CLOUD_PROJECT'),
+            'location' => env('GOOGLE_CLOUD_SPEECH_LOCATION', 'global'),
+            'model' => env('GOOGLE_CLOUD_SPEECH_MODEL', 'short'),
+            'credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+        ],
+    ],
 ];
