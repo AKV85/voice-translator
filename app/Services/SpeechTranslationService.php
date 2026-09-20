@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\SpeechToTextProvider;
 use App\Contracts\TextToSpeechProvider;
 use App\Contracts\TranslationProvider;
+use App\DTO\AudioInput;
 use App\DTO\SpeechTranslationResult;
 use App\Enums\Language;
 
@@ -17,7 +18,7 @@ final readonly class SpeechTranslationService
     ) {}
 
     public function translate(
-        string $audio,
+        AudioInput $audio,
         Language $sourceLanguage,
         Language $targetLanguage,
     ): SpeechTranslationResult {
