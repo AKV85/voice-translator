@@ -16,25 +16,32 @@ class AppServiceProvider extends ServiceProvider
             SpeechClient::class,
             function (): SpeechClient {
                 $credentialsPath = config(
-                    'services.google.speech.credentials_path',
+                    'services.google.speech.credentials_path'
                 );
 
-                if (
-                    is_string($credentialsPath)
-                    && $credentialsPath !== ''
-                ) {
+                if (is_string($credentialsPath) && $credentialsPath !== '') {
                     if (! is_readable($credentialsPath)) {
                         throw new RuntimeException(
-                            'Google credentials file is not readable.',
+                            'Google credentials file is not readable.'
                         );
                     }
 
                     putenv(
-                        "GOOGLE_APPLICATION_CREDENTIALS={$credentialsPath}",
+                        "GOOGLE_APPLICATION_CREDENTIALS={$credentialsPath}"
                     );
                 }
 
-                return new SpeechClient;
+                $clientOptions = [];
+
+                $apiEndpoint = config(
+                    'services.google.speech.api_endpoint'
+                );
+
+                if (is_string($apiEndpoint) && $apiEndpoint !== '') {
+                    $clientOptions['apiEndpoint'] = $apiEndpoint;
+                }
+
+                return new SpeechClient($clientOptions);
             },
         );
 

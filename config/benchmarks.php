@@ -15,6 +15,19 @@ return [
                 'model' => 'short',
                 'config' => [
                     'services.google.speech.model' => 'short',
+                    'services.google.speech.location' => 'global',
+                    'services.google.speech.api_endpoint' => null,
+                ],
+            ],
+
+            'google-chirp-3' => [
+                'contract' => SpeechToTextProvider::class,
+                'provider' => 'google',
+                'model' => 'chirp_3',
+                'config' => [
+                    'services.google.speech.model' => 'chirp_3',
+                    'services.google.speech.location' => 'eu',
+                    'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
                 ],
             ],
         ],

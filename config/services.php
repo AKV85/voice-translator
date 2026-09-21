@@ -41,6 +41,7 @@ return [
             'location' => env('GOOGLE_CLOUD_SPEECH_LOCATION', 'global'),
             'model' => env('GOOGLE_CLOUD_SPEECH_MODEL', 'short'),
             'credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+            'api_endpoint' => env('GOOGLE_CLOUD_SPEECH_API_ENDPOINT'),
         ],
     ],
 ];
