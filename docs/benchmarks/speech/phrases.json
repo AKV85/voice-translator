@@ -10,98 +10,98 @@
             "language": "ru",
             "category": "ambiguity",
             "expected": "Я свободна или не свободна?",
-            "audio": "audio/ru-001.wav"
+            "audio": "audio/raw/ru-001.webm"
         },
         {
             "id": "ru-002",
             "language": "ru",
             "category": "similar_sounding_words",
             "expected": "Кот Персик рыжий хулиган.",
-            "audio": "audio/ru-002.wav"
+            "audio": "audio/raw/ru-002.webm"
         },
         {
             "id": "ru-003",
             "language": "ru",
             "category": "context",
             "expected": "У меня есть кот Персик, он рыжий хулиган.",
-            "audio": "audio/ru-003.wav"
+            "audio": "audio/raw/ru-003.webm"
         },
         {
             "id": "ru-004",
             "language": "ru",
             "category": "numbers",
             "expected": "Ты сказал пятнадцать или пятьдесят?",
-            "audio": "audio/ru-004.wav"
+            "audio": "audio/raw/ru-004.webm"
         },
         {
             "id": "ru-005",
             "language": "ru",
             "category": "negation",
             "expected": "Не отправляй этот грузовик, он ещё не разгрузился.",
-            "audio": "audio/ru-005.wav"
+            "audio": "audio/raw/ru-005.webm"
         },
         {
             "id": "ru-006",
             "language": "ru",
             "category": "logistics",
             "expected": "Водитель уже разгрузился и едет в Клайпеду.",
-            "audio": "audio/ru-006.wav"
+            "audio": "audio/raw/ru-006.webm"
         },
         {
             "id": "ru-007",
             "language": "ru",
             "category": "identifier",
             "expected": "Прицеп ZZ 546 нужно оставить на стоянке.",
-            "audio": "audio/ru-007.wav"
+            "audio": "audio/raw/ru-007.webm"
         },
         {
             "id": "ru-008",
             "language": "ru",
             "category": "distance",
             "expected": "До точки назначения осталось сто пятьдесят четыре километра.",
-            "audio": "audio/ru-008.wav"
+            "audio": "audio/raw/ru-008.webm"
         },
         {
             "id": "ru-009",
             "language": "ru",
             "category": "time",
             "expected": "Загрузка начнётся завтра в семь тридцать утра.",
-            "audio": "audio/ru-009.wav"
+            "audio": "audio/raw/ru-009.webm"
         },
         {
             "id": "ru-010",
             "language": "ru",
             "category": "instruction",
             "expected": "Нет, не этот грузовик, возьми следующий.",
-            "audio": "audio/ru-010.wav"
+            "audio": "audio/raw/ru-010.webm"
         },
         {
             "id": "ru-011",
             "language": "ru",
             "category": "logistics",
             "expected": "Забери документы у диспетчера и передай их водителю.",
-            "audio": "audio/ru-011.wav"
+            "audio": "audio/raw/ru-011.webm"
         },
         {
             "id": "ru-012",
             "language": "ru",
             "category": "temperature",
             "expected": "Температура должна оставаться между двумя и шестью градусами.",
-            "audio": "audio/ru-012.wav"
+            "audio": "audio/raw/ru-012.webm"
         },
         {
             "id": "ru-013",
             "language": "ru",
             "category": "long_sentence",
             "expected": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Каунас.",
-            "audio": "audio/ru-013.wav"
+            "audio": "audio/raw/ru-013.webm"
         },
         {
             "id": "ru-014",
             "language": "ru",
             "category": "pause",
             "expected": "Я приеду через пятнадцать минут, если не будет пробок.",
-            "audio": "audio/ru-014.wav",
+            "audio": "audio/raw/ru-014.webm",
             "recording_instruction": "Make a short natural pause after 'минут'."
         },
         {
@@ -109,7 +109,7 @@
             "language": "ru",
             "category": "proper_nouns",
             "expected": "Андрей Котов встретит водителя в Клайпеде возле терминала.",
-            "audio": "audio/ru-015.wav"
+            "audio": "audio/raw/ru-015.webm"
         },
 
         {
@@ -117,91 +117,91 @@
             "language": "en",
             "category": "simple",
             "expected": "I am ready to start the trip.",
-            "audio": "audio/en-001.wav"
+            "audio": "audio/raw/en-001.webm"
         },
         {
             "id": "en-002",
             "language": "en",
             "category": "proper_nouns",
             "expected": "My cat Persik is a ginger hooligan.",
-            "audio": "audio/en-002.wav"
+            "audio": "audio/raw/en-002.webm"
         },
         {
             "id": "en-003",
             "language": "en",
             "category": "numbers",
             "expected": "Did you say fifteen or fifty?",
-            "audio": "audio/en-003.wav"
+            "audio": "audio/raw/en-003.webm"
         },
         {
             "id": "en-004",
             "language": "en",
             "category": "negation",
             "expected": "Do not send this truck because the driver has not unloaded yet.",
-            "audio": "audio/en-004.wav"
+            "audio": "audio/raw/en-004.webm"
         },
         {
             "id": "en-005",
             "language": "en",
             "category": "logistics",
             "expected": "The driver has finished unloading and is heading to Klaipeda.",
-            "audio": "audio/en-005.wav"
+            "audio": "audio/raw/en-005.webm"
         },
         {
             "id": "en-006",
             "language": "en",
             "category": "identifier",
             "expected": "Leave trailer ZZ 546 in the parking area.",
-            "audio": "audio/en-006.wav"
+            "audio": "audio/raw/en-006.webm"
         },
         {
             "id": "en-007",
             "language": "en",
             "category": "distance",
             "expected": "The remaining distance is one hundred and fifty-four kilometers.",
-            "audio": "audio/en-007.wav"
+            "audio": "audio/raw/en-007.webm"
         },
         {
             "id": "en-008",
             "language": "en",
             "category": "time",
             "expected": "Loading starts tomorrow at seven thirty in the morning.",
-            "audio": "audio/en-008.wav"
+            "audio": "audio/raw/en-008.webm"
         },
         {
             "id": "en-009",
             "language": "en",
             "category": "instruction",
             "expected": "No, not this truck, take the next one.",
-            "audio": "audio/en-009.wav"
+            "audio": "audio/raw/en-009.webm"
         },
         {
             "id": "en-010",
             "language": "en",
             "category": "logistics",
             "expected": "Collect the documents from the dispatcher and give them to the driver.",
-            "audio": "audio/en-010.wav"
+            "audio": "audio/raw/en-010.webm"
         },
         {
             "id": "en-011",
             "language": "en",
             "category": "temperature",
             "expected": "The temperature must stay between two and six degrees.",
-            "audio": "audio/en-011.wav"
+            "audio": "audio/raw/en-011.webm"
         },
         {
             "id": "en-012",
             "language": "en",
             "category": "long_sentence",
             "expected": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
-            "audio": "audio/en-012.wav"
+            "audio": "audio/raw/en-012.webm"
         },
         {
             "id": "en-013",
             "language": "en",
             "category": "pause",
             "expected": "I will arrive in fifteen minutes if there is no traffic.",
-            "audio": "audio/en-013.wav",
+            "audio": "audio/raw/en-013.webm",
             "recording_instruction": "Make a short natural pause after 'minutes'."
         },
         {
@@ -209,14 +209,14 @@
             "language": "en",
             "category": "similar_sounding_words",
             "expected": "The driver said he can leave at eight, not eighteen.",
-            "audio": "audio/en-014.wav"
+            "audio": "audio/raw/en-014.webm"
         },
         {
             "id": "en-015",
             "language": "en",
             "category": "context",
             "expected": "Please call me when the unloading is finished and tell me where the trailer was left.",
-            "audio": "audio/en-015.wav"
+            "audio": "audio/raw/en-015.webm"
         }
     ]
 }
