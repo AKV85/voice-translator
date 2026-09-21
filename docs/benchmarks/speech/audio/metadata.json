@@ -1,0 +1,14 @@
+{
+    "dataset_version": 1,
+    "recording_date": "2026-09-21",
+    "fixture_count": 30,
+    "source_format": "audio/webm",
+    "codec": "opus",
+    "recording_method": "Browser MediaRecorder API",
+    "device": "AKV85PC",
+    "browser": "Google Chrome",
+    "microphone": "built-in microphone",
+    "microphone_distance": "approximately 30 cm",
+    "environment": "home office",
+    "notes": "Canonical benchmark recordings. Original fixtures must remain unchanged after finalization."
+}
