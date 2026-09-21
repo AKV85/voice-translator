@@ -4,6 +4,7 @@ use App\Contracts\SpeechToTextProvider;
 use App\DTO\AudioInput;
 use App\DTO\TranscriptionResult;
 use App\Enums\Language;
+use App\Services\Speech\DeepgramSpeechToTextProvider;
 use Illuminate\Support\Facades\File;
 
 class BenchmarkSpeechFakeProvider implements SpeechToTextProvider
@@ -204,5 +205,26 @@ it('defines the Google Chirp 3 benchmark profile', function () {
             'services.google.speech.model' => 'chirp_3',
             'services.google.speech.location' => 'eu',
             'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
+        ]);
+});
+
+it('defines the Deepgram Nova 3 benchmark profile', function () {
+    $profile = config(
+        'benchmarks.speech.providers.deepgram-nova-3'
+    );
+
+    expect($profile)
+        ->toBeArray()
+        ->and($profile['contract'])
+        ->toBe(
+            DeepgramSpeechToTextProvider::class
+        )
+        ->and($profile['provider'])
+        ->toBe('deepgram')
+        ->and($profile['model'])
+        ->toBe('nova-3')
+        ->and($profile['config'])
+        ->toMatchArray([
+            'services.deepgram.model' => 'nova-3',
         ]);
 });
