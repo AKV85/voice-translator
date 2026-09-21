@@ -44,4 +44,18 @@ return [
             'api_endpoint' => env('GOOGLE_CLOUD_SPEECH_API_ENDPOINT'),
         ],
     ],
+
+    'deepgram' => [
+        'api_key' => env('DEEPGRAM_API_KEY'),
+
+        'endpoint' => env(
+            'DEEPGRAM_API_ENDPOINT',
+            'https://api.deepgram.com/v1/listen',
+        ),
+
+        'model' => env(
+            'DEEPGRAM_MODEL',
+            'nova-3',
+        ),
+    ],
 ];

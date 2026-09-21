@@ -85,6 +85,9 @@ class SpeechTranscriptNormalizer
     {
         $text = mb_strtolower(trim($text));
 
+        $text = str_replace('ё', 'е', $text);
+
+        $text = $this->normalizeEnglishContractions($text);
         $text = $this->normalizeTimes($text);
         $text = $this->normalizeUnits($text);
 
@@ -110,6 +113,15 @@ class SpeechTranscriptNormalizer
         $tokens = $this->normalizeRussianNumbers($tokens);
 
         return implode(' ', $tokens);
+    }
+
+    private function normalizeEnglishContractions(string $text): string
+    {
+        return preg_replace(
+            "/\bi['’]m\b/u",
+            'i am',
+            $text,
+        ) ?? $text;
     }
 
     private function normalizeTimes(string $text): string
@@ -178,10 +190,23 @@ class SpeechTranscriptNormalizer
                 : null;
 
             /*
-         * Spoken time:
-         * "seven thirty" must become "7 30",
-         * not the mathematically creative "37".
-         */
+             * Spoken digit sequences:
+             * "five four six" -> "5 4 6", not "15".
+             */
+            if (
+                $currentValue < 20
+                && is_int($nextValue)
+                && $nextValue < 20
+            ) {
+                $result[] = (string) $currentValue;
+
+                continue;
+            }
+
+            /*
+             * Spoken time:
+             * "seven thirty" -> "7 30", not "37".
+             */
             if (
                 $currentValue < 20
                 && is_int($nextValue)
@@ -261,14 +286,28 @@ class SpeechTranscriptNormalizer
                 : null;
 
             /*
-         * Spoken time:
-         * "семь тридцать" must become "7 30",
-         * not "37".
-         */
+             * Spoken digit sequences:
+             * "пять четыре шесть" -> "5 4 6", not "15".
+             */
+            if (
+                $currentValue < 20
+                && is_int($nextValue)
+                && $nextValue < 20
+            ) {
+                $result[] = (string) $currentValue;
+
+                continue;
+            }
+
+            /*
+             * Spoken time:
+             * "семь тридцать" -> "7 30", not "37".
+             */
             if (
                 $currentValue < 20
                 && is_int($nextValue)
                 && $nextValue >= 20
+                && $nextValue < 100
             ) {
                 $result[] = (string) $currentValue;
 
@@ -284,7 +323,9 @@ class SpeechTranscriptNormalizer
                     self::RUSSIAN_NUMBERS,
                 )
             ) {
-                $value += self::RUSSIAN_NUMBERS[$tokens[$index]];
+                $value += self::RUSSIAN_NUMBERS[
+                    $tokens[$index]
+                ];
 
                 $index++;
             }
