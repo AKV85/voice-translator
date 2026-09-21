@@ -67,8 +67,8 @@ beforeEach(function () {
                 ],
             ],
             JSON_PRETTY_PRINT
-            | JSON_UNESCAPED_UNICODE
-            | JSON_THROW_ON_ERROR,
+                | JSON_UNESCAPED_UNICODE
+                | JSON_THROW_ON_ERROR,
         ),
     );
 
@@ -184,4 +184,25 @@ it('rejects an unknown speech benchmark provider', function () {
             'Unknown speech benchmark provider: unknown'
         )
         ->assertFailed();
+});
+
+it('defines the Google Chirp 3 benchmark profile', function () {
+    $profile = config(
+        'benchmarks.speech.providers.google-chirp-3'
+    );
+
+    expect($profile)
+        ->toBeArray()
+        ->and($profile['contract'])
+        ->toBe(SpeechToTextProvider::class)
+        ->and($profile['provider'])
+        ->toBe('google')
+        ->and($profile['model'])
+        ->toBe('chirp_3')
+        ->and($profile['config'])
+        ->toMatchArray([
+            'services.google.speech.model' => 'chirp_3',
+            'services.google.speech.location' => 'eu',
+            'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
+        ]);
 });
