@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Contracts\SpeechToTextProvider;
+use App\Services\Speech\DeepgramSpeechToTextProvider;
 use App\Services\Speech\GoogleSpeechToTextProvider;
 use Google\Cloud\Speech\V2\Client\SpeechClient;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
 
@@ -69,6 +71,49 @@ class AppServiceProvider extends ServiceProvider
                         'services.google.speech.model',
                         'short',
                     ),
+                );
+            },
+        );
+
+        $this->app->bind(
+            DeepgramSpeechToTextProvider::class,
+            function ($app): DeepgramSpeechToTextProvider {
+                $apiKey = config(
+                    'services.deepgram.api_key',
+                );
+
+                $endpoint = config(
+                    'services.deepgram.endpoint',
+                );
+
+                $model = config(
+                    'services.deepgram.model',
+                    'nova-3',
+                );
+
+                if (! is_string($apiKey) || $apiKey === '') {
+                    throw new RuntimeException(
+                        'Deepgram API key is not configured.',
+                    );
+                }
+
+                if (! is_string($endpoint) || $endpoint === '') {
+                    throw new RuntimeException(
+                        'Deepgram API endpoint is not configured.',
+                    );
+                }
+
+                if (! is_string($model) || $model === '') {
+                    throw new RuntimeException(
+                        'Deepgram model is not configured.',
+                    );
+                }
+
+                return new DeepgramSpeechToTextProvider(
+                    http: $app->make(Factory::class),
+                    apiKey: $apiKey,
+                    endpoint: $endpoint,
+                    model: $model,
                 );
             },
         );
