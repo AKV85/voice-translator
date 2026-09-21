@@ -1,6 +1,7 @@
 <?php
 
 use App\Contracts\SpeechToTextProvider;
+use App\Services\Speech\DeepgramSpeechToTextProvider;
 
 return [
     'speech' => [
@@ -28,6 +29,15 @@ return [
                     'services.google.speech.model' => 'chirp_3',
                     'services.google.speech.location' => 'eu',
                     'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
+                ],
+            ],
+
+            'deepgram-nova-3' => [
+                'contract' => DeepgramSpeechToTextProvider::class,
+                'provider' => 'deepgram',
+                'model' => 'nova-3',
+                'config' => [
+                    'services.deepgram.model' => 'nova-3',
                 ],
             ],
         ],

@@ -106,7 +106,7 @@
             "evaluation": {
                 "raw_wer": 0.75,
                 "normalized_wer": 0.5,
-                "normalized_expected": "не отправляй этот грузовик он ещё не разгрузился",
+                "normalized_expected": "не отправляй этот грузовик он еще не разгрузился",
                 "normalized_actual": "не отправляй этот грузовик",
                 "classification": "content_mismatch"
             }
@@ -190,8 +190,8 @@
             "evaluation": {
                 "raw_wer": 0.5714,
                 "normalized_wer": 0,
-                "normalized_expected": "загрузка начнётся завтра в 7 30 утра",
-                "normalized_actual": "загрузка начнётся завтра в 7 30 утра",
+                "normalized_expected": "загрузка начнется завтра в 7 30 утра",
+                "normalized_actual": "загрузка начнется завтра в 7 30 утра",
                 "classification": "normalization_only"
             }
         },
@@ -336,10 +336,10 @@
             "model": "short",
             "evaluation": {
                 "raw_wer": 0.4286,
-                "normalized_wer": 0.1429,
+                "normalized_wer": 0,
                 "normalized_expected": "i am ready to start the trip",
-                "normalized_actual": "i m ready to start the trip",
-                "classification": "content_mismatch"
+                "normalized_actual": "i am ready to start the trip",
+                "classification": "normalization_only"
             }
         },
         {
@@ -641,17 +641,17 @@
     "model": "short",
     "evaluation": {
         "version": 1,
-        "evaluated_at": "2026-09-21T20:45:47+00:00",
+        "evaluated_at": "2026-09-21T21:50:33+00:00",
         "summary": {
             "fixture_count": 30,
             "successful_count": 30,
             "failed_count": 0,
             "exact_match_count": 0,
-            "normalization_only_count": 17,
-            "content_mismatch_count": 13,
+            "normalization_only_count": 18,
+            "content_mismatch_count": 12,
             "provider_failure_count": 0,
             "average_raw_wer": 0.4259,
-            "average_normalized_wer": 0.1063,
+            "average_normalized_wer": 0.1015,
             "latency_ms": {
                 "average": 1461.069,
                 "median": 1272.46,
