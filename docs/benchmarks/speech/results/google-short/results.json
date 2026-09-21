@@ -18,7 +18,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:25+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.2,
+                "normalized_wer": 0,
+                "normalized_expected": "я свободна или не свободна",
+                "normalized_actual": "я свободна или не свободна",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-002",
@@ -32,7 +39,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:29+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.75,
+                "normalized_wer": 0,
+                "normalized_expected": "кот персик рыжий хулиган",
+                "normalized_actual": "кот персик рыжий хулиган",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-003",
@@ -46,7 +60,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:30+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.5,
+                "normalized_wer": 0.375,
+                "normalized_expected": "у меня есть кот персик он рыжий хулиган",
+                "normalized_actual": "у меня есть кот персик",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "ru-004",
@@ -60,7 +81,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:31+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.6,
+                "normalized_wer": 0,
+                "normalized_expected": "ты сказал 15 или 50",
+                "normalized_actual": "ты сказал 15 или 50",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-005",
@@ -74,7 +102,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:33+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.75,
+                "normalized_wer": 0.5,
+                "normalized_expected": "не отправляй этот грузовик он ещё не разгрузился",
+                "normalized_actual": "не отправляй этот грузовик",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "ru-006",
@@ -88,7 +123,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:34+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.2857,
+                "normalized_wer": 0,
+                "normalized_expected": "водитель уже разгрузился и едет в клайпеду",
+                "normalized_actual": "водитель уже разгрузился и едет в клайпеду",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-007",
@@ -102,7 +144,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:35+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.4286,
+                "normalized_wer": 0.1429,
+                "normalized_expected": "прицеп zz 546 нужно оставить на стоянке",
+                "normalized_actual": "прицеп zz 546 нужно ставить на стоянке",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "ru-008",
@@ -116,7 +165,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:36+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.625,
+                "normalized_wer": 0,
+                "normalized_expected": "до точки назначения осталось 154 км",
+                "normalized_actual": "до точки назначения осталось 154 км",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-009",
@@ -130,7 +186,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:38+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.5714,
+                "normalized_wer": 0,
+                "normalized_expected": "загрузка начнётся завтра в 7 30 утра",
+                "normalized_actual": "загрузка начнётся завтра в 7 30 утра",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-010",
@@ -144,7 +207,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:39+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.6667,
+                "normalized_wer": 0.3333,
+                "normalized_expected": "нет не этот грузовик возьми следующий",
+                "normalized_actual": "нет не этот грузовик",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "ru-011",
@@ -158,7 +228,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:40+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.25,
+                "normalized_wer": 0,
+                "normalized_expected": "забери документы у диспетчера и передай их водителю",
+                "normalized_actual": "забери документы у диспетчера и передай их водителю",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-012",
@@ -172,7 +249,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:41+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.375,
+                "normalized_wer": 0,
+                "normalized_expected": "температура должна оставаться между 2 и 6 degree",
+                "normalized_actual": "температура должна оставаться между 2 и 6 degree",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-013",
@@ -186,7 +270,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:43+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.3571,
+                "normalized_wer": 0,
+                "normalized_expected": "если водитель закончит разгрузку до 8 вечера отправь его на следующую загрузку в каунас",
+                "normalized_actual": "если водитель закончит разгрузку до 8 вечера отправь его на следующую загрузку в каунас",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "ru-014",
@@ -200,7 +291,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:45+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.6667,
+                "normalized_wer": 0.4444,
+                "normalized_expected": "я приеду через 15 минут если не будет пробок",
+                "normalized_actual": "я приеду через 15 минут",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "ru-015",
@@ -214,7 +312,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:46+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.25,
+                "normalized_wer": 0,
+                "normalized_expected": "андрей котов встретит водителя в клайпеде возле терминала",
+                "normalized_actual": "андрей котов встретит водителя в клайпеде возле терминала",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-001",
@@ -228,7 +333,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:47+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.4286,
+                "normalized_wer": 0.1429,
+                "normalized_expected": "i am ready to start the trip",
+                "normalized_actual": "i m ready to start the trip",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-002",
@@ -242,7 +354,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:48+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.4286,
+                "normalized_wer": 0.1429,
+                "normalized_expected": "my cat persik is a ginger hooligan",
+                "normalized_actual": "my cat perfect is a ginger hooligan",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-003",
@@ -256,7 +375,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:49+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.5,
+                "normalized_wer": 0,
+                "normalized_expected": "did you say 15 or 50",
+                "normalized_actual": "did you say 15 or 50",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-004",
@@ -270,7 +396,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:51+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.4167,
+                "normalized_wer": 0.25,
+                "normalized_expected": "do not send this truck because the driver has not unloaded yet",
+                "normalized_actual": "do not send this track because the driver has not allowed it yet",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-005",
@@ -284,7 +417,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:52+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.2,
+                "normalized_wer": 0.1,
+                "normalized_expected": "the driver has finished unloading and is heading to klaipeda",
+                "normalized_actual": "the driver has finished unloading and is heading to cleveland",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-006",
@@ -298,7 +438,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:54+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.25,
+                "normalized_wer": 0.125,
+                "normalized_expected": "leave trailer zz 546 in the parking area",
+                "normalized_actual": "leaf trailer zz 546 in the parking area",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-007",
@@ -312,7 +459,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:55+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.6667,
+                "normalized_wer": 0,
+                "normalized_expected": "the remaining distance is 154 km",
+                "normalized_actual": "the remaining distance is 154 km",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-008",
@@ -326,7 +480,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:57+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.4444,
+                "normalized_wer": 0,
+                "normalized_expected": "loading starts tomorrow at 7 30 in the morning",
+                "normalized_actual": "loading starts tomorrow at 7 30 in the morning",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-009",
@@ -340,7 +501,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:58+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.375,
+                "normalized_wer": 0.125,
+                "normalized_expected": "no not this truck take the next 1",
+                "normalized_actual": "no not this track take the next 1",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-010",
@@ -354,7 +522,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:05:59+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.1667,
+                "normalized_wer": 0,
+                "normalized_expected": "collect the documents from the dispatcher and give them to the driver",
+                "normalized_actual": "collect the documents from the dispatcher and give them to the driver",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-011",
@@ -368,7 +543,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:06:01+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.4444,
+                "normalized_wer": 0,
+                "normalized_expected": "the temperature must stay between 2 and 6 degree",
+                "normalized_actual": "the temperature must stay between 2 and 6 degree",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-012",
@@ -382,7 +564,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:06:03+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.2105,
+                "normalized_wer": 0.0526,
+                "normalized_expected": "if the driver finishes unloading before 8 in the evening send him to the next loading point in kaunas",
+                "normalized_actual": "if the driver finishes unloading before 8 in the evening send him to the next loading point in counters",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-013",
@@ -396,7 +585,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:06:05+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.5455,
+                "normalized_wer": 0.4545,
+                "normalized_expected": "i will arrive in 15 minutes if there is no traffic",
+                "normalized_actual": "i will arrive in 15 minutes",
+                "classification": "content_mismatch"
+            }
         },
         {
             "phrase_id": "en-014",
@@ -410,7 +606,14 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:06:06+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.3,
+                "normalized_wer": 0,
+                "normalized_expected": "the driver said he can leave at 8 not 18",
+                "normalized_actual": "the driver said he can leave at 8 not 18",
+                "classification": "normalization_only"
+            }
         },
         {
             "phrase_id": "en-015",
@@ -424,9 +627,38 @@
             "error": null,
             "provider": "google",
             "recorded_at": "2026-09-21T19:06:08+00:00",
-            "model": "short"
+            "model": "short",
+            "evaluation": {
+                "raw_wer": 0.125,
+                "normalized_wer": 0,
+                "normalized_expected": "please call me when the unloading is finished and tell me where the trailer was left",
+                "normalized_actual": "please call me when the unloading is finished and tell me where the trailer was left",
+                "classification": "normalization_only"
+            }
         }
     ],
     "profile": "google-short",
-    "model": "short"
+    "model": "short",
+    "evaluation": {
+        "version": 1,
+        "evaluated_at": "2026-09-21T20:45:47+00:00",
+        "summary": {
+            "fixture_count": 30,
+            "successful_count": 30,
+            "failed_count": 0,
+            "exact_match_count": 0,
+            "normalization_only_count": 17,
+            "content_mismatch_count": 13,
+            "provider_failure_count": 0,
+            "average_raw_wer": 0.4259,
+            "average_normalized_wer": 0.1063,
+            "latency_ms": {
+                "average": 1461.069,
+                "median": 1272.46,
+                "min": 912.34,
+                "max": 3686.65,
+                "p95": 2246.69
+            }
+        }
+    }
 }
