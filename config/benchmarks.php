@@ -5,9 +5,13 @@ use App\Services\Speech\DeepgramSpeechToTextProvider;
 
 return [
     'speech' => [
-        'dataset_path' => base_path('docs/benchmarks/speech/phrases.json'),
+        'dataset_path' => base_path(
+            'docs/benchmarks/speech/phrases.json'
+        ),
 
-        'results_path' => base_path('docs/benchmarks/speech/results'),
+        'results_path' => base_path(
+            'docs/benchmarks/speech/results'
+        ),
 
         'providers' => [
             'google-short' => [
@@ -39,6 +43,15 @@ return [
                 'config' => [
                     'services.deepgram.model' => 'nova-3',
                 ],
+            ],
+        ],
+
+        'streaming' => [
+            'chunk_size_bytes' => 4096,
+            'chunk_interval_ms' => 0,
+
+            'providers' => [
+                //
             ],
         ],
     ],
