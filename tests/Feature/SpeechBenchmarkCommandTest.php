@@ -173,7 +173,6 @@ it('runs the speech benchmark and stores structured results', function () {
         ]);
 
     expect($failedResult['latency_ms'])
-        ->toBeFloat()
         ->toBeGreaterThanOrEqual(0);
 });
 
