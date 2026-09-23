@@ -1,0 +1,4312 @@
+{
+    "benchmark_version": 1,
+    "benchmark_type": "streaming",
+    "dataset_version": 1,
+    "profile": "deepgram-flux",
+    "provider": "deepgram",
+    "model": "flux-general-multi",
+    "phrase_filter": null,
+    "chunk_duration_ms": 80,
+    "started_at": "2026-09-22T21:31:20+00:00",
+    "completed_at": "2026-09-22T21:34:55+00:00",
+    "fixture_count": 30,
+    "results": [
+        {
+            "phrase_id": "ru-001",
+            "language": "ru",
+            "category": "ambiguity",
+            "expected": "Я свободна или не свободна?",
+            "actual": "Я свободна или не свободна?",
+            "audio": "audio/raw/ru-001.webm",
+            "success": true,
+            "audio_duration_ms": 4799.863,
+            "preparation_duration_ms": 372.87,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.998,
+            "chunk_size_bytes": 1251,
+            "chunk_count": 60,
+            "time_to_first_transcript_ms": 3463.52,
+            "time_to_final_transcript_ms": 6100.6,
+            "finalization_latency_ms": 246.88,
+            "total_duration_ms": 6113.6,
+            "event_count": 13,
+            "events": [
+                {
+                    "text": "Я",
+                    "is_final": false,
+                    "received_at_ms": 3463.52
+                },
+                {
+                    "text": "Я свободен",
+                    "is_final": false,
+                    "received_at_ms": 3692.75
+                },
+                {
+                    "text": "Я свободна,",
+                    "is_final": false,
+                    "received_at_ms": 3932.56
+                },
+                {
+                    "text": "Я свободна,",
+                    "is_final": false,
+                    "received_at_ms": 4172.65
+                },
+                {
+                    "text": "Я свободна и",
+                    "is_final": false,
+                    "received_at_ms": 4412.62
+                },
+                {
+                    "text": "Я свободна или не",
+                    "is_final": false,
+                    "received_at_ms": 4652.58
+                },
+                {
+                    "text": "Я свободна или не смогу",
+                    "is_final": false,
+                    "received_at_ms": 4892.52
+                },
+                {
+                    "text": "Я свободна или не свободна?",
+                    "is_final": false,
+                    "received_at_ms": 5132.59
+                },
+                {
+                    "text": "Я свободна или не свободна?",
+                    "is_final": false,
+                    "received_at_ms": 5372.48
+                },
+                {
+                    "text": "Я свободна или не свободна?",
+                    "is_final": false,
+                    "received_at_ms": 5613.46
+                },
+                {
+                    "text": "Я свободна или не свободна?",
+                    "is_final": false,
+                    "received_at_ms": 5853.67
+                },
+                {
+                    "text": "Я свободна или не свободна?",
+                    "is_final": false,
+                    "received_at_ms": 6060.13
+                },
+                {
+                    "text": "Я свободна или не свободна?",
+                    "is_final": true,
+                    "received_at_ms": 6100.6
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:20+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "я свободна или не свободна",
+                "normalized_actual": "я свободна или не свободна",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "ru-002",
+            "language": "ru",
+            "category": "similar_sounding_words",
+            "expected": "Кот Персик рыжий хулиган.",
+            "actual": "Кот-персик рыжий хулиган.",
+            "audio": "audio/raw/ru-002.webm",
+            "success": true,
+            "audio_duration_ms": 4979.797,
+            "preparation_duration_ms": 64.71,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.044,
+            "chunk_size_bytes": 1243,
+            "chunk_count": 63,
+            "time_to_first_transcript_ms": 2183.5,
+            "time_to_final_transcript_ms": 5774.2,
+            "finalization_latency_ms": 265.53,
+            "total_duration_ms": 5774.69,
+            "event_count": 16,
+            "events": [
+                {
+                    "text": "К",
+                    "is_final": false,
+                    "received_at_ms": 2183.5
+                },
+                {
+                    "text": "Кот",
+                    "is_final": false,
+                    "received_at_ms": 2341.48
+                },
+                {
+                    "text": "Кот père",
+                    "is_final": false,
+                    "received_at_ms": 2577.96
+                },
+                {
+                    "text": "Кот Перси",
+                    "is_final": false,
+                    "received_at_ms": 2815.82
+                },
+                {
+                    "text": "Кот Персик",
+                    "is_final": false,
+                    "received_at_ms": 3053.29
+                },
+                {
+                    "text": "Кот Персик",
+                    "is_final": false,
+                    "received_at_ms": 3293.86
+                },
+                {
+                    "text": "Кот Персик ры",
+                    "is_final": false,
+                    "received_at_ms": 3606.49
+                },
+                {
+                    "text": "Кот Персик рыжий",
+                    "is_final": false,
+                    "received_at_ms": 3843.38
+                },
+                {
+                    "text": "Кот-персик рыжий",
+                    "is_final": false,
+                    "received_at_ms": 4080.83
+                },
+                {
+                    "text": "Кот-персик рыжий хули",
+                    "is_final": false,
+                    "received_at_ms": 4396.68
+                },
+                {
+                    "text": "Кот-персик рыжий хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 4634.09
+                },
+                {
+                    "text": "Кот-персик рыжий хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 4871
+                },
+                {
+                    "text": "Кот-персик рыжий хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 5107.63
+                },
+                {
+                    "text": "Кот-персик рыжий хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 5345.44
+                },
+                {
+                    "text": "Кот-персик рыжий хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 5533.6
+                },
+                {
+                    "text": "Кот-персик рыжий хулиган.",
+                    "is_final": true,
+                    "received_at_ms": 5774.2
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:26+00:00",
+            "evaluation": {
+                "raw_wer": 0.5,
+                "normalized_wer": 0,
+                "normalized_expected": "кот персик рыжий хулиган",
+                "normalized_actual": "кот персик рыжий хулиган",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-003",
+            "language": "ru",
+            "category": "context",
+            "expected": "У меня есть кот Персик, он рыжий хулиган.",
+            "actual": "У меня есть кот Персик. Он рыжий, хулиган.",
+            "audio": "audio/raw/ru-003.webm",
+            "success": true,
+            "audio_duration_ms": 5940.553,
+            "preparation_duration_ms": 63.97,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.207,
+            "chunk_size_bytes": 1237,
+            "chunk_count": 75,
+            "time_to_first_transcript_ms": 2555.73,
+            "time_to_final_transcript_ms": 6670.12,
+            "finalization_latency_ms": 228.68,
+            "total_duration_ms": 6670.94,
+            "event_count": 18,
+            "events": [
+                {
+                    "text": "У",
+                    "is_final": false,
+                    "received_at_ms": 2555.73
+                },
+                {
+                    "text": "У меня",
+                    "is_final": false,
+                    "received_at_ms": 2714.02
+                },
+                {
+                    "text": "У меня есть к",
+                    "is_final": false,
+                    "received_at_ms": 2951.53
+                },
+                {
+                    "text": "У меня есть код",
+                    "is_final": false,
+                    "received_at_ms": 3268.35
+                },
+                {
+                    "text": "У меня есть кот,",
+                    "is_final": false,
+                    "received_at_ms": 3507.44
+                },
+                {
+                    "text": "У меня есть кот-перси",
+                    "is_final": false,
+                    "received_at_ms": 3746.59
+                },
+                {
+                    "text": "У меня есть кот Персик,",
+                    "is_final": false,
+                    "received_at_ms": 3986.58
+                },
+                {
+                    "text": "У меня есть кот Персик.",
+                    "is_final": false,
+                    "received_at_ms": 4298.39
+                },
+                {
+                    "text": "У меня есть кот Персик.",
+                    "is_final": false,
+                    "received_at_ms": 4536.13
+                },
+                {
+                    "text": "У меня есть кот Персик. Он",
+                    "is_final": false,
+                    "received_at_ms": 4773.59
+                },
+                {
+                    "text": "У меня есть кот Персик. Он",
+                    "is_final": false,
+                    "received_at_ms": 5011.27
+                },
+                {
+                    "text": "У меня есть кот Персик. Он ры",
+                    "is_final": false,
+                    "received_at_ms": 5327.85
+                },
+                {
+                    "text": "У меня есть кот Персик. Он рыжий",
+                    "is_final": false,
+                    "received_at_ms": 5565.68
+                },
+                {
+                    "text": "У меня есть кот Персик. Он рыжий,",
+                    "is_final": false,
+                    "received_at_ms": 5803.31
+                },
+                {
+                    "text": "У меня есть кот Персик. Он рыжий, хули",
+                    "is_final": false,
+                    "received_at_ms": 6040.83
+                },
+                {
+                    "text": "У меня есть кот Персик. Он рыжий, хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 6278.23
+                },
+                {
+                    "text": "У меня есть кот Персик. Он рыжий, хулиган.",
+                    "is_final": false,
+                    "received_at_ms": 6468.21
+                },
+                {
+                    "text": "У меня есть кот Персик. Он рыжий, хулиган.",
+                    "is_final": true,
+                    "received_at_ms": 6670.12
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:32+00:00",
+            "evaluation": {
+                "raw_wer": 0.375,
+                "normalized_wer": 0,
+                "normalized_expected": "у меня есть кот персик он рыжий хулиган",
+                "normalized_actual": "у меня есть кот персик он рыжий хулиган",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-004",
+            "language": "ru",
+            "category": "numbers",
+            "expected": "Ты сказал пятнадцать или пятьдесят?",
+            "actual": "Ты сказал пятнадцать или пятьдесят?",
+            "audio": "audio/raw/ru-004.webm",
+            "success": true,
+            "audio_duration_ms": 5819.969,
+            "preparation_duration_ms": 58.21,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.726,
+            "chunk_size_bytes": 1301,
+            "chunk_count": 73,
+            "time_to_first_transcript_ms": 2901.25,
+            "time_to_final_transcript_ms": 6802.47,
+            "finalization_latency_ms": 313.55,
+            "total_duration_ms": 6803.13,
+            "event_count": 18,
+            "events": [
+                {
+                    "text": "Т",
+                    "is_final": false,
+                    "received_at_ms": 2901.25
+                },
+                {
+                    "text": "Ты",
+                    "is_final": false,
+                    "received_at_ms": 3140.94
+                },
+                {
+                    "text": "Ты сказал пят",
+                    "is_final": false,
+                    "received_at_ms": 3379.77
+                },
+                {
+                    "text": "Ты сказал пятнадцать,",
+                    "is_final": false,
+                    "received_at_ms": 3618.88
+                },
+                {
+                    "text": "Ты сказал пятнадцать,",
+                    "is_final": false,
+                    "received_at_ms": 3858.06
+                },
+                {
+                    "text": "Ты сказал пятнадцать?",
+                    "is_final": false,
+                    "received_at_ms": 4097.89
+                },
+                {
+                    "text": "Ты сказал пятнадцать или",
+                    "is_final": false,
+                    "received_at_ms": 4337.21
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пять",
+                    "is_final": false,
+                    "received_at_ms": 4576.55
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят",
+                    "is_final": false,
+                    "received_at_ms": 4814.79
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят",
+                    "is_final": false,
+                    "received_at_ms": 5053.8
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 5293.05
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 5533.06
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 5771.85
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 6010.49
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 6250.54
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 6488.91
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": false,
+                    "received_at_ms": 6720.41
+                },
+                {
+                    "text": "Ты сказал пятнадцать или пятьдесят?",
+                    "is_final": true,
+                    "received_at_ms": 6802.47
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:39+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "ты сказал 15 или 50",
+                "normalized_actual": "ты сказал 15 или 50",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "ru-005",
+            "language": "ru",
+            "category": "negation",
+            "expected": "Не отправляй этот грузовик, он ещё не разгрузился.",
+            "actual": "Не отправляй этот грузовик. Он еще не разгрузился.",
+            "audio": "audio/raw/ru-005.webm",
+            "success": true,
+            "audio_duration_ms": 5879.999,
+            "preparation_duration_ms": 60.1,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.459,
+            "chunk_size_bytes": 1297,
+            "chunk_count": 74,
+            "time_to_first_transcript_ms": 1982.71,
+            "time_to_final_transcript_ms": 6882.3,
+            "finalization_latency_ms": 286.27,
+            "total_duration_ms": 6882.73,
+            "event_count": 22,
+            "events": [
+                {
+                    "text": "Н",
+                    "is_final": false,
+                    "received_at_ms": 1982.71
+                },
+                {
+                    "text": "Не отправля",
+                    "is_final": false,
+                    "received_at_ms": 2220.74
+                },
+                {
+                    "text": "Не отправляй",
+                    "is_final": false,
+                    "received_at_ms": 2459.74
+                },
+                {
+                    "text": "Не отправляй",
+                    "is_final": false,
+                    "received_at_ms": 2697.73
+                },
+                {
+                    "text": "Не отправляй этот",
+                    "is_final": false,
+                    "received_at_ms": 2936.29
+                },
+                {
+                    "text": "Не отправляй этот груз",
+                    "is_final": false,
+                    "received_at_ms": 3174.08
+                },
+                {
+                    "text": "Не отправляй этот грузовик",
+                    "is_final": false,
+                    "received_at_ms": 3412.06
+                },
+                {
+                    "text": "Не отправляй этот грузовик.",
+                    "is_final": false,
+                    "received_at_ms": 3650.49
+                },
+                {
+                    "text": "Не отправляй этот грузовик.",
+                    "is_final": false,
+                    "received_at_ms": 3888.95
+                },
+                {
+                    "text": "Не отправляй этот грузовик.",
+                    "is_final": false,
+                    "received_at_ms": 4127.28
+                },
+                {
+                    "text": "Не отправляй этот грузовик. О",
+                    "is_final": false,
+                    "received_at_ms": 4365.51
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он",
+                    "is_final": false,
+                    "received_at_ms": 4604.5
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он ещё",
+                    "is_final": false,
+                    "received_at_ms": 4842.93
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разбер",
+                    "is_final": false,
+                    "received_at_ms": 5082.38
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузил",
+                    "is_final": false,
+                    "received_at_ms": 5319.99
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузился,",
+                    "is_final": false,
+                    "received_at_ms": 5558.28
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузился.",
+                    "is_final": false,
+                    "received_at_ms": 5796.75
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он ещё не разгрузился.",
+                    "is_final": false,
+                    "received_at_ms": 6035
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузился.",
+                    "is_final": false,
+                    "received_at_ms": 6273.51
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузился.",
+                    "is_final": false,
+                    "received_at_ms": 6510.93
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузился.",
+                    "is_final": false,
+                    "received_at_ms": 6722.37
+                },
+                {
+                    "text": "Не отправляй этот грузовик. Он еще не разгрузился.",
+                    "is_final": true,
+                    "received_at_ms": 6882.3
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:45+00:00",
+            "evaluation": {
+                "raw_wer": 0.375,
+                "normalized_wer": 0,
+                "normalized_expected": "не отправляй этот грузовик он еще не разгрузился",
+                "normalized_actual": "не отправляй этот грузовик он еще не разгрузился",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-006",
+            "language": "ru",
+            "category": "logistics",
+            "expected": "Водитель уже разгрузился и едет в Клайпеду.",
+            "actual": "Водитель уже разгрузился и едет к айпеду.",
+            "audio": "audio/raw/ru-006.webm",
+            "success": true,
+            "audio_duration_ms": 5460.064,
+            "preparation_duration_ms": 61.18,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.131,
+            "chunk_size_bytes": 1242,
+            "chunk_count": 69,
+            "time_to_first_transcript_ms": 2981.98,
+            "time_to_final_transcript_ms": 6339.39,
+            "finalization_latency_ms": 266.06,
+            "total_duration_ms": 6340.08,
+            "event_count": 15,
+            "events": [
+                {
+                    "text": "Во",
+                    "is_final": false,
+                    "received_at_ms": 2981.98
+                },
+                {
+                    "text": "Водитель",
+                    "is_final": false,
+                    "received_at_ms": 3219.78
+                },
+                {
+                    "text": "Водитель уже",
+                    "is_final": false,
+                    "received_at_ms": 3457.63
+                },
+                {
+                    "text": "Водитель уже разгов",
+                    "is_final": false,
+                    "received_at_ms": 3693.64
+                },
+                {
+                    "text": "Водитель уже разгрузил",
+                    "is_final": false,
+                    "received_at_ms": 3931.84
+                },
+                {
+                    "text": "Водитель уже разгрузился",
+                    "is_final": false,
+                    "received_at_ms": 4168.99
+                },
+                {
+                    "text": "Водитель уже разгрузился,",
+                    "is_final": false,
+                    "received_at_ms": 4406.37
+                },
+                {
+                    "text": "Водитель уже разгрузился и",
+                    "is_final": false,
+                    "received_at_ms": 4644.02
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет",
+                    "is_final": false,
+                    "received_at_ms": 4960.6
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет в",
+                    "is_final": false,
+                    "received_at_ms": 5197.77
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет к вайпе",
+                    "is_final": false,
+                    "received_at_ms": 5434.44
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет к айпеду.",
+                    "is_final": false,
+                    "received_at_ms": 5672.32
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет к айпеду.",
+                    "is_final": false,
+                    "received_at_ms": 5909.92
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет к айпеду.",
+                    "is_final": false,
+                    "received_at_ms": 6138.77
+                },
+                {
+                    "text": "Водитель уже разгрузился и едет к айпеду.",
+                    "is_final": true,
+                    "received_at_ms": 6339.39
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:52+00:00",
+            "evaluation": {
+                "raw_wer": 0.2857,
+                "normalized_wer": 0.2857,
+                "normalized_expected": "водитель уже разгрузился и едет в клайпеду",
+                "normalized_actual": "водитель уже разгрузился и едет к айпеду",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "ru-007",
+            "language": "ru",
+            "category": "identifier",
+            "expected": "Прицеп ZZ 546 нужно оставить на стоянке.",
+            "actual": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+            "audio": "audio/raw/ru-007.webm",
+            "success": true,
+            "audio_duration_ms": 7980.078,
+            "preparation_duration_ms": 57.58,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.801,
+            "chunk_size_bytes": 1298,
+            "chunk_count": 100,
+            "time_to_first_transcript_ms": 2774.08,
+            "time_to_final_transcript_ms": 8756.6,
+            "finalization_latency_ms": 231.62,
+            "total_duration_ms": 8757.07,
+            "event_count": 27,
+            "events": [
+                {
+                    "text": "Пред",
+                    "is_final": false,
+                    "received_at_ms": 2774.08
+                },
+                {
+                    "text": "Прицеп",
+                    "is_final": false,
+                    "received_at_ms": 3013.69
+                },
+                {
+                    "text": "Прицеп.",
+                    "is_final": false,
+                    "received_at_ms": 3252.42
+                },
+                {
+                    "text": "Прицеп.",
+                    "is_final": false,
+                    "received_at_ms": 3492.33
+                },
+                {
+                    "text": "Прицеп З",
+                    "is_final": false,
+                    "received_at_ms": 3731.86
+                },
+                {
+                    "text": "Прицеп ЗД",
+                    "is_final": false,
+                    "received_at_ms": 3971.42
+                },
+                {
+                    "text": "Прицеп ЗЗ",
+                    "is_final": false,
+                    "received_at_ms": 4210.89
+                },
+                {
+                    "text": "Прицеп ЗЗ",
+                    "is_final": false,
+                    "received_at_ms": 4449.66
+                },
+                {
+                    "text": "Прицеп ЗЗ",
+                    "is_final": false,
+                    "received_at_ms": 4689.33
+                },
+                {
+                    "text": "Прицеп ЗЗ-5",
+                    "is_final": false,
+                    "received_at_ms": 4928.94
+                },
+                {
+                    "text": "Прицеп ZZ553",
+                    "is_final": false,
+                    "received_at_ms": 5168.09
+                },
+                {
+                    "text": "Прицеп ZZ54C",
+                    "is_final": false,
+                    "received_at_ms": 5408.02
+                },
+                {
+                    "text": "Прицеп ZZ54C",
+                    "is_final": false,
+                    "received_at_ms": 5646.37
+                },
+                {
+                    "text": "Прицеп ZZ546",
+                    "is_final": false,
+                    "received_at_ms": 5886.36
+                },
+                {
+                    "text": "Прицеп ZZ546",
+                    "is_final": false,
+                    "received_at_ms": 6125.92
+                },
+                {
+                    "text": "Прицеп ZZ546 на",
+                    "is_final": false,
+                    "received_at_ms": 6365.28
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно",
+                    "is_final": false,
+                    "received_at_ms": 6604.69
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно сто",
+                    "is_final": false,
+                    "received_at_ms": 6843.98
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно ставить",
+                    "is_final": false,
+                    "received_at_ms": 7083.53
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на столе",
+                    "is_final": false,
+                    "received_at_ms": 7323.04
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке",
+                    "is_final": false,
+                    "received_at_ms": 7561.97
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+                    "is_final": false,
+                    "received_at_ms": 7721.19
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+                    "is_final": false,
+                    "received_at_ms": 7961.33
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+                    "is_final": false,
+                    "received_at_ms": 8199.87
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+                    "is_final": false,
+                    "received_at_ms": 8439.78
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+                    "is_final": false,
+                    "received_at_ms": 8676.01
+                },
+                {
+                    "text": "Прицеп ЗЗ-546 нужно оставить на стоянке.",
+                    "is_final": true,
+                    "received_at_ms": 8756.6
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:31:59+00:00",
+            "evaluation": {
+                "raw_wer": 0.2857,
+                "normalized_wer": 0.1429,
+                "normalized_expected": "прицеп zz 546 нужно оставить на стоянке",
+                "normalized_actual": "прицеп зз 546 нужно оставить на стоянке",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "ru-008",
+            "language": "ru",
+            "category": "distance",
+            "expected": "До точки назначения осталось сто пятьдесят четыре километра.",
+            "actual": "До точки назначения осталось 154 километра.",
+            "audio": "audio/raw/ru-008.webm",
+            "success": true,
+            "audio_duration_ms": 6420.223,
+            "preparation_duration_ms": 59.16,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.262,
+            "chunk_size_bytes": 1249,
+            "chunk_count": 81,
+            "time_to_first_transcript_ms": 3035.44,
+            "time_to_final_transcript_ms": 7392.71,
+            "finalization_latency_ms": 309.01,
+            "total_duration_ms": 7393.19,
+            "event_count": 19,
+            "events": [
+                {
+                    "text": "До",
+                    "is_final": false,
+                    "received_at_ms": 3035.44
+                },
+                {
+                    "text": "До точк",
+                    "is_final": false,
+                    "received_at_ms": 3356.08
+                },
+                {
+                    "text": "До точки",
+                    "is_final": false,
+                    "received_at_ms": 3511.79
+                },
+                {
+                    "text": "До точки назначения",
+                    "is_final": false,
+                    "received_at_ms": 3749.94
+                },
+                {
+                    "text": "До точки назначения",
+                    "is_final": false,
+                    "received_at_ms": 3987.52
+                },
+                {
+                    "text": "До точки назначения от",
+                    "is_final": false,
+                    "received_at_ms": 4225.35
+                },
+                {
+                    "text": "До точки назначения осталось",
+                    "is_final": false,
+                    "received_at_ms": 4462.31
+                },
+                {
+                    "text": "До точки назначения осталось",
+                    "is_final": false,
+                    "received_at_ms": 4700.68
+                },
+                {
+                    "text": "До точки назначения осталось сто",
+                    "is_final": false,
+                    "received_at_ms": 4938.8
+                },
+                {
+                    "text": "До точки назначения осталось 150",
+                    "is_final": false,
+                    "received_at_ms": 5176.2
+                },
+                {
+                    "text": "До точки назначения осталось 150",
+                    "is_final": false,
+                    "received_at_ms": 5414.21
+                },
+                {
+                    "text": "До точки назначения осталось 154",
+                    "is_final": false,
+                    "received_at_ms": 5731.4
+                },
+                {
+                    "text": "До точки назначения осталось 154 кг",
+                    "is_final": false,
+                    "received_at_ms": 5969.03
+                },
+                {
+                    "text": "До точки назначения осталось 154 км.",
+                    "is_final": false,
+                    "received_at_ms": 6206.03
+                },
+                {
+                    "text": "До точки назначения осталось 154 километра",
+                    "is_final": false,
+                    "received_at_ms": 6444.12
+                },
+                {
+                    "text": "До точки назначения осталось 154 километра.",
+                    "is_final": false,
+                    "received_at_ms": 6681.46
+                },
+                {
+                    "text": "До точки назначения осталось 154 километра.",
+                    "is_final": false,
+                    "received_at_ms": 6919.39
+                },
+                {
+                    "text": "До точки назначения осталось 154 километра.",
+                    "is_final": false,
+                    "received_at_ms": 7150.18
+                },
+                {
+                    "text": "До точки назначения осталось 154 километра.",
+                    "is_final": true,
+                    "received_at_ms": 7392.71
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:08+00:00",
+            "evaluation": {
+                "raw_wer": 0.375,
+                "normalized_wer": 0,
+                "normalized_expected": "до точки назначения осталось 154 км",
+                "normalized_actual": "до точки назначения осталось 154 км",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-009",
+            "language": "ru",
+            "category": "time",
+            "expected": "Загрузка начнётся завтра в семь тридцать утра.",
+            "actual": "Загрузка начнется завтра, 7:30 утра.",
+            "audio": "audio/raw/ru-009.webm",
+            "success": true,
+            "audio_duration_ms": 4979.993,
+            "preparation_duration_ms": 57.73,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.048,
+            "chunk_size_bytes": 1243,
+            "chunk_count": 63,
+            "time_to_first_transcript_ms": 2351.07,
+            "time_to_final_transcript_ms": 5789.13,
+            "finalization_latency_ms": 270.75,
+            "total_duration_ms": 5789.73,
+            "event_count": 15,
+            "events": [
+                {
+                    "text": "За",
+                    "is_final": false,
+                    "received_at_ms": 2351.07
+                },
+                {
+                    "text": "Загрузка",
+                    "is_final": false,
+                    "received_at_ms": 2588.6
+                },
+                {
+                    "text": "Загрузка на",
+                    "is_final": false,
+                    "received_at_ms": 2825.32
+                },
+                {
+                    "text": "Загрузка начн",
+                    "is_final": false,
+                    "received_at_ms": 3064.75
+                },
+                {
+                    "text": "Загрузка начнется за",
+                    "is_final": false,
+                    "received_at_ms": 3378.82
+                },
+                {
+                    "text": "Загрузка начнется завтра",
+                    "is_final": false,
+                    "received_at_ms": 3615.91
+                },
+                {
+                    "text": "Загрузка начнется завтра.",
+                    "is_final": false,
+                    "received_at_ms": 3853.11
+                },
+                {
+                    "text": "Загрузка начнется завтра, все",
+                    "is_final": false,
+                    "received_at_ms": 4090.25
+                },
+                {
+                    "text": "Загрузка начнется завтра, всем",
+                    "is_final": false,
+                    "received_at_ms": 4406.17
+                },
+                {
+                    "text": "Загрузка начнется завтра, семь треть",
+                    "is_final": false,
+                    "received_at_ms": 4643.4
+                },
+                {
+                    "text": "Загрузка начнется завтра, 730",
+                    "is_final": false,
+                    "received_at_ms": 4879.77
+                },
+                {
+                    "text": "Загрузка начнется завтра, 7:30 утр",
+                    "is_final": false,
+                    "received_at_ms": 5117.74
+                },
+                {
+                    "text": "Загрузка начнется завтра, 7:30 утра.",
+                    "is_final": false,
+                    "received_at_ms": 5354.97
+                },
+                {
+                    "text": "Загрузка начнется завтра, 7:30 утра.",
+                    "is_final": false,
+                    "received_at_ms": 5546.32
+                },
+                {
+                    "text": "Загрузка начнется завтра, 7:30 утра.",
+                    "is_final": true,
+                    "received_at_ms": 5789.13
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:15+00:00",
+            "evaluation": {
+                "raw_wer": 0.7143,
+                "normalized_wer": 0.1429,
+                "normalized_expected": "загрузка начнется завтра в 7 30 утра",
+                "normalized_actual": "загрузка начнется завтра 7 30 утра",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "ru-010",
+            "language": "ru",
+            "category": "instruction",
+            "expected": "Нет, не этот грузовик, возьми следующий.",
+            "actual": "Нет, не этот грузовик. Возьми следующий.",
+            "audio": "audio/raw/ru-010.webm",
+            "success": true,
+            "audio_duration_ms": 5879.823,
+            "preparation_duration_ms": 55.15,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.457,
+            "chunk_size_bytes": 1241,
+            "chunk_count": 74,
+            "time_to_first_transcript_ms": 1816.24,
+            "time_to_final_transcript_ms": 6594.43,
+            "finalization_latency_ms": 245.05,
+            "total_duration_ms": 6594.64,
+            "event_count": 21,
+            "events": [
+                {
+                    "text": "Не",
+                    "is_final": false,
+                    "received_at_ms": 1816.24
+                },
+                {
+                    "text": "Нет,",
+                    "is_final": false,
+                    "received_at_ms": 2054.77
+                },
+                {
+                    "text": "Нет,",
+                    "is_final": false,
+                    "received_at_ms": 2292.94
+                },
+                {
+                    "text": "Нет.",
+                    "is_final": false,
+                    "received_at_ms": 2531.2
+                },
+                {
+                    "text": "Нет.",
+                    "is_final": false,
+                    "received_at_ms": 2769.62
+                },
+                {
+                    "text": "Нет.",
+                    "is_final": false,
+                    "received_at_ms": 3007.94
+                },
+                {
+                    "text": "Нет, не",
+                    "is_final": false,
+                    "received_at_ms": 3246.62
+                },
+                {
+                    "text": "Нет, нет,",
+                    "is_final": false,
+                    "received_at_ms": 3564.06
+                },
+                {
+                    "text": "Нет. Не этот",
+                    "is_final": false,
+                    "received_at_ms": 3802.57
+                },
+                {
+                    "text": "Нет, не этот грузов",
+                    "is_final": false,
+                    "received_at_ms": 3961.32
+                },
+                {
+                    "text": "Нет, не этот грузовик.",
+                    "is_final": false,
+                    "received_at_ms": 4198.9
+                },
+                {
+                    "text": "Нет, не этот грузовик.",
+                    "is_final": false,
+                    "received_at_ms": 4437.46
+                },
+                {
+                    "text": "Нет, не этот грузовик.",
+                    "is_final": false,
+                    "received_at_ms": 4675.83
+                },
+                {
+                    "text": "Нет, не этот грузовик. Воз",
+                    "is_final": false,
+                    "received_at_ms": 4914.56
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьм",
+                    "is_final": false,
+                    "received_at_ms": 5153.4
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьми следующее",
+                    "is_final": false,
+                    "received_at_ms": 5393.56
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьми следующее",
+                    "is_final": false,
+                    "received_at_ms": 5711.27
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьми следующий.",
+                    "is_final": false,
+                    "received_at_ms": 6027.08
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьми следующий.",
+                    "is_final": false,
+                    "received_at_ms": 6264.95
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьми следующий.",
+                    "is_final": false,
+                    "received_at_ms": 6433.67
+                },
+                {
+                    "text": "Нет, не этот грузовик. Возьми следующий.",
+                    "is_final": true,
+                    "received_at_ms": 6594.43
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:21+00:00",
+            "evaluation": {
+                "raw_wer": 0.3333,
+                "normalized_wer": 0,
+                "normalized_expected": "нет не этот грузовик возьми следующий",
+                "normalized_actual": "нет не этот грузовик возьми следующий",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-011",
+            "language": "ru",
+            "category": "logistics",
+            "expected": "Забери документы у диспетчера и передай их водителю.",
+            "actual": "Забери документы у диспетчера и передай их водителю.",
+            "audio": "audio/raw/ru-011.webm",
+            "success": true,
+            "audio_duration_ms": 5039.92,
+            "preparation_duration_ms": 56.89,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.999,
+            "chunk_size_bytes": 1248,
+            "chunk_count": 63,
+            "time_to_first_transcript_ms": 2078.82,
+            "time_to_final_transcript_ms": 5733.53,
+            "finalization_latency_ms": 214.58,
+            "total_duration_ms": 5733.88,
+            "event_count": 17,
+            "events": [
+                {
+                    "text": "За",
+                    "is_final": false,
+                    "received_at_ms": 2078.82
+                },
+                {
+                    "text": "Забери",
+                    "is_final": false,
+                    "received_at_ms": 2318.84
+                },
+                {
+                    "text": "Забери документ",
+                    "is_final": false,
+                    "received_at_ms": 2559.04
+                },
+                {
+                    "text": "Забери документы",
+                    "is_final": false,
+                    "received_at_ms": 2797.93
+                },
+                {
+                    "text": "Забери документы у",
+                    "is_final": false,
+                    "received_at_ms": 3038.95
+                },
+                {
+                    "text": "Забери документы у ди",
+                    "is_final": false,
+                    "received_at_ms": 3358.89
+                },
+                {
+                    "text": "Забери документы у диспет",
+                    "is_final": false,
+                    "received_at_ms": 3599.14
+                },
+                {
+                    "text": "Забери документы у диспетчера",
+                    "is_final": false,
+                    "received_at_ms": 3837.92
+                },
+                {
+                    "text": "Забери документы у диспетчера и",
+                    "is_final": false,
+                    "received_at_ms": 4078.83
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай",
+                    "is_final": false,
+                    "received_at_ms": 4318.67
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай их",
+                    "is_final": false,
+                    "received_at_ms": 4558.7
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай хватить",
+                    "is_final": false,
+                    "received_at_ms": 4798.7
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай их водител",
+                    "is_final": false,
+                    "received_at_ms": 5038.56
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай их водителю.",
+                    "is_final": false,
+                    "received_at_ms": 5278.74
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай их водителю.",
+                    "is_final": false,
+                    "received_at_ms": 5518.92
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай их водителю.",
+                    "is_final": false,
+                    "received_at_ms": 5692.26
+                },
+                {
+                    "text": "Забери документы у диспетчера и передай их водителю.",
+                    "is_final": true,
+                    "received_at_ms": 5733.53
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:28+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "забери документы у диспетчера и передай их водителю",
+                "normalized_actual": "забери документы у диспетчера и передай их водителю",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "ru-012",
+            "language": "ru",
+            "category": "temperature",
+            "expected": "Температура должна оставаться между двумя и шестью градусами.",
+            "actual": "Температура должна оставаться между двумя и шестью градусами.",
+            "audio": "audio/raw/ru-012.webm",
+            "success": true,
+            "audio_duration_ms": 5579.97,
+            "preparation_duration_ms": 56.84,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.714,
+            "chunk_size_bytes": 1252,
+            "chunk_count": 70,
+            "time_to_first_transcript_ms": 2530.87,
+            "time_to_final_transcript_ms": 6269.96,
+            "finalization_latency_ms": 226.49,
+            "total_duration_ms": 6270.48,
+            "event_count": 17,
+            "events": [
+                {
+                    "text": "Т",
+                    "is_final": false,
+                    "received_at_ms": 2530.87
+                },
+                {
+                    "text": "Темпер",
+                    "is_final": false,
+                    "received_at_ms": 2769.22
+                },
+                {
+                    "text": "Температур",
+                    "is_final": false,
+                    "received_at_ms": 3088.82
+                },
+                {
+                    "text": "Температура дол",
+                    "is_final": false,
+                    "received_at_ms": 3327.88
+                },
+                {
+                    "text": "Температура должна оста",
+                    "is_final": false,
+                    "received_at_ms": 3567.18
+                },
+                {
+                    "text": "Температура должна оставаться меж",
+                    "is_final": false,
+                    "received_at_ms": 3806.56
+                },
+                {
+                    "text": "Температура должна оставаться между дву",
+                    "is_final": false,
+                    "received_at_ms": 4045.46
+                },
+                {
+                    "text": "Температура должна оставаться между двумя",
+                    "is_final": false,
+                    "received_at_ms": 4283.93
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и",
+                    "is_final": false,
+                    "received_at_ms": 4523.64
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью",
+                    "is_final": false,
+                    "received_at_ms": 4763.08
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью гра",
+                    "is_final": false,
+                    "received_at_ms": 5001.59
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью градус",
+                    "is_final": false,
+                    "received_at_ms": 5241.32
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью градусами.",
+                    "is_final": false,
+                    "received_at_ms": 5480.54
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью градусами.",
+                    "is_final": false,
+                    "received_at_ms": 5799.15
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью градусами.",
+                    "is_final": false,
+                    "received_at_ms": 5957.9
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью градусами.",
+                    "is_final": false,
+                    "received_at_ms": 6190.51
+                },
+                {
+                    "text": "Температура должна оставаться между двумя и шестью градусами.",
+                    "is_final": true,
+                    "received_at_ms": 6269.96
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:33+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "температура должна оставаться между 2 и 6 degree",
+                "normalized_actual": "температура должна оставаться между 2 и 6 degree",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "ru-013",
+            "language": "ru",
+            "category": "long_sentence",
+            "expected": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Каунас.",
+            "actual": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в каунас.",
+            "audio": "audio/raw/ru-013.webm",
+            "success": true,
+            "audio_duration_ms": 7739.707,
+            "preparation_duration_ms": 58.37,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.791,
+            "chunk_size_bytes": 1269,
+            "chunk_count": 97,
+            "time_to_first_transcript_ms": 2561.8,
+            "time_to_final_transcript_ms": 8700.96,
+            "finalization_latency_ms": 314.77,
+            "total_duration_ms": 8701.48,
+            "event_count": 27,
+            "events": [
+                {
+                    "text": "Е",
+                    "is_final": false,
+                    "received_at_ms": 2561.8
+                },
+                {
+                    "text": "Если",
+                    "is_final": false,
+                    "received_at_ms": 2801.42
+                },
+                {
+                    "text": "Если водитель",
+                    "is_final": false,
+                    "received_at_ms": 3040.82
+                },
+                {
+                    "text": "Если водитель закончи",
+                    "is_final": false,
+                    "received_at_ms": 3280.34
+                },
+                {
+                    "text": "Если водитель закончит",
+                    "is_final": false,
+                    "received_at_ms": 3519.68
+                },
+                {
+                    "text": "Если водитель закончит разгруз",
+                    "is_final": false,
+                    "received_at_ms": 3759.24
+                },
+                {
+                    "text": "Если водитель закончит разгрузку",
+                    "is_final": false,
+                    "received_at_ms": 3998.65
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до",
+                    "is_final": false,
+                    "received_at_ms": 4237.39
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до вос",
+                    "is_final": false,
+                    "received_at_ms": 4477.23
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми",
+                    "is_final": false,
+                    "received_at_ms": 4716.75
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера,",
+                    "is_final": false,
+                    "received_at_ms": 4955.27
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера,",
+                    "is_final": false,
+                    "received_at_ms": 5194.91
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера,",
+                    "is_final": false,
+                    "received_at_ms": 5433.93
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, от",
+                    "is_final": false,
+                    "received_at_ms": 5673.64
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправьте",
+                    "is_final": false,
+                    "received_at_ms": 5912.9
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его",
+                    "is_final": false,
+                    "received_at_ms": 6152.23
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на",
+                    "is_final": false,
+                    "received_at_ms": 6392.36
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующий",
+                    "is_final": false,
+                    "received_at_ms": 6631.51
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую",
+                    "is_final": false,
+                    "received_at_ms": 6870.88
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую за",
+                    "is_final": false,
+                    "received_at_ms": 7110.48
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку",
+                    "is_final": false,
+                    "received_at_ms": 7349.86
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку",
+                    "is_final": false,
+                    "received_at_ms": 7588.27
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в",
+                    "is_final": false,
+                    "received_at_ms": 7907.85
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Кауна",
+                    "is_final": false,
+                    "received_at_ms": 8147.75
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в каунас",
+                    "is_final": false,
+                    "received_at_ms": 8386.18
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в каунас.",
+                    "is_final": false,
+                    "received_at_ms": 8620.68
+                },
+                {
+                    "text": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в каунас.",
+                    "is_final": true,
+                    "received_at_ms": 8700.96
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:40+00:00",
+            "evaluation": {
+                "raw_wer": 0.0714,
+                "normalized_wer": 0,
+                "normalized_expected": "если водитель закончит разгрузку до 8 вечера отправь его на следующую загрузку в каунас",
+                "normalized_actual": "если водитель закончит разгрузку до 8 вечера отправь его на следующую загрузку в каунас",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-014",
+            "language": "ru",
+            "category": "pause",
+            "expected": "Я приеду через пятнадцать минут, если не будет пробок.",
+            "actual": "Я приеду через пятнадцать минут. Если не будет пробок,",
+            "audio": "audio/raw/ru-014.webm",
+            "success": true,
+            "audio_duration_ms": 5940.285,
+            "preparation_duration_ms": 61.51,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.204,
+            "chunk_size_bytes": 1292,
+            "chunk_count": 75,
+            "time_to_first_transcript_ms": 2427.76,
+            "time_to_final_transcript_ms": 6941.48,
+            "finalization_latency_ms": 311.21,
+            "total_duration_ms": 6941.8,
+            "event_count": 20,
+            "events": [
+                {
+                    "text": "Я",
+                    "is_final": false,
+                    "received_at_ms": 2427.76
+                },
+                {
+                    "text": "Я прие",
+                    "is_final": false,
+                    "received_at_ms": 2665.51
+                },
+                {
+                    "text": "Я приеду",
+                    "is_final": false,
+                    "received_at_ms": 2903.08
+                },
+                {
+                    "text": "Я приеду через",
+                    "is_final": false,
+                    "received_at_ms": 3140.88
+                },
+                {
+                    "text": "Я приеду через пятнадцать",
+                    "is_final": false,
+                    "received_at_ms": 3377.37
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут",
+                    "is_final": false,
+                    "received_at_ms": 3615.26
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут,",
+                    "is_final": false,
+                    "received_at_ms": 3853.11
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут.",
+                    "is_final": false,
+                    "received_at_ms": 4090.5
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут.",
+                    "is_final": false,
+                    "received_at_ms": 4328.5
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут.",
+                    "is_final": false,
+                    "received_at_ms": 4565.58
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут.",
+                    "is_final": false,
+                    "received_at_ms": 4804.02
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут.",
+                    "is_final": false,
+                    "received_at_ms": 5041.18
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если",
+                    "is_final": false,
+                    "received_at_ms": 5279.25
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не",
+                    "is_final": false,
+                    "received_at_ms": 5516.93
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не будет",
+                    "is_final": false,
+                    "received_at_ms": 5753.98
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не будет про",
+                    "is_final": false,
+                    "received_at_ms": 5991.81
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не будет пробы,",
+                    "is_final": false,
+                    "received_at_ms": 6228.85
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не будет пробок,",
+                    "is_final": false,
+                    "received_at_ms": 6466.65
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не будет пробок,",
+                    "is_final": false,
+                    "received_at_ms": 6697.04
+                },
+                {
+                    "text": "Я приеду через пятнадцать минут. Если не будет пробок,",
+                    "is_final": true,
+                    "received_at_ms": 6941.48
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:48+00:00",
+            "evaluation": {
+                "raw_wer": 0.3333,
+                "normalized_wer": 0,
+                "normalized_expected": "я приеду через 15 минут если не будет пробок",
+                "normalized_actual": "я приеду через 15 минут если не будет пробок",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "ru-015",
+            "language": "ru",
+            "category": "proper_nouns",
+            "expected": "Андрей Котов встретит водителя в Клайпеде возле терминала.",
+            "actual": "Андрей Котов встретит водителя в коллайпеде возле терминала.",
+            "audio": "audio/raw/ru-015.webm",
+            "success": true,
+            "audio_duration_ms": 5640.076,
+            "preparation_duration_ms": 59.16,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.438,
+            "chunk_size_bytes": 1244,
+            "chunk_count": 71,
+            "time_to_first_transcript_ms": 2459.83,
+            "time_to_final_transcript_ms": 6569.05,
+            "finalization_latency_ms": 290.78,
+            "total_duration_ms": 6569.43,
+            "event_count": 18,
+            "events": [
+                {
+                    "text": "Ан",
+                    "is_final": false,
+                    "received_at_ms": 2459.83
+                },
+                {
+                    "text": "Андрей",
+                    "is_final": false,
+                    "received_at_ms": 2698.12
+                },
+                {
+                    "text": "Андрей Кот",
+                    "is_final": false,
+                    "received_at_ms": 2936.4
+                },
+                {
+                    "text": "Андрей Котов",
+                    "is_final": false,
+                    "received_at_ms": 3174.75
+                },
+                {
+                    "text": "Андрей Котов встретит",
+                    "is_final": false,
+                    "received_at_ms": 3492.55
+                },
+                {
+                    "text": "Андрей Котов встретит вод",
+                    "is_final": false,
+                    "received_at_ms": 3731.45
+                },
+                {
+                    "text": "Андрей Котов встретит водителя",
+                    "is_final": false,
+                    "received_at_ms": 3969.3
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в К",
+                    "is_final": false,
+                    "received_at_ms": 4208.41
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в кол",
+                    "is_final": false,
+                    "received_at_ms": 4448.32
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллай",
+                    "is_final": false,
+                    "received_at_ms": 4688.11
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде",
+                    "is_final": false,
+                    "received_at_ms": 4927.3
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле",
+                    "is_final": false,
+                    "received_at_ms": 5161.07
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле тер",
+                    "is_final": false,
+                    "received_at_ms": 5399.54
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле терминала",
+                    "is_final": false,
+                    "received_at_ms": 5717.23
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле терминала.",
+                    "is_final": false,
+                    "received_at_ms": 5955.63
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле терминала.",
+                    "is_final": false,
+                    "received_at_ms": 6193.44
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле терминала.",
+                    "is_final": false,
+                    "received_at_ms": 6409.33
+                },
+                {
+                    "text": "Андрей Котов встретит водителя в коллайпеде возле терминала.",
+                    "is_final": true,
+                    "received_at_ms": 6569.05
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:32:56+00:00",
+            "evaluation": {
+                "raw_wer": 0.125,
+                "normalized_wer": 0.125,
+                "normalized_expected": "андрей котов встретит водителя в клайпеде возле терминала",
+                "normalized_actual": "андрей котов встретит водителя в коллайпеде возле терминала",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "en-001",
+            "language": "en",
+            "category": "simple",
+            "expected": "I am ready to start the trip.",
+            "actual": "I'm ready to start the trip.",
+            "audio": "audio/raw/en-001.webm",
+            "success": true,
+            "audio_duration_ms": 4259.856,
+            "preparation_duration_ms": 65.55,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 78.886,
+            "chunk_size_bytes": 1241,
+            "chunk_count": 54,
+            "time_to_first_transcript_ms": 2327.25,
+            "time_to_final_transcript_ms": 5202.29,
+            "finalization_latency_ms": 266.99,
+            "total_duration_ms": 5202.61,
+            "event_count": 13,
+            "events": [
+                {
+                    "text": "I am",
+                    "is_final": false,
+                    "received_at_ms": 2327.25
+                },
+                {
+                    "text": "I'm Ray",
+                    "is_final": false,
+                    "received_at_ms": 2563.84
+                },
+                {
+                    "text": "I'm ready",
+                    "is_final": false,
+                    "received_at_ms": 2802.29
+                },
+                {
+                    "text": "I'm ready to",
+                    "is_final": false,
+                    "received_at_ms": 3037.27
+                },
+                {
+                    "text": "I'm ready to start",
+                    "is_final": false,
+                    "received_at_ms": 3273.88
+                },
+                {
+                    "text": "I'm ready to start",
+                    "is_final": false,
+                    "received_at_ms": 3510.41
+                },
+                {
+                    "text": "I'm ready to start the",
+                    "is_final": false,
+                    "received_at_ms": 3825.9
+                },
+                {
+                    "text": "I'm ready to start the tree",
+                    "is_final": false,
+                    "received_at_ms": 4062.42
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 4299.73
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 4535.98
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 4772.62
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 5001.97
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": true,
+                    "received_at_ms": 5202.29
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:02+00:00",
+            "evaluation": {
+                "raw_wer": 0.2857,
+                "normalized_wer": 0,
+                "normalized_expected": "i am ready to start the trip",
+                "normalized_actual": "i am ready to start the trip",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "en-002",
+            "language": "en",
+            "category": "proper_nouns",
+            "expected": "My cat Persik is a ginger hooligan.",
+            "actual": "My cat Persic is a ginger hooligan.",
+            "audio": "audio/raw/en-002.webm",
+            "success": true,
+            "audio_duration_ms": 4980.016,
+            "preparation_duration_ms": 56,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.048,
+            "chunk_size_bytes": 1243,
+            "chunk_count": 63,
+            "time_to_first_transcript_ms": 1953.7,
+            "time_to_final_transcript_ms": 5858.18,
+            "finalization_latency_ms": 263.29,
+            "total_duration_ms": 5858.67,
+            "event_count": 17,
+            "events": [
+                {
+                    "text": "My",
+                    "is_final": false,
+                    "received_at_ms": 1953.7
+                },
+                {
+                    "text": "My",
+                    "is_final": false,
+                    "received_at_ms": 2269.01
+                },
+                {
+                    "text": "My cat",
+                    "is_final": false,
+                    "received_at_ms": 2506.47
+                },
+                {
+                    "text": "My cat",
+                    "is_final": false,
+                    "received_at_ms": 2744.12
+                },
+                {
+                    "text": "My cat pressed",
+                    "is_final": false,
+                    "received_at_ms": 2980.28
+                },
+                {
+                    "text": "My cat Percy",
+                    "is_final": false,
+                    "received_at_ms": 3218.66
+                },
+                {
+                    "text": "My cat Persic",
+                    "is_final": false,
+                    "received_at_ms": 3455.36
+                },
+                {
+                    "text": "My cat Persic is",
+                    "is_final": false,
+                    "received_at_ms": 3692.62
+                },
+                {
+                    "text": "My cat Persic is a",
+                    "is_final": false,
+                    "received_at_ms": 3929.99
+                },
+                {
+                    "text": "My cat Persic is a ginger",
+                    "is_final": false,
+                    "received_at_ms": 4166.56
+                },
+                {
+                    "text": "My cat Persic is a ginger",
+                    "is_final": false,
+                    "received_at_ms": 4482.55
+                },
+                {
+                    "text": "My cat Persic is a ginger Hul",
+                    "is_final": false,
+                    "received_at_ms": 4720.11
+                },
+                {
+                    "text": "My cat Persic is a ginger hooligan",
+                    "is_final": false,
+                    "received_at_ms": 4956.67
+                },
+                {
+                    "text": "My cat Persic is a ginger hooligan",
+                    "is_final": false,
+                    "received_at_ms": 5194.23
+                },
+                {
+                    "text": "My cat Persic is a ginger hooligan.",
+                    "is_final": false,
+                    "received_at_ms": 5431.79
+                },
+                {
+                    "text": "My cat Persic is a ginger hooligan.",
+                    "is_final": false,
+                    "received_at_ms": 5656.13
+                },
+                {
+                    "text": "My cat Persic is a ginger hooligan.",
+                    "is_final": true,
+                    "received_at_ms": 5858.18
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:07+00:00",
+            "evaluation": {
+                "raw_wer": 0.1429,
+                "normalized_wer": 0.1429,
+                "normalized_expected": "my cat persik is a ginger hooligan",
+                "normalized_actual": "my cat persic is a ginger hooligan",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "en-003",
+            "language": "en",
+            "category": "numbers",
+            "expected": "Did you say fifteen or fifty?",
+            "actual": "Did you say fifteen or fifty?",
+            "audio": "audio/raw/en-003.webm",
+            "success": true,
+            "audio_duration_ms": 4619.784,
+            "preparation_duration_ms": 55.11,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.651,
+            "chunk_size_bytes": 1250,
+            "chunk_count": 58,
+            "time_to_first_transcript_ms": 2190.43,
+            "time_to_final_transcript_ms": 5408.63,
+            "finalization_latency_ms": 270.99,
+            "total_duration_ms": 5408.82,
+            "event_count": 15,
+            "events": [
+                {
+                    "text": "Did",
+                    "is_final": false,
+                    "received_at_ms": 2190.43
+                },
+                {
+                    "text": "Did you",
+                    "is_final": false,
+                    "received_at_ms": 2429.45
+                },
+                {
+                    "text": "Did you say",
+                    "is_final": false,
+                    "received_at_ms": 2668.32
+                },
+                {
+                    "text": "Did you say if",
+                    "is_final": false,
+                    "received_at_ms": 2907.32
+                },
+                {
+                    "text": "Did you say fifth",
+                    "is_final": false,
+                    "received_at_ms": 3145.36
+                },
+                {
+                    "text": "Did you say fifty",
+                    "is_final": false,
+                    "received_at_ms": 3384.37
+                },
+                {
+                    "text": "Did you say fifteen",
+                    "is_final": false,
+                    "received_at_ms": 3624.4
+                },
+                {
+                    "text": "Did you say fifteen or",
+                    "is_final": false,
+                    "received_at_ms": 3863.12
+                },
+                {
+                    "text": "Did you say fifteen or",
+                    "is_final": false,
+                    "received_at_ms": 4101.9
+                },
+                {
+                    "text": "Did you say fifteen or",
+                    "is_final": false,
+                    "received_at_ms": 4341.39
+                },
+                {
+                    "text": "Did you say fifteen or fifty",
+                    "is_final": false,
+                    "received_at_ms": 4580.41
+                },
+                {
+                    "text": "Did you say fifteen or fifty",
+                    "is_final": false,
+                    "received_at_ms": 4898.71
+                },
+                {
+                    "text": "Did you say fifteen or fifty?",
+                    "is_final": false,
+                    "received_at_ms": 5137.61
+                },
+                {
+                    "text": "Did you say fifteen or fifty?",
+                    "is_final": false,
+                    "received_at_ms": 5329.39
+                },
+                {
+                    "text": "Did you say fifteen or fifty?",
+                    "is_final": true,
+                    "received_at_ms": 5408.63
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:13+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "did you say 15 or 50",
+                "normalized_actual": "did you say 15 or 50",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "en-004",
+            "language": "en",
+            "category": "negation",
+            "expected": "Do not send this truck because the driver has not unloaded yet.",
+            "actual": "Do not send this truck because the driver has not unloaded yet?",
+            "audio": "audio/raw/en-004.webm",
+            "success": true,
+            "audio_duration_ms": 5520.331,
+            "preparation_duration_ms": 56.69,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 78.862,
+            "chunk_size_bytes": 1288,
+            "chunk_count": 70,
+            "time_to_first_transcript_ms": 1509.92,
+            "time_to_final_transcript_ms": 6218.65,
+            "finalization_latency_ms": 213.75,
+            "total_duration_ms": 6218.85,
+            "event_count": 22,
+            "events": [
+                {
+                    "text": "Do",
+                    "is_final": false,
+                    "received_at_ms": 1509.92
+                },
+                {
+                    "text": "Do not",
+                    "is_final": false,
+                    "received_at_ms": 1746.47
+                },
+                {
+                    "text": "Do not say",
+                    "is_final": false,
+                    "received_at_ms": 1983
+                },
+                {
+                    "text": "Do not send",
+                    "is_final": false,
+                    "received_at_ms": 2140.7
+                },
+                {
+                    "text": "Do not send this",
+                    "is_final": false,
+                    "received_at_ms": 2456.88
+                },
+                {
+                    "text": "Do not send this try",
+                    "is_final": false,
+                    "received_at_ms": 2613.88
+                },
+                {
+                    "text": "Do not send this drug",
+                    "is_final": false,
+                    "received_at_ms": 2856.52
+                },
+                {
+                    "text": "Do not send this truck because",
+                    "is_final": false,
+                    "received_at_ms": 3166.35
+                },
+                {
+                    "text": "Do not send this truck because",
+                    "is_final": false,
+                    "received_at_ms": 3402.66
+                },
+                {
+                    "text": "Do not send this truck because the",
+                    "is_final": false,
+                    "received_at_ms": 3639.09
+                },
+                {
+                    "text": "Do not send this truck because the drive",
+                    "is_final": false,
+                    "received_at_ms": 3875.85
+                },
+                {
+                    "text": "Do not send this truck because the driver",
+                    "is_final": false,
+                    "received_at_ms": 4112.3
+                },
+                {
+                    "text": "Do not send this truck because the driver has",
+                    "is_final": false,
+                    "received_at_ms": 4348.82
+                },
+                {
+                    "text": "Do not send this truck because the driver has no",
+                    "is_final": false,
+                    "received_at_ms": 4585.85
+                },
+                {
+                    "text": "Do not send this truck because the driver has not",
+                    "is_final": false,
+                    "received_at_ms": 4821.94
+                },
+                {
+                    "text": "Do not send this truck because the driver has not on",
+                    "is_final": false,
+                    "received_at_ms": 4979.53
+                },
+                {
+                    "text": "Do not send this truck because the driver has not unload",
+                    "is_final": false,
+                    "received_at_ms": 5220.35
+                },
+                {
+                    "text": "Do not send this truck because the driver has not unloaded the",
+                    "is_final": false,
+                    "received_at_ms": 5457.43
+                },
+                {
+                    "text": "Do not send this truck because the driver has not unloaded yet.",
+                    "is_final": false,
+                    "received_at_ms": 5694.23
+                },
+                {
+                    "text": "Do not send this truck because the driver has not unloaded yet.",
+                    "is_final": false,
+                    "received_at_ms": 6004.89
+                },
+                {
+                    "text": "Do not send this truck because the driver has not unloaded yet?",
+                    "is_final": false,
+                    "received_at_ms": 6187.48
+                },
+                {
+                    "text": "Do not send this truck because the driver has not unloaded yet?",
+                    "is_final": true,
+                    "received_at_ms": 6218.65
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:19+00:00",
+            "evaluation": {
+                "raw_wer": 0.0833,
+                "normalized_wer": 0,
+                "normalized_expected": "do not send this truck because the driver has not unloaded yet",
+                "normalized_actual": "do not send this truck because the driver has not unloaded yet",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "en-005",
+            "language": "en",
+            "category": "logistics",
+            "expected": "The driver has finished unloading and is heading to Klaipeda.",
+            "actual": "The driver has finished unloading and is heading to Clebra.",
+            "audio": "audio/raw/en-005.webm",
+            "success": true,
+            "audio_duration_ms": 6839.875,
+            "preparation_duration_ms": 63.84,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.533,
+            "chunk_size_bytes": 1296,
+            "chunk_count": 86,
+            "time_to_first_transcript_ms": 1780.96,
+            "time_to_final_transcript_ms": 7611.43,
+            "finalization_latency_ms": 258.09,
+            "total_duration_ms": 7611.66,
+            "event_count": 26,
+            "events": [
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 1780.96
+                },
+                {
+                    "text": "The dry",
+                    "is_final": false,
+                    "received_at_ms": 2019.49
+                },
+                {
+                    "text": "The driver",
+                    "is_final": false,
+                    "received_at_ms": 2258.12
+                },
+                {
+                    "text": "The driver",
+                    "is_final": false,
+                    "received_at_ms": 2496.69
+                },
+                {
+                    "text": "The driver has",
+                    "is_final": false,
+                    "received_at_ms": 2735.54
+                },
+                {
+                    "text": "The driver has been",
+                    "is_final": false,
+                    "received_at_ms": 2973.83
+                },
+                {
+                    "text": "The driver has finished",
+                    "is_final": false,
+                    "received_at_ms": 3212.46
+                },
+                {
+                    "text": "The driver has finished",
+                    "is_final": false,
+                    "received_at_ms": 3371.52
+                },
+                {
+                    "text": "The driver has finished on",
+                    "is_final": false,
+                    "received_at_ms": 3689.63
+                },
+                {
+                    "text": "The driver has finished unloading",
+                    "is_final": false,
+                    "received_at_ms": 3848.75
+                },
+                {
+                    "text": "The driver has finished unloading",
+                    "is_final": false,
+                    "received_at_ms": 4088.41
+                },
+                {
+                    "text": "The driver has finished unloading",
+                    "is_final": false,
+                    "received_at_ms": 4325.85
+                },
+                {
+                    "text": "The driver has finished unloading a",
+                    "is_final": false,
+                    "received_at_ms": 4569.77
+                },
+                {
+                    "text": "The driver has finished unloading and",
+                    "is_final": false,
+                    "received_at_ms": 4882.77
+                },
+                {
+                    "text": "The driver has finished unloading an e",
+                    "is_final": false,
+                    "received_at_ms": 5042.09
+                },
+                {
+                    "text": "The driver has finished unloading and is",
+                    "is_final": false,
+                    "received_at_ms": 5284.98
+                },
+                {
+                    "text": "The driver has finished unloading and is",
+                    "is_final": false,
+                    "received_at_ms": 5519.93
+                },
+                {
+                    "text": "The driver has finished unloading and is head",
+                    "is_final": false,
+                    "received_at_ms": 5761.86
+                },
+                {
+                    "text": "The driver has finished unloading and is heading",
+                    "is_final": false,
+                    "received_at_ms": 6076.09
+                },
+                {
+                    "text": "The driver has finished unloading and is heading",
+                    "is_final": false,
+                    "received_at_ms": 6314.51
+                },
+                {
+                    "text": "The driver has finished unloading and is heading to",
+                    "is_final": false,
+                    "received_at_ms": 6552.92
+                },
+                {
+                    "text": "The driver has finished unloading and is heading to Clay",
+                    "is_final": false,
+                    "received_at_ms": 6791.58
+                },
+                {
+                    "text": "The driver has finished unloading and is heading to Clayburn",
+                    "is_final": false,
+                    "received_at_ms": 7030.1
+                },
+                {
+                    "text": "The driver has finished unloading and is heading to Clebra",
+                    "is_final": false,
+                    "received_at_ms": 7268.86
+                },
+                {
+                    "text": "The driver has finished unloading and is heading to Clebra.",
+                    "is_final": false,
+                    "received_at_ms": 7450.06
+                },
+                {
+                    "text": "The driver has finished unloading and is heading to Clebra.",
+                    "is_final": true,
+                    "received_at_ms": 7611.43
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:25+00:00",
+            "evaluation": {
+                "raw_wer": 0.1,
+                "normalized_wer": 0.1,
+                "normalized_expected": "the driver has finished unloading and is heading to klaipeda",
+                "normalized_actual": "the driver has finished unloading and is heading to clebra",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "en-006",
+            "language": "en",
+            "category": "identifier",
+            "expected": "Leave trailer ZZ 546 in the parking area.",
+            "actual": "Lift trailer z z five four six in the parking area.",
+            "audio": "audio/raw/en-006.webm",
+            "success": true,
+            "audio_duration_ms": 7200.497,
+            "preparation_duration_ms": 78.11,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.126,
+            "chunk_size_bytes": 1288,
+            "chunk_count": 91,
+            "time_to_first_transcript_ms": 2234.66,
+            "time_to_final_transcript_ms": 7904.6,
+            "finalization_latency_ms": 210.21,
+            "total_duration_ms": 7905.04,
+            "event_count": 26,
+            "events": [
+                {
+                    "text": "Re",
+                    "is_final": false,
+                    "received_at_ms": 2234.66
+                },
+                {
+                    "text": "Lift",
+                    "is_final": false,
+                    "received_at_ms": 2393.18
+                },
+                {
+                    "text": "Lift tray",
+                    "is_final": false,
+                    "received_at_ms": 2630.75
+                },
+                {
+                    "text": "Lift trailer",
+                    "is_final": false,
+                    "received_at_ms": 2868.35
+                },
+                {
+                    "text": "Lift trailer",
+                    "is_final": false,
+                    "received_at_ms": 3105.96
+                },
+                {
+                    "text": "Lift trailer, the",
+                    "is_final": false,
+                    "received_at_ms": 3344.76
+                },
+                {
+                    "text": "Lift trailer. ZZ",
+                    "is_final": false,
+                    "received_at_ms": 3585.25
+                },
+                {
+                    "text": "Lift trailer zizi",
+                    "is_final": false,
+                    "received_at_ms": 3896.35
+                },
+                {
+                    "text": "Lift trailer z z",
+                    "is_final": false,
+                    "received_at_ms": 4133.71
+                },
+                {
+                    "text": "Lift trailer z z five",
+                    "is_final": false,
+                    "received_at_ms": 4371.79
+                },
+                {
+                    "text": "Lift trailer ZZ five",
+                    "is_final": false,
+                    "received_at_ms": 4608.7
+                },
+                {
+                    "text": "Lift trailer ZZ five four",
+                    "is_final": false,
+                    "received_at_ms": 4846.67
+                },
+                {
+                    "text": "Lift trailer z z five four",
+                    "is_final": false,
+                    "received_at_ms": 5083.59
+                },
+                {
+                    "text": "Lift trailer z z five four six",
+                    "is_final": false,
+                    "received_at_ms": 5321.17
+                },
+                {
+                    "text": "Lift trailer z z five four six",
+                    "is_final": false,
+                    "received_at_ms": 5558.01
+                },
+                {
+                    "text": "Lift trailer z z five four six",
+                    "is_final": false,
+                    "received_at_ms": 5796.22
+                },
+                {
+                    "text": "Lift trailer z z five four six in",
+                    "is_final": false,
+                    "received_at_ms": 6032.87
+                },
+                {
+                    "text": "Lift trailer z z five four six in the",
+                    "is_final": false,
+                    "received_at_ms": 6191.31
+                },
+                {
+                    "text": "Lift trailer z z five four six in the park",
+                    "is_final": false,
+                    "received_at_ms": 6428.3
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking",
+                    "is_final": false,
+                    "received_at_ms": 6745.55
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking of",
+                    "is_final": false,
+                    "received_at_ms": 6905.7
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking array",
+                    "is_final": false,
+                    "received_at_ms": 7145.24
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking area",
+                    "is_final": false,
+                    "received_at_ms": 7458.19
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking area",
+                    "is_final": false,
+                    "received_at_ms": 7694.37
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking area.",
+                    "is_final": false,
+                    "received_at_ms": 7865.02
+                },
+                {
+                    "text": "Lift trailer z z five four six in the parking area.",
+                    "is_final": true,
+                    "received_at_ms": 7904.6
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:33+00:00",
+            "evaluation": {
+                "raw_wer": 0.75,
+                "normalized_wer": 0.75,
+                "normalized_expected": "leave trailer zz 546 in the parking area",
+                "normalized_actual": "lift trailer z z 5 4 6 in the parking area",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "en-007",
+            "language": "en",
+            "category": "distance",
+            "expected": "The remaining distance is one hundred and fifty-four kilometers.",
+            "actual": "The remaining distance is one hundred and fifty four kilometers.",
+            "audio": "audio/raw/en-007.webm",
+            "success": true,
+            "audio_duration_ms": 7560.456,
+            "preparation_duration_ms": 61.5,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.584,
+            "chunk_size_bytes": 1258,
+            "chunk_count": 95,
+            "time_to_first_transcript_ms": 2362.24,
+            "time_to_final_transcript_ms": 8353.72,
+            "finalization_latency_ms": 255.91,
+            "total_duration_ms": 8353.92,
+            "event_count": 26,
+            "events": [
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 2362.24
+                },
+                {
+                    "text": "There",
+                    "is_final": false,
+                    "received_at_ms": 2601.79
+                },
+                {
+                    "text": "The remote",
+                    "is_final": false,
+                    "received_at_ms": 2840.47
+                },
+                {
+                    "text": "The remaining",
+                    "is_final": false,
+                    "received_at_ms": 3078.83
+                },
+                {
+                    "text": "The remaining",
+                    "is_final": false,
+                    "received_at_ms": 3397.13
+                },
+                {
+                    "text": "The remaining this",
+                    "is_final": false,
+                    "received_at_ms": 3636.35
+                },
+                {
+                    "text": "The remaining distance",
+                    "is_final": false,
+                    "received_at_ms": 3874.68
+                },
+                {
+                    "text": "The remaining distance",
+                    "is_final": false,
+                    "received_at_ms": 4033.62
+                },
+                {
+                    "text": "The remaining distance is",
+                    "is_final": false,
+                    "received_at_ms": 4274.55
+                },
+                {
+                    "text": "The remaining distance is one",
+                    "is_final": false,
+                    "received_at_ms": 4510.98
+                },
+                {
+                    "text": "The remaining distance is one",
+                    "is_final": false,
+                    "received_at_ms": 4750.4
+                },
+                {
+                    "text": "The remaining distance is one hundred",
+                    "is_final": false,
+                    "received_at_ms": 4992.35
+                },
+                {
+                    "text": "The remaining distance is one hundred",
+                    "is_final": false,
+                    "received_at_ms": 5227.8
+                },
+                {
+                    "text": "The remaining distance is one hundred",
+                    "is_final": false,
+                    "received_at_ms": 5466.8
+                },
+                {
+                    "text": "The remaining distance is one hundred and",
+                    "is_final": false,
+                    "received_at_ms": 5706.33
+                },
+                {
+                    "text": "The remaining distance is one hundred and",
+                    "is_final": false,
+                    "received_at_ms": 6023.9
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty",
+                    "is_final": false,
+                    "received_at_ms": 6185.56
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty",
+                    "is_final": false,
+                    "received_at_ms": 6424.31
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four",
+                    "is_final": false,
+                    "received_at_ms": 6819.67
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilobytes",
+                    "is_final": false,
+                    "received_at_ms": 7058.49
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilometer",
+                    "is_final": false,
+                    "received_at_ms": 7296.68
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilometer",
+                    "is_final": false,
+                    "received_at_ms": 7535.24
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilometers.",
+                    "is_final": false,
+                    "received_at_ms": 7774.25
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilometers.",
+                    "is_final": false,
+                    "received_at_ms": 8012.8
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilometers.",
+                    "is_final": false,
+                    "received_at_ms": 8185.43
+                },
+                {
+                    "text": "The remaining distance is one hundred and fifty four kilometers.",
+                    "is_final": true,
+                    "received_at_ms": 8353.72
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:41+00:00",
+            "evaluation": {
+                "raw_wer": 0.2222,
+                "normalized_wer": 0,
+                "normalized_expected": "the remaining distance is 154 km",
+                "normalized_actual": "the remaining distance is 154 km",
+                "classification": "normalization_only"
+            }
+        },
+        {
+            "phrase_id": "en-008",
+            "language": "en",
+            "category": "time",
+            "expected": "Loading starts tomorrow at seven thirty in the morning.",
+            "actual": "Loading starts tomorrow at seven thirty in the morning.",
+            "audio": "audio/raw/en-008.webm",
+            "success": true,
+            "audio_duration_ms": 6900.001,
+            "preparation_duration_ms": 59.4,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.31,
+            "chunk_size_bytes": 1248,
+            "chunk_count": 87,
+            "time_to_first_transcript_ms": 2137.37,
+            "time_to_final_transcript_ms": 7654.93,
+            "finalization_latency_ms": 203.85,
+            "total_duration_ms": 7655.12,
+            "event_count": 24,
+            "events": [
+                {
+                    "text": "Low",
+                    "is_final": false,
+                    "received_at_ms": 2137.37
+                },
+                {
+                    "text": "Laurie",
+                    "is_final": false,
+                    "received_at_ms": 2375.45
+                },
+                {
+                    "text": "Loading",
+                    "is_final": false,
+                    "received_at_ms": 2613.59
+                },
+                {
+                    "text": "Loading",
+                    "is_final": false,
+                    "received_at_ms": 2772.12
+                },
+                {
+                    "text": "Loading install",
+                    "is_final": false,
+                    "received_at_ms": 3009.16
+                },
+                {
+                    "text": "Loading starts",
+                    "is_final": false,
+                    "received_at_ms": 3326.51
+                },
+                {
+                    "text": "Loading starts",
+                    "is_final": false,
+                    "received_at_ms": 3565.05
+                },
+                {
+                    "text": "Loading starts to move",
+                    "is_final": false,
+                    "received_at_ms": 3804.63
+                },
+                {
+                    "text": "Loading starts tomorrow",
+                    "is_final": false,
+                    "received_at_ms": 4043.88
+                },
+                {
+                    "text": "Loading starts tomorrow",
+                    "is_final": false,
+                    "received_at_ms": 4281.85
+                },
+                {
+                    "text": "Loading starts tomorrow at",
+                    "is_final": false,
+                    "received_at_ms": 4595.23
+                },
+                {
+                    "text": "Loading starts tomorrow at seven",
+                    "is_final": false,
+                    "received_at_ms": 4833.17
+                },
+                {
+                    "text": "Loading starts tomorrow at seven",
+                    "is_final": false,
+                    "received_at_ms": 5071.11
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty",
+                    "is_final": false,
+                    "received_at_ms": 5310.09
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty",
+                    "is_final": false,
+                    "received_at_ms": 5547.86
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty",
+                    "is_final": false,
+                    "received_at_ms": 5784.96
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in",
+                    "is_final": false,
+                    "received_at_ms": 6102.92
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the",
+                    "is_final": false,
+                    "received_at_ms": 6341.03
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the morning",
+                    "is_final": false,
+                    "received_at_ms": 6579.03
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the morning",
+                    "is_final": false,
+                    "received_at_ms": 6816.44
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the morning.",
+                    "is_final": false,
+                    "received_at_ms": 7054.79
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the morning.",
+                    "is_final": false,
+                    "received_at_ms": 7292.72
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the morning.",
+                    "is_final": false,
+                    "received_at_ms": 7451.05
+                },
+                {
+                    "text": "Loading starts tomorrow at seven thirty in the morning.",
+                    "is_final": true,
+                    "received_at_ms": 7654.93
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:49+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "loading starts tomorrow at 7 30 in the morning",
+                "normalized_actual": "loading starts tomorrow at 7 30 in the morning",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "en-009",
+            "language": "en",
+            "category": "instruction",
+            "expected": "No, not this truck, take the next one.",
+            "actual": "No, not this track. Take the next one.",
+            "audio": "audio/raw/en-009.webm",
+            "success": true,
+            "audio_duration_ms": 6540.011,
+            "preparation_duration_ms": 58.9,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.756,
+            "chunk_size_bytes": 1257,
+            "chunk_count": 82,
+            "time_to_first_transcript_ms": 1870.48,
+            "time_to_final_transcript_ms": 7289.97,
+            "finalization_latency_ms": 230.07,
+            "total_duration_ms": 7290.44,
+            "event_count": 24,
+            "events": [
+                {
+                    "text": "No",
+                    "is_final": false,
+                    "received_at_ms": 1870.48
+                },
+                {
+                    "text": "No,",
+                    "is_final": false,
+                    "received_at_ms": 2110.03
+                },
+                {
+                    "text": "No,",
+                    "is_final": false,
+                    "received_at_ms": 2348.81
+                },
+                {
+                    "text": "no",
+                    "is_final": false,
+                    "received_at_ms": 2588.69
+                },
+                {
+                    "text": "No",
+                    "is_final": false,
+                    "received_at_ms": 2827.75
+                },
+                {
+                    "text": "No, not",
+                    "is_final": false,
+                    "received_at_ms": 3066.88
+                },
+                {
+                    "text": "No, not",
+                    "is_final": false,
+                    "received_at_ms": 3386.19
+                },
+                {
+                    "text": "No, not this",
+                    "is_final": false,
+                    "received_at_ms": 3624.89
+                },
+                {
+                    "text": "No, not this tried",
+                    "is_final": false,
+                    "received_at_ms": 3864.89
+                },
+                {
+                    "text": "No, not this track",
+                    "is_final": false,
+                    "received_at_ms": 4104
+                },
+                {
+                    "text": "No, not this track.",
+                    "is_final": false,
+                    "received_at_ms": 4342.39
+                },
+                {
+                    "text": "No, not this track.",
+                    "is_final": false,
+                    "received_at_ms": 4582.62
+                },
+                {
+                    "text": "No, not this track.",
+                    "is_final": false,
+                    "received_at_ms": 4821.81
+                },
+                {
+                    "text": "No, not this track.",
+                    "is_final": false,
+                    "received_at_ms": 5061.21
+                },
+                {
+                    "text": "No, not this track.",
+                    "is_final": false,
+                    "received_at_ms": 5300.15
+                },
+                {
+                    "text": "No, not this track. Take",
+                    "is_final": false,
+                    "received_at_ms": 5539.59
+                },
+                {
+                    "text": "No, not this track. Take the",
+                    "is_final": false,
+                    "received_at_ms": 5778.81
+                },
+                {
+                    "text": "No, not this track. Take that",
+                    "is_final": false,
+                    "received_at_ms": 6018.05
+                },
+                {
+                    "text": "No, not this track. Take the next",
+                    "is_final": false,
+                    "received_at_ms": 6257.49
+                },
+                {
+                    "text": "No, not this track. Take the next one",
+                    "is_final": false,
+                    "received_at_ms": 6496.01
+                },
+                {
+                    "text": "No, not this track. Take the next one.",
+                    "is_final": false,
+                    "received_at_ms": 6815.67
+                },
+                {
+                    "text": "No, not this track. Take the next one.",
+                    "is_final": false,
+                    "received_at_ms": 6974.9
+                },
+                {
+                    "text": "No, not this track. Take the next one.",
+                    "is_final": false,
+                    "received_at_ms": 7208.58
+                },
+                {
+                    "text": "No, not this track. Take the next one.",
+                    "is_final": true,
+                    "received_at_ms": 7289.97
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:33:57+00:00",
+            "evaluation": {
+                "raw_wer": 0.25,
+                "normalized_wer": 0.125,
+                "normalized_expected": "no not this truck take the next 1",
+                "normalized_actual": "no not this track take the next 1",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "en-010",
+            "language": "en",
+            "category": "logistics",
+            "expected": "Collect the documents from the dispatcher and give them to the driver.",
+            "actual": "Collect the documents from the dispatcher and give them to the driver.",
+            "audio": "audio/raw/en-010.webm",
+            "success": true,
+            "audio_duration_ms": 7379.769,
+            "preparation_duration_ms": 55.62,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.352,
+            "chunk_size_bytes": 1292,
+            "chunk_count": 93,
+            "time_to_first_transcript_ms": 2000.96,
+            "time_to_final_transcript_ms": 8143.74,
+            "finalization_latency_ms": 265.82,
+            "total_duration_ms": 8143.95,
+            "event_count": 27,
+            "events": [
+                {
+                    "text": "Call",
+                    "is_final": false,
+                    "received_at_ms": 2000.96
+                },
+                {
+                    "text": "Collect",
+                    "is_final": false,
+                    "received_at_ms": 2239.01
+                },
+                {
+                    "text": "Collect",
+                    "is_final": false,
+                    "received_at_ms": 2477.34
+                },
+                {
+                    "text": "Collect the",
+                    "is_final": false,
+                    "received_at_ms": 2715.18
+                },
+                {
+                    "text": "Collect the",
+                    "is_final": false,
+                    "received_at_ms": 2953.43
+                },
+                {
+                    "text": "Collect the document",
+                    "is_final": false,
+                    "received_at_ms": 3191.3
+                },
+                {
+                    "text": "Collect the documents",
+                    "is_final": false,
+                    "received_at_ms": 3349.82
+                },
+                {
+                    "text": "Collect the documents for",
+                    "is_final": false,
+                    "received_at_ms": 3588.03
+                },
+                {
+                    "text": "Collect the documents from",
+                    "is_final": false,
+                    "received_at_ms": 3826.31
+                },
+                {
+                    "text": "Collect the documents from the",
+                    "is_final": false,
+                    "received_at_ms": 4064.1
+                },
+                {
+                    "text": "Collect the documents from the",
+                    "is_final": false,
+                    "received_at_ms": 4302.77
+                },
+                {
+                    "text": "Collect the documents from the dispatch",
+                    "is_final": false,
+                    "received_at_ms": 4542.48
+                },
+                {
+                    "text": "Collect the documents from the dispatcher",
+                    "is_final": false,
+                    "received_at_ms": 4779.89
+                },
+                {
+                    "text": "Collect the documents from the dispatcher",
+                    "is_final": false,
+                    "received_at_ms": 5021.27
+                },
+                {
+                    "text": "Collect the documents from the dispatcher",
+                    "is_final": false,
+                    "received_at_ms": 5333.05
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and",
+                    "is_final": false,
+                    "received_at_ms": 5572.05
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give",
+                    "is_final": false,
+                    "received_at_ms": 5809.93
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give",
+                    "is_final": false,
+                    "received_at_ms": 6047.76
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give the",
+                    "is_final": false,
+                    "received_at_ms": 6285.14
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them",
+                    "is_final": false,
+                    "received_at_ms": 6523.9
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them",
+                    "is_final": false,
+                    "received_at_ms": 6762.14
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them to",
+                    "is_final": false,
+                    "received_at_ms": 7000.14
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them to the",
+                    "is_final": false,
+                    "received_at_ms": 7238.21
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them to the driver",
+                    "is_final": false,
+                    "received_at_ms": 7475.55
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them to the driver.",
+                    "is_final": false,
+                    "received_at_ms": 7714.39
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them to the driver.",
+                    "is_final": false,
+                    "received_at_ms": 7901.46
+                },
+                {
+                    "text": "Collect the documents from the dispatcher and give them to the driver.",
+                    "is_final": true,
+                    "received_at_ms": 8143.74
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:34:04+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "collect the documents from the dispatcher and give them to the driver",
+                "normalized_actual": "collect the documents from the dispatcher and give them to the driver",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "en-011",
+            "language": "en",
+            "category": "temperature",
+            "expected": "The temperature must stay between two and six degrees.",
+            "actual": "The temperature must stay between two and six degrees.",
+            "audio": "audio/raw/en-011.webm",
+            "success": true,
+            "audio_duration_ms": 6539.91,
+            "preparation_duration_ms": 59.66,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.755,
+            "chunk_size_bytes": 1257,
+            "chunk_count": 82,
+            "time_to_first_transcript_ms": 2021.47,
+            "time_to_final_transcript_ms": 7515.18,
+            "finalization_latency_ms": 310.12,
+            "total_duration_ms": 7515.39,
+            "event_count": 24,
+            "events": [
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 2021.47
+                },
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 2261.08
+                },
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 2500.25
+                },
+                {
+                    "text": "The temp",
+                    "is_final": false,
+                    "received_at_ms": 2739.36
+                },
+                {
+                    "text": "The temporal",
+                    "is_final": false,
+                    "received_at_ms": 2979.07
+                },
+                {
+                    "text": "The temperature",
+                    "is_final": false,
+                    "received_at_ms": 3218.15
+                },
+                {
+                    "text": "The temperature",
+                    "is_final": false,
+                    "received_at_ms": 3537.04
+                },
+                {
+                    "text": "The temperature",
+                    "is_final": false,
+                    "received_at_ms": 3776.43
+                },
+                {
+                    "text": "The temperature",
+                    "is_final": false,
+                    "received_at_ms": 4015.51
+                },
+                {
+                    "text": "The temperature mass",
+                    "is_final": false,
+                    "received_at_ms": 4254.96
+                },
+                {
+                    "text": "The temperature must stay",
+                    "is_final": false,
+                    "received_at_ms": 4493.33
+                },
+                {
+                    "text": "The temperature must stay",
+                    "is_final": false,
+                    "received_at_ms": 4733.43
+                },
+                {
+                    "text": "The temperature must stay between",
+                    "is_final": false,
+                    "received_at_ms": 4972.56
+                },
+                {
+                    "text": "The temperature must stay between",
+                    "is_final": false,
+                    "received_at_ms": 5211.85
+                },
+                {
+                    "text": "The temperature must stay between two",
+                    "is_final": false,
+                    "received_at_ms": 5451.19
+                },
+                {
+                    "text": "The temperature must stay between two and",
+                    "is_final": false,
+                    "received_at_ms": 5690.19
+                },
+                {
+                    "text": "The temperature must stay between two and",
+                    "is_final": false,
+                    "received_at_ms": 5929.13
+                },
+                {
+                    "text": "The temperature must stay between two and six",
+                    "is_final": false,
+                    "received_at_ms": 6168.33
+                },
+                {
+                    "text": "The temperature must stay between two and six degree",
+                    "is_final": false,
+                    "received_at_ms": 6407.45
+                },
+                {
+                    "text": "The temperature must stay between two and six degrees",
+                    "is_final": false,
+                    "received_at_ms": 6647.52
+                },
+                {
+                    "text": "The temperature must stay between two and six degrees.",
+                    "is_final": false,
+                    "received_at_ms": 6966.6
+                },
+                {
+                    "text": "The temperature must stay between two and six degrees.",
+                    "is_final": false,
+                    "received_at_ms": 7205.05
+                },
+                {
+                    "text": "The temperature must stay between two and six degrees.",
+                    "is_final": false,
+                    "received_at_ms": 7436.01
+                },
+                {
+                    "text": "The temperature must stay between two and six degrees.",
+                    "is_final": true,
+                    "received_at_ms": 7515.18
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:34:12+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "the temperature must stay between 2 and 6 degree",
+                "normalized_actual": "the temperature must stay between 2 and 6 degree",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "en-012",
+            "language": "en",
+            "category": "long_sentence",
+            "expected": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+            "actual": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+            "audio": "audio/raw/en-012.webm",
+            "success": true,
+            "audio_duration_ms": 9719.827,
+            "preparation_duration_ms": 63.74,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.671,
+            "chunk_size_bytes": 1294,
+            "chunk_count": 122,
+            "time_to_first_transcript_ms": 1662.3,
+            "time_to_final_transcript_ms": 10677.7,
+            "finalization_latency_ms": 326.27,
+            "total_duration_ms": 10678.2,
+            "event_count": 39,
+            "events": [
+                {
+                    "text": "If",
+                    "is_final": false,
+                    "received_at_ms": 1662.3
+                },
+                {
+                    "text": "If the",
+                    "is_final": false,
+                    "received_at_ms": 1901.5
+                },
+                {
+                    "text": "If the drive",
+                    "is_final": false,
+                    "received_at_ms": 2139.55
+                },
+                {
+                    "text": "If the driver",
+                    "is_final": false,
+                    "received_at_ms": 2379.49
+                },
+                {
+                    "text": "If the driver feel",
+                    "is_final": false,
+                    "received_at_ms": 2618.4
+                },
+                {
+                    "text": "If the driver finishes",
+                    "is_final": false,
+                    "received_at_ms": 2857.39
+                },
+                {
+                    "text": "If the driver finishes",
+                    "is_final": false,
+                    "received_at_ms": 3095.95
+                },
+                {
+                    "text": "If the driver finishes",
+                    "is_final": false,
+                    "received_at_ms": 3335.63
+                },
+                {
+                    "text": "If the driver finishes a",
+                    "is_final": false,
+                    "received_at_ms": 3574.69
+                },
+                {
+                    "text": "If the driver finishes unload",
+                    "is_final": false,
+                    "received_at_ms": 3813.43
+                },
+                {
+                    "text": "If the driver finishes unloading",
+                    "is_final": false,
+                    "received_at_ms": 4052.07
+                },
+                {
+                    "text": "If the driver finishes unloading before",
+                    "is_final": false,
+                    "received_at_ms": 4291.29
+                },
+                {
+                    "text": "If the driver finishes unloading before",
+                    "is_final": false,
+                    "received_at_ms": 4530.5
+                },
+                {
+                    "text": "If the driver finishes unloading before eight",
+                    "is_final": false,
+                    "received_at_ms": 4769.54
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in",
+                    "is_final": false,
+                    "received_at_ms": 5008.74
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the",
+                    "is_final": false,
+                    "received_at_ms": 5247.52
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening",
+                    "is_final": false,
+                    "received_at_ms": 5486.37
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening,",
+                    "is_final": false,
+                    "received_at_ms": 5725.61
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening,",
+                    "is_final": false,
+                    "received_at_ms": 5964.55
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening,",
+                    "is_final": false,
+                    "received_at_ms": 6202.67
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening,",
+                    "is_final": false,
+                    "received_at_ms": 6442.39
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send",
+                    "is_final": false,
+                    "received_at_ms": 6681.58
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him",
+                    "is_final": false,
+                    "received_at_ms": 6920.71
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to",
+                    "is_final": false,
+                    "received_at_ms": 7159.7
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the",
+                    "is_final": false,
+                    "received_at_ms": 7398.35
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next",
+                    "is_final": false,
+                    "received_at_ms": 7639.07
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next load",
+                    "is_final": false,
+                    "received_at_ms": 7876.69
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading",
+                    "is_final": false,
+                    "received_at_ms": 8117.13
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading",
+                    "is_final": false,
+                    "received_at_ms": 8358.45
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading pole",
+                    "is_final": false,
+                    "received_at_ms": 8593.72
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point",
+                    "is_final": false,
+                    "received_at_ms": 8832.03
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in",
+                    "is_final": false,
+                    "received_at_ms": 9071.82
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in",
+                    "is_final": false,
+                    "received_at_ms": 9310.95
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in",
+                    "is_final": false,
+                    "received_at_ms": 9549.72
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in counter.",
+                    "is_final": false,
+                    "received_at_ms": 9789.01
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+                    "is_final": false,
+                    "received_at_ms": 10027.78
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+                    "is_final": false,
+                    "received_at_ms": 10267.03
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+                    "is_final": false,
+                    "received_at_ms": 10477.59
+                },
+                {
+                    "text": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+                    "is_final": true,
+                    "received_at_ms": 10677.7
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:34:20+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "if the driver finishes unloading before 8 in the evening send him to the next loading point in kaunas",
+                "normalized_actual": "if the driver finishes unloading before 8 in the evening send him to the next loading point in kaunas",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "en-013",
+            "language": "en",
+            "category": "pause",
+            "expected": "I will arrive in fifteen minutes if there is no traffic.",
+            "actual": "I will arrive in fifteen minutes if there is no traffic.",
+            "audio": "audio/raw/en-013.webm",
+            "success": true,
+            "audio_duration_ms": 7980.147,
+            "preparation_duration_ms": 59.61,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.801,
+            "chunk_size_bytes": 1263,
+            "chunk_count": 100,
+            "time_to_first_transcript_ms": 2104.91,
+            "time_to_final_transcript_ms": 8721.03,
+            "finalization_latency_ms": 227.08,
+            "total_duration_ms": 8721.66,
+            "event_count": 29,
+            "events": [
+                {
+                    "text": "I",
+                    "is_final": false,
+                    "received_at_ms": 2104.91
+                },
+                {
+                    "text": "I will",
+                    "is_final": false,
+                    "received_at_ms": 2344.4
+                },
+                {
+                    "text": "I will",
+                    "is_final": false,
+                    "received_at_ms": 2583.79
+                },
+                {
+                    "text": "I will arrange",
+                    "is_final": false,
+                    "received_at_ms": 2823.06
+                },
+                {
+                    "text": "I will arrive",
+                    "is_final": false,
+                    "received_at_ms": 3062.18
+                },
+                {
+                    "text": "I will arrive in",
+                    "is_final": false,
+                    "received_at_ms": 3302.03
+                },
+                {
+                    "text": "I will arrive in fifth",
+                    "is_final": false,
+                    "received_at_ms": 3540.71
+                },
+                {
+                    "text": "I will arrive in fifteen",
+                    "is_final": false,
+                    "received_at_ms": 3780.68
+                },
+                {
+                    "text": "I will arrive in fifteen minutes",
+                    "is_final": false,
+                    "received_at_ms": 4099.85
+                },
+                {
+                    "text": "I will arrive in fifteen minutes",
+                    "is_final": false,
+                    "received_at_ms": 4339.15
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 4578.6
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 4817.41
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 5057.39
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 5296.9
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 5536.25
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 5775.82
+                },
+                {
+                    "text": "I will arrive in fifteen minutes.",
+                    "is_final": false,
+                    "received_at_ms": 6014.12
+                },
+                {
+                    "text": "I will arrive in fifteen minutes. If",
+                    "is_final": false,
+                    "received_at_ms": 6253.71
+                },
+                {
+                    "text": "I will arrive in fifteen minutes. If",
+                    "is_final": false,
+                    "received_at_ms": 6493.83
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there",
+                    "is_final": false,
+                    "received_at_ms": 6733.3
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there",
+                    "is_final": false,
+                    "received_at_ms": 6972.77
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is",
+                    "is_final": false,
+                    "received_at_ms": 7212.04
+                },
+                {
+                    "text": "I will arrive in fifteen minutes. If there is not",
+                    "is_final": false,
+                    "received_at_ms": 7451.42
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is not",
+                    "is_final": false,
+                    "received_at_ms": 7610.91
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is no traffic",
+                    "is_final": false,
+                    "received_at_ms": 7930.04
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is no traffic.",
+                    "is_final": false,
+                    "received_at_ms": 8169.9
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is no traffic.",
+                    "is_final": false,
+                    "received_at_ms": 8409.03
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is no traffic.",
+                    "is_final": false,
+                    "received_at_ms": 8642
+                },
+                {
+                    "text": "I will arrive in fifteen minutes if there is no traffic.",
+                    "is_final": true,
+                    "received_at_ms": 8721.03
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:34:31+00:00",
+            "evaluation": {
+                "raw_wer": 0,
+                "normalized_wer": 0,
+                "normalized_expected": "i will arrive in 15 minutes if there is no traffic",
+                "normalized_actual": "i will arrive in 15 minutes if there is no traffic",
+                "classification": "exact_match"
+            }
+        },
+        {
+            "phrase_id": "en-014",
+            "language": "en",
+            "category": "similar_sounding_words",
+            "expected": "The driver said he can leave at eight, not eighteen.",
+            "actual": "The driver said he can live at eight, not eighteen.",
+            "audio": "audio/raw/en-014.webm",
+            "success": true,
+            "audio_duration_ms": 6300.051,
+            "preparation_duration_ms": 55.96,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.747,
+            "chunk_size_bytes": 1300,
+            "chunk_count": 79,
+            "time_to_first_transcript_ms": 2168.96,
+            "time_to_final_transcript_ms": 7267.16,
+            "finalization_latency_ms": 313.36,
+            "total_duration_ms": 7267.65,
+            "event_count": 23,
+            "events": [
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 2168.96
+                },
+                {
+                    "text": "The",
+                    "is_final": false,
+                    "received_at_ms": 2408.25
+                },
+                {
+                    "text": "The dry",
+                    "is_final": false,
+                    "received_at_ms": 2646.77
+                },
+                {
+                    "text": "The driver's",
+                    "is_final": false,
+                    "received_at_ms": 2886.94
+                },
+                {
+                    "text": "The driver's seat",
+                    "is_final": false,
+                    "received_at_ms": 3126
+                },
+                {
+                    "text": "The driver said",
+                    "is_final": false,
+                    "received_at_ms": 3364.4
+                },
+                {
+                    "text": "The driver said he",
+                    "is_final": false,
+                    "received_at_ms": 3604.25
+                },
+                {
+                    "text": "The driver said he can",
+                    "is_final": false,
+                    "received_at_ms": 3844.04
+                },
+                {
+                    "text": "The driver said he can leave",
+                    "is_final": false,
+                    "received_at_ms": 4082.27
+                },
+                {
+                    "text": "The driver said he can leave at",
+                    "is_final": false,
+                    "received_at_ms": 4322.25
+                },
+                {
+                    "text": "The driver said he can live at a",
+                    "is_final": false,
+                    "received_at_ms": 4561.7
+                },
+                {
+                    "text": "The driver said he can live at eight",
+                    "is_final": false,
+                    "received_at_ms": 4799.86
+                },
+                {
+                    "text": "The driver said he can live at eight",
+                    "is_final": false,
+                    "received_at_ms": 5039.97
+                },
+                {
+                    "text": "The driver said he can live at eight",
+                    "is_final": false,
+                    "received_at_ms": 5278.88
+                },
+                {
+                    "text": "The driver said he can live at eight, not",
+                    "is_final": false,
+                    "received_at_ms": 5517.74
+                },
+                {
+                    "text": "The driver said he can live at eight not",
+                    "is_final": false,
+                    "received_at_ms": 5757.64
+                },
+                {
+                    "text": "The driver said he can live at eight, not eight",
+                    "is_final": false,
+                    "received_at_ms": 5996.94
+                },
+                {
+                    "text": "The driver said he can live at eight, not eight",
+                    "is_final": false,
+                    "received_at_ms": 6235.7
+                },
+                {
+                    "text": "The driver said he can live at eight, not eighteen,",
+                    "is_final": false,
+                    "received_at_ms": 6475.52
+                },
+                {
+                    "text": "The driver said he can live at eight, not eighteen,",
+                    "is_final": false,
+                    "received_at_ms": 6714.72
+                },
+                {
+                    "text": "The driver said he can live at eight, not eighteen.",
+                    "is_final": false,
+                    "received_at_ms": 6953.76
+                },
+                {
+                    "text": "The driver said he can live at eight, not eighteen.",
+                    "is_final": false,
+                    "received_at_ms": 7188.64
+                },
+                {
+                    "text": "The driver said he can live at eight, not eighteen.",
+                    "is_final": true,
+                    "received_at_ms": 7267.16
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:34:40+00:00",
+            "evaluation": {
+                "raw_wer": 0.1,
+                "normalized_wer": 0.1,
+                "normalized_expected": "the driver said he can leave at 8 not 18",
+                "normalized_actual": "the driver said he can live at 8 not 18",
+                "classification": "content_mismatch"
+            }
+        },
+        {
+            "phrase_id": "en-015",
+            "language": "en",
+            "category": "context",
+            "expected": "Please call me when the unloading is finished and tell me where the trailer was left.",
+            "actual": "Please call me when the loading is finished and tell me where the trailer was left.",
+            "audio": "audio/raw/en-015.webm",
+            "success": true,
+            "audio_duration_ms": 7439.787,
+            "preparation_duration_ms": 57.21,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 79.998,
+            "chunk_size_bytes": 1302,
+            "chunk_count": 93,
+            "time_to_first_transcript_ms": 1940.08,
+            "time_to_final_transcript_ms": 8353.98,
+            "finalization_latency_ms": 254.02,
+            "total_duration_ms": 8354.53,
+            "event_count": 29,
+            "events": [
+                {
+                    "text": "Please",
+                    "is_final": false,
+                    "received_at_ms": 1940.08
+                },
+                {
+                    "text": "Please call",
+                    "is_final": false,
+                    "received_at_ms": 2180.06
+                },
+                {
+                    "text": "Please call me",
+                    "is_final": false,
+                    "received_at_ms": 2420.21
+                },
+                {
+                    "text": "Please call me when",
+                    "is_final": false,
+                    "received_at_ms": 2660.14
+                },
+                {
+                    "text": "Please call me when the",
+                    "is_final": false,
+                    "received_at_ms": 2900.14
+                },
+                {
+                    "text": "Please call me when the",
+                    "is_final": false,
+                    "received_at_ms": 3139.23
+                },
+                {
+                    "text": "Please call me when the unloading",
+                    "is_final": false,
+                    "received_at_ms": 3379.84
+                },
+                {
+                    "text": "Please call me when the unloading",
+                    "is_final": false,
+                    "received_at_ms": 3619.17
+                },
+                {
+                    "text": "Please call me when the unloading is",
+                    "is_final": false,
+                    "received_at_ms": 3860.11
+                },
+                {
+                    "text": "Please call me when the unloading is",
+                    "is_final": false,
+                    "received_at_ms": 4100.09
+                },
+                {
+                    "text": "Please call me when the unloading is finished",
+                    "is_final": false,
+                    "received_at_ms": 4340.14
+                },
+                {
+                    "text": "Please call me when the loading is finished",
+                    "is_final": false,
+                    "received_at_ms": 4580.02
+                },
+                {
+                    "text": "Please call me when the loading is finished and",
+                    "is_final": false,
+                    "received_at_ms": 4820.23
+                },
+                {
+                    "text": "Please call me when the loading is finished and",
+                    "is_final": false,
+                    "received_at_ms": 5060.35
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell",
+                    "is_final": false,
+                    "received_at_ms": 5299.23
+                },
+                {
+                    "text": "Please call me when the loading is finished, and tell me",
+                    "is_final": false,
+                    "received_at_ms": 5539.3
+                },
+                {
+                    "text": "Please call me when the loading is finished, and tell me",
+                    "is_final": false,
+                    "received_at_ms": 5779.85
+                },
+                {
+                    "text": "Please call me when the loading is finished, and tell me when",
+                    "is_final": false,
+                    "received_at_ms": 6020.1
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the",
+                    "is_final": false,
+                    "received_at_ms": 6260.01
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the train",
+                    "is_final": false,
+                    "received_at_ms": 6499.35
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer",
+                    "is_final": false,
+                    "received_at_ms": 6739.86
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer",
+                    "is_final": false,
+                    "received_at_ms": 7060.03
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was",
+                    "is_final": false,
+                    "received_at_ms": 7300.06
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was lasted",
+                    "is_final": false,
+                    "received_at_ms": 7459.75
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was left.",
+                    "is_final": false,
+                    "received_at_ms": 7700.05
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was left.",
+                    "is_final": false,
+                    "received_at_ms": 7939.99
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was left.",
+                    "is_final": false,
+                    "received_at_ms": 8099.93
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was left.",
+                    "is_final": false,
+                    "received_at_ms": 8313.33
+                },
+                {
+                    "text": "Please call me when the loading is finished and tell me where the trailer was left.",
+                    "is_final": true,
+                    "received_at_ms": 8353.98
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:34:47+00:00",
+            "evaluation": {
+                "raw_wer": 0.0625,
+                "normalized_wer": 0.0625,
+                "normalized_expected": "please call me when the unloading is finished and tell me where the trailer was left",
+                "normalized_actual": "please call me when the loading is finished and tell me where the trailer was left",
+                "classification": "content_mismatch"
+            }
+        }
+    ],
+    "evaluation": {
+        "version": 1,
+        "evaluated_at": "2026-09-22T21:48:34+00:00",
+        "summary": {
+            "fixture_count": 30,
+            "successful_count": 30,
+            "failed_count": 0,
+            "exact_match_count": 10,
+            "normalization_only_count": 10,
+            "content_mismatch_count": 10,
+            "provider_failure_count": 0,
+            "average_raw_wer": 0.1923,
+            "average_normalized_wer": 0.0659,
+            "latency_ms": {
+                "average": null,
+                "median": null,
+                "min": null,
+                "max": null,
+                "p95": null
+            }
+        },
+        "streaming_latency": {
+            "time_to_first_transcript_ms": {
+                "count": 30,
+                "average": 2279.01,
+                "median": 2186.97,
+                "min": 1509.92,
+                "max": 3463.52,
+                "p95": 3011.38
+            },
+            "time_to_final_transcript_ms": {
+                "count": 30,
+                "average": 7116.6,
+                "median": 6911.89,
+                "min": 5202.29,
+                "max": 10677.7,
+                "p95": 8740.59
+            },
+            "finalization_latency_ms": {
+                "count": 30,
+                "average": 263.03,
+                "median": 264.41,
+                "min": 203.85,
+                "max": 326.27,
+                "p95": 314.22
+            },
+            "total_duration_ms": {
+                "count": 30,
+                "average": 7117.45,
+                "median": 6912.26,
+                "min": 5202.61,
+                "max": 10678.2,
+                "p95": 8741.14
+            },
+            "preparation_duration_ms": {
+                "count": 30,
+                "average": 70.34,
+                "median": 59.16,
+                "min": 55.11,
+                "max": 372.87,
+                "p95": 72.46
+            },
+            "estimated_provider_setup_ms": {
+                "count": 30,
+                "average": 591.55,
+                "median": 547.99,
+                "min": 463.5,
+                "max": 1053.86,
+                "p95": 704.31
+            }
+        }
+    }
+}

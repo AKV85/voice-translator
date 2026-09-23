@@ -11,7 +11,8 @@ use RuntimeException;
 class BenchmarkStreamingSpeechCommand extends Command
 {
     protected $signature = 'benchmark:speech:stream
-        {--provider= : Streaming speech benchmark provider profile}';
+        {--provider= : Streaming speech benchmark provider profile}
+        {--phrase= : Run only one benchmark phrase by ID}';
 
     protected $description =
         'Run canonical streaming speech benchmark fixtures';
@@ -19,7 +20,9 @@ class BenchmarkStreamingSpeechCommand extends Command
     public function handle(
         StreamingSpeechBenchmarkRunner $runner,
     ): int {
-        $profileName = (string) $this->option('provider');
+        $profileName = (string) $this->option(
+            'provider'
+        );
 
         if ($profileName === '') {
             $this->error(
@@ -27,6 +30,12 @@ class BenchmarkStreamingSpeechCommand extends Command
             );
 
             return self::FAILURE;
+        }
+
+        $phraseId = $this->option('phrase');
+
+        if ($phraseId === '') {
+            $phraseId = null;
         }
 
         $profile = config(
@@ -44,7 +53,8 @@ class BenchmarkStreamingSpeechCommand extends Command
         $contract = $profile['contract'] ?? null;
         $providerName = $profile['provider'] ?? null;
         $modelName = $profile['model'] ?? null;
-        $configOverrides = $profile['config'] ?? [];
+        $configOverrides =
+            $profile['config'] ?? [];
 
         if (
             ! is_string($contract)
@@ -63,10 +73,14 @@ class BenchmarkStreamingSpeechCommand extends Command
 
         $provider = app($contract);
 
-        if (! $provider instanceof StreamingSpeechToTextProvider) {
+        if (
+            ! $provider
+                instanceof StreamingSpeechToTextProvider
+        ) {
             throw new RuntimeException(
                 "{$contract} must resolve to "
-                .StreamingSpeechToTextProvider::class.'.'
+                .StreamingSpeechToTextProvider::class
+                .'.'
             );
         }
 
@@ -78,12 +92,8 @@ class BenchmarkStreamingSpeechCommand extends Command
             'benchmarks.speech.results_path'
         );
 
-        $chunkSizeBytes = config(
-            'benchmarks.speech.streaming.chunk_size_bytes'
-        );
-
-        $chunkIntervalMs = config(
-            'benchmarks.speech.streaming.chunk_interval_ms'
+        $chunkDurationMs = config(
+            'benchmarks.speech.streaming.chunk_duration_ms'
         );
 
         if (
@@ -96,20 +106,11 @@ class BenchmarkStreamingSpeechCommand extends Command
         }
 
         if (
-            ! is_int($chunkSizeBytes)
-            || $chunkSizeBytes <= 0
+            ! is_int($chunkDurationMs)
+            || $chunkDurationMs <= 0
         ) {
             throw new RuntimeException(
-                'Streaming speech benchmark chunk size is invalid.'
-            );
-        }
-
-        if (
-            ! is_int($chunkIntervalMs)
-            || $chunkIntervalMs < 0
-        ) {
-            throw new RuntimeException(
-                'Streaming speech benchmark chunk interval is invalid.'
+                'Streaming speech benchmark chunk duration is invalid.'
             );
         }
 
@@ -126,12 +127,14 @@ class BenchmarkStreamingSpeechCommand extends Command
         );
 
         $this->line(
-            "Chunk size: {$chunkSizeBytes} bytes"
+            "Chunk duration: {$chunkDurationMs} ms"
         );
 
-        $this->line(
-            "Chunk interval: {$chunkIntervalMs} ms"
-        );
+        if ($phraseId !== null) {
+            $this->line(
+                "Phrase: {$phraseId}"
+            );
+        }
 
         $benchmark = $runner->run(
             provider: $provider,
@@ -139,8 +142,8 @@ class BenchmarkStreamingSpeechCommand extends Command
             providerName: $providerName,
             modelName: $modelName,
             datasetPath: $datasetPath,
-            chunkSizeBytes: $chunkSizeBytes,
-            chunkIntervalMs: $chunkIntervalMs,
+            chunkDurationMs: $chunkDurationMs,
+            phraseId: $phraseId,
         );
 
         $profileResultsPath =
@@ -150,8 +153,12 @@ class BenchmarkStreamingSpeechCommand extends Command
             $profileResultsPath
         );
 
+        $outputFilename = $phraseId === null
+            ? 'streaming-results.json'
+            : "streaming-results-{$phraseId}.json";
+
         $outputPath =
-            "{$profileResultsPath}/streaming-results.json";
+            "{$profileResultsPath}/{$outputFilename}";
 
         File::put(
             $outputPath,
