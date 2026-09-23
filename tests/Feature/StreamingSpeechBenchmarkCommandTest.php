@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\AudioDurationProbe;
 use App\Contracts\StreamingSpeechToTextProvider;
 use App\DTO\StreamingTranscriptionResult;
 use App\Enums\Language;
@@ -48,6 +49,15 @@ class BenchmarkStreamingFakeProvider implements StreamingSpeechToTextProvider
     }
 }
 
+class BenchmarkStreamingFakeAudioDurationProbe implements AudioDurationProbe
+{
+    public function durationMs(
+        string $audioPath,
+    ): float {
+        return 4.0;
+    }
+}
+
 beforeEach(function () {
     $this->benchmarkDirectory = storage_path(
         'framework/testing/streaming-speech-benchmark'
@@ -74,14 +84,17 @@ beforeEach(function () {
     );
 
     File::put(
-        $this->benchmarkDirectory.'/phrases.json',
+        $this->benchmarkDirectory
+        .'/phrases.json',
         json_encode(
             [
                 'version' => 1,
+
                 'languages' => [
                     'ru',
                     'en',
                 ],
+
                 'phrases' => [
                     [
                         'id' => 'ru-001',
@@ -90,6 +103,7 @@ beforeEach(function () {
                         'expected' => 'Тестовая фраза.',
                         'audio' => 'audio/raw/ru-001.webm',
                     ],
+
                     [
                         'id' => 'en-001',
                         'language' => 'en',
@@ -105,14 +119,19 @@ beforeEach(function () {
         ),
     );
 
+    app()->instance(
+        AudioDurationProbe::class,
+        new BenchmarkStreamingFakeAudioDurationProbe,
+    );
+
     config([
-        'benchmarks.speech.dataset_path' => $this->benchmarkDirectory.'/phrases.json',
+        'benchmarks.speech.dataset_path' => $this->benchmarkDirectory
+            .'/phrases.json',
 
-        'benchmarks.speech.results_path' => $this->benchmarkDirectory.'/results',
+        'benchmarks.speech.results_path' => $this->benchmarkDirectory
+            .'/results',
 
-        'benchmarks.speech.streaming.chunk_size_bytes' => 4,
-
-        'benchmarks.speech.streaming.chunk_interval_ms' => 0,
+        'benchmarks.speech.streaming.chunk_duration_ms' => 1,
 
         'benchmarks.speech.streaming.providers.fake-stream' => [
             'contract' => BenchmarkStreamingFakeProvider::class,
@@ -151,10 +170,7 @@ it(
                 'Model: fake-stream-model'
             )
             ->expectsOutput(
-                'Chunk size: 4 bytes'
-            )
-            ->expectsOutput(
-                'Chunk interval: 0 ms'
+                'Chunk duration: 1 ms'
             )
             ->expectsOutput(
                 'Completed: 1/2 successful.'
@@ -200,12 +216,8 @@ it(
                 'fake-stream-model',
             )
             ->toHaveKey(
-                'chunk_size_bytes',
-                4,
-            )
-            ->toHaveKey(
-                'chunk_interval_ms',
-                0,
+                'chunk_duration_ms',
+                1,
             )
             ->toHaveKey(
                 'fixture_count',
@@ -233,11 +245,21 @@ it(
                 'actual' => 'Fake final transcription',
                 'audio' => 'audio/raw/ru-001.webm',
                 'success' => true,
+                'audio_duration_ms' => 4,
+                'chunk_duration_ms' => 1,
+                'chunk_size_bytes' => 4,
+                'chunk_count' => 4,
                 'event_count' => 2,
                 'error' => null,
                 'provider' => 'fake',
                 'model' => 'fake-stream-model',
             ]);
+
+        expect(
+            $successfulResult[
+                'effective_chunk_duration_ms'
+            ]
+        )->toBe(1);
 
         expect(
             $successfulResult[
@@ -293,6 +315,8 @@ it(
                 'actual' => null,
                 'audio' => 'audio/raw/en-001.webm',
                 'success' => false,
+                'audio_duration_ms' => 4,
+                'chunk_duration_ms' => 1,
                 'error' => RuntimeException::class,
                 'provider' => 'fake',
                 'model' => 'fake-stream-model',
