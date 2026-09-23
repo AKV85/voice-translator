@@ -1,0 +1,106 @@
+{
+    "benchmark_version": 1,
+    "benchmark_type": "streaming",
+    "dataset_version": 1,
+    "profile": "deepgram-flux",
+    "provider": "deepgram",
+    "model": "flux-general-multi",
+    "phrase_filter": "en-001",
+    "chunk_duration_ms": 80,
+    "started_at": "2026-09-22T21:26:23+00:00",
+    "completed_at": "2026-09-22T21:26:29+00:00",
+    "fixture_count": 1,
+    "results": [
+        {
+            "phrase_id": "en-001",
+            "language": "en",
+            "category": "simple",
+            "expected": "I am ready to start the trip.",
+            "actual": "I'm ready to start the trip.",
+            "audio": "audio/raw/en-001.webm",
+            "success": true,
+            "audio_duration_ms": 4259.856,
+            "preparation_duration_ms": 423.6,
+            "chunk_duration_ms": 80,
+            "effective_chunk_duration_ms": 78.886,
+            "chunk_size_bytes": 1241,
+            "chunk_count": 54,
+            "time_to_first_transcript_ms": 2529.15,
+            "time_to_final_transcript_ms": 5391.79,
+            "finalization_latency_ms": 266.61,
+            "total_duration_ms": 5404.73,
+            "event_count": 13,
+            "events": [
+                {
+                    "text": "I am",
+                    "is_final": false,
+                    "received_at_ms": 2529.15
+                },
+                {
+                    "text": "I'm Ray",
+                    "is_final": false,
+                    "received_at_ms": 2674.49
+                },
+                {
+                    "text": "I'm ready",
+                    "is_final": false,
+                    "received_at_ms": 2911.1
+                },
+                {
+                    "text": "I'm ready to",
+                    "is_final": false,
+                    "received_at_ms": 3148.51
+                },
+                {
+                    "text": "I'm ready to start",
+                    "is_final": false,
+                    "received_at_ms": 3389.94
+                },
+                {
+                    "text": "I'm ready to start",
+                    "is_final": false,
+                    "received_at_ms": 3700.33
+                },
+                {
+                    "text": "I'm ready to start the",
+                    "is_final": false,
+                    "received_at_ms": 4015.66
+                },
+                {
+                    "text": "I'm ready to start the tree",
+                    "is_final": false,
+                    "received_at_ms": 4252.19
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 4488.08
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 4724.87
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 4962.19
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": false,
+                    "received_at_ms": 5152.05
+                },
+                {
+                    "text": "I'm ready to start the trip.",
+                    "is_final": true,
+                    "received_at_ms": 5391.79
+                }
+            ],
+            "error": null,
+            "provider": "deepgram",
+            "model": "flux-general-multi",
+            "recorded_at": "2026-09-22T21:26:23+00:00"
+        }
+    ]
+}
