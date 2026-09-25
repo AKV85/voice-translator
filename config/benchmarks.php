@@ -1,8 +1,12 @@
 <?php
 
 use App\Contracts\SpeechToTextProvider;
+use App\Contracts\TranslationProvider;
 use App\Services\Speech\DeepgramFluxSpeechToTextProvider;
 use App\Services\Speech\DeepgramSpeechToTextProvider;
+use App\Services\Translation\DeepLTranslationProvider;
+use App\Services\Translation\OpenAIRealtimeTranslationProvider;
+use App\Services\Translation\OpenAITranslationProvider;
 
 return [
     'speech' => [
@@ -80,8 +84,11 @@ return [
 
                 'deepgram-flux-keyterms' => [
                     'contract' => DeepgramFluxSpeechToTextProvider::class,
+
                     'provider' => 'deepgram',
+
                     'model' => 'flux-general-multi',
+
                     'config' => [
                         'services.deepgram.flux_endpoint' => 'wss://api.deepgram.com/v2/listen',
 
@@ -98,6 +105,94 @@ return [
                             'unloading',
                             'leave',
                         ],
+                    ],
+                ],
+            ],
+        ],
+    ],
+
+    'translation' => [
+        'dataset_path' => base_path(
+            'docs/benchmarks/translation/phrases.json'
+        ),
+
+        'results_path' => base_path(
+            'docs/benchmarks/translation/results'
+        ),
+
+        'providers' => [
+            'google-nmt' => [
+                'contract' => TranslationProvider::class,
+
+                'provider' => 'google',
+
+                'model' => 'general/nmt',
+
+                'config' => [
+                    'services.google.translation.location' => 'global',
+
+                    'services.google.translation.model' => 'general/nmt',
+                ],
+            ],
+
+            'deepl-latency' => [
+                'contract' => DeepLTranslationProvider::class,
+
+                'provider' => 'deepl',
+
+                'model' => 'latency_optimized',
+
+                'config' => [
+                    'services.deepl.model_type' => 'latency_optimized',
+                ],
+            ],
+
+            'openai-gpt54-mini' => [
+                'contract' => OpenAITranslationProvider::class,
+
+                'provider' => 'openai',
+
+                'model' => 'gpt-5.4-mini-2026-03-17',
+
+                'config' => [
+                    'services.openai.translation.model' => 'gpt-5.4-mini-2026-03-17',
+
+                    'services.openai.translation.service_tier' => 'default',
+                ],
+            ],
+
+            'openai-gpt55' => [
+                'contract' => OpenAITranslationProvider::class,
+
+                'provider' => 'openai',
+
+                'model' => 'gpt-5.5-2026-04-23',
+
+                'config' => [
+                    'services.openai.translation.model' => 'gpt-5.5-2026-04-23',
+
+                    'services.openai.translation.service_tier' => 'default',
+                ],
+            ],
+        ],
+
+        'realtime' => [
+            'chunk_duration_ms' => 100,
+
+            'runs_per_fixture' => 3,
+
+            'providers' => [
+                'openai-realtime' => [
+                    'contract' => OpenAIRealtimeTranslationProvider::class,
+
+                    'provider' => 'openai',
+
+                    'model' => 'gpt-realtime-translate',
+
+                    'config' => [
+                        'services.openai.realtime_translation.endpoint' => 'wss://api.openai.com/v1/realtime/translations',
+
+                        'services.openai.realtime_translation.model' => 'gpt-realtime-translate',
                     ],
                 ],
             ],
