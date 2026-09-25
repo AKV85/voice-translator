@@ -43,6 +43,66 @@ return [
             'credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
             'api_endpoint' => env('GOOGLE_CLOUD_SPEECH_API_ENDPOINT'),
         ],
+
+        'translation' => [
+            'project_id' => env('GOOGLE_CLOUD_PROJECT'),
+
+            'location' => env(
+                'GOOGLE_CLOUD_TRANSLATION_LOCATION',
+                'global',
+            ),
+
+            'model' => env(
+                'GOOGLE_CLOUD_TRANSLATION_MODEL',
+                'general/nmt',
+            ),
+
+            'credentials_path' => env(
+                'GOOGLE_APPLICATION_CREDENTIALS',
+            ),
+        ],
+    ],
+
+    'deepl' => [
+        'auth_key' => env('DEEPL_AUTH_KEY'),
+
+        'model_type' => env(
+            'DEEPL_MODEL_TYPE',
+            'latency_optimized',
+        ),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+
+        'translation' => [
+            'model' => env(
+                'OPENAI_TRANSLATION_MODEL',
+                'gpt-5.4-mini-2026-03-17',
+            ),
+
+            'endpoint' => env(
+                'OPENAI_TRANSLATION_ENDPOINT',
+                'https://api.openai.com/v1/responses',
+            ),
+
+            'service_tier' => env(
+                'OPENAI_TRANSLATION_SERVICE_TIER',
+                'default',
+            ),
+        ],
+
+        'realtime_translation' => [
+            'model' => env(
+                'OPENAI_REALTIME_TRANSLATION_MODEL',
+                'gpt-realtime-translate',
+            ),
+
+            'endpoint' => env(
+                'OPENAI_REALTIME_TRANSLATION_ENDPOINT',
+                'wss://api.openai.com/v1/realtime/translations',
+            ),
+        ],
     ],
 
     'deepgram' => [

@@ -1,0 +1,775 @@
+{
+    "version": 1,
+    "language_pairs": [
+        "ru-en",
+        "en-ru"
+    ],
+    "phrases": [
+        {
+            "id": "ru-en-001",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "ambiguity",
+            "source": "Я свободна или не свободна?",
+            "reference": "Am I free or not free?",
+            "critical_elements": [
+                {
+                    "name": "negation",
+                    "accepted": [
+                        "not"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-002",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "proper_nouns",
+            "source": "Кот Персик рыжий хулиган.",
+            "reference": "The cat Persik is a ginger hooligan.",
+            "critical_elements": [
+                {
+                    "name": "cat_name",
+                    "accepted": [
+                        "Persik"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-003",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "context",
+            "source": "У меня есть кот Персик, он рыжий хулиган.",
+            "reference": "I have a cat named Persik; he is a ginger hooligan.",
+            "critical_elements": [
+                {
+                    "name": "cat_name",
+                    "accepted": [
+                        "Persik"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-004",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "numbers",
+            "source": "Ты сказал пятнадцать или пятьдесят?",
+            "reference": "Did you say fifteen or fifty?",
+            "critical_elements": [
+                {
+                    "name": "number_15",
+                    "accepted": [
+                        "fifteen",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "number_50",
+                    "accepted": [
+                        "fifty",
+                        "50"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-005",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "negation",
+            "source": "Не отправляй этот грузовик, он ещё не разгрузился.",
+            "reference": "Do not send this truck; it has not been unloaded yet.",
+            "critical_elements": [
+                {
+                    "name": "send_negation",
+                    "accepted": [
+                        "do not send",
+                        "don't send"
+                    ]
+                },
+                {
+                    "name": "unloading_negation",
+                    "accepted": [
+                        "not unloaded",
+                        "not been unloaded",
+                        "hasn't unloaded",
+                        "has not unloaded",
+                        "hasn't been unloaded"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-006",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "logistics",
+            "source": "Водитель уже разгрузился и едет в Клайпеду.",
+            "reference": "The driver has already unloaded and is heading to Klaipeda.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "unloaded",
+                        "unloading"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Klaipeda",
+                        "Klaipėda"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-007",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "identifier",
+            "source": "Прицеп ZZ 546 нужно оставить на стоянке.",
+            "reference": "Trailer ZZ 546 needs to be left in the parking area.",
+            "critical_elements": [
+                {
+                    "name": "trailer_identifier",
+                    "accepted": [
+                        "ZZ 546",
+                        "ZZ-546",
+                        "ZZ546"
+                    ]
+                },
+                {
+                    "name": "leave_action",
+                    "accepted": [
+                        "leave",
+                        "left",
+                        "be left"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-008",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "distance",
+            "source": "До точки назначения осталось сто пятьдесят четыре километра.",
+            "reference": "There are one hundred and fifty-four kilometers left to the destination.",
+            "critical_elements": [
+                {
+                    "name": "distance",
+                    "accepted": [
+                        "154",
+                        "one hundred and fifty-four",
+                        "one hundred fifty-four"
+                    ]
+                },
+                {
+                    "name": "distance_unit",
+                    "accepted": [
+                        "kilometers",
+                        "kilometres",
+                        "km"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-009",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "time",
+            "source": "Загрузка начнётся завтра в семь тридцать утра.",
+            "reference": "Loading will start tomorrow at seven thirty in the morning.",
+            "critical_elements": [
+                {
+                    "name": "day",
+                    "accepted": [
+                        "tomorrow"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "seven thirty",
+                        "7:30"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-010",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "instruction",
+            "source": "Нет, не этот грузовик, возьми следующий.",
+            "reference": "No, not this truck, take the next one.",
+            "critical_elements": [
+                {
+                    "name": "truck_negation",
+                    "accepted": [
+                        "not this truck",
+                        "not that truck"
+                    ]
+                },
+                {
+                    "name": "next_vehicle",
+                    "accepted": [
+                        "next one",
+                        "next truck"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-011",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "logistics",
+            "source": "Забери документы у диспетчера и передай их водителю.",
+            "reference": "Collect the documents from the dispatcher and give them to the driver.",
+            "critical_elements": [
+                {
+                    "name": "dispatcher",
+                    "accepted": [
+                        "dispatcher"
+                    ]
+                },
+                {
+                    "name": "driver",
+                    "accepted": [
+                        "driver"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-012",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "temperature",
+            "source": "Температура должна оставаться между двумя и шестью градусами.",
+            "reference": "The temperature must remain between two and six degrees.",
+            "critical_elements": [
+                {
+                    "name": "lower_temperature",
+                    "accepted": [
+                        "two",
+                        "2"
+                    ]
+                },
+                {
+                    "name": "upper_temperature",
+                    "accepted": [
+                        "six",
+                        "6"
+                    ]
+                },
+                {
+                    "name": "temperature_unit",
+                    "accepted": [
+                        "degree",
+                        "degrees"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-013",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "long_sentence",
+            "source": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Каунас.",
+            "reference": "If the driver finishes unloading before eight in the evening, send him to the next loading in Kaunas.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "unloading",
+                        "unloads"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "eight",
+                        "8"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Kaunas"
+                    ]
+                },
+                {
+                    "name": "next_loading",
+                    "accepted": [
+                        "next loading",
+                        "next load",
+                        "next pickup"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-014",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "pause",
+            "source": "Я приеду через пятнадцать минут, если не будет пробок.",
+            "reference": "I will arrive in fifteen minutes if there is no traffic.",
+            "critical_elements": [
+                {
+                    "name": "duration",
+                    "accepted": [
+                        "fifteen",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "traffic_condition",
+                    "accepted": [
+                        "no traffic",
+                        "without traffic",
+                        "traffic permitting",
+                        "if traffic permits"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ru-en-015",
+            "source_language": "ru",
+            "target_language": "en",
+            "category": "proper_nouns",
+            "source": "Андрей Котов встретит водителя в Клайпеде возле терминала.",
+            "reference": "Andrej Kotov will meet the driver in Klaipeda near the terminal.",
+            "critical_elements": [
+                {
+                    "name": "person",
+                    "accepted": [
+                        "Andrej Kotov",
+                        "Andrey Kotov",
+                        "Andrei Kotov"
+                    ]
+                },
+                {
+                    "name": "location",
+                    "accepted": [
+                        "Klaipeda",
+                        "Klaipėda"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-001",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "simple",
+            "source": "I am ready to start the trip.",
+            "reference": "Я готов начать поездку.",
+            "critical_elements": [
+                {
+                    "name": "start_trip",
+                    "accepted": [
+                        "начать поездку",
+                        "начать рейс",
+                        "начать путешествие",
+                        "отправиться в путь",
+                        "начать путь"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-002",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "proper_nouns",
+            "source": "My cat Persik is a ginger hooligan.",
+            "reference": "Мой кот Персик — рыжий хулиган.",
+            "critical_elements": [
+                {
+                    "name": "cat_name",
+                    "accepted": [
+                        "Персик",
+                        "Persik"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-003",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "numbers",
+            "source": "Did you say fifteen or fifty?",
+            "reference": "Ты сказал пятнадцать или пятьдесят?",
+            "critical_elements": [
+                {
+                    "name": "number_15",
+                    "accepted": [
+                        "пятнадцать",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "number_50",
+                    "accepted": [
+                        "пятьдесят",
+                        "50"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-004",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "negation",
+            "source": "Do not send this truck because the driver has not unloaded yet.",
+            "reference": "Не отправляй этот грузовик, потому что водитель ещё не разгрузился.",
+            "critical_elements": [
+                {
+                    "name": "send_negation",
+                    "accepted": [
+                        "не отправляй",
+                        "не отправляйте",
+                        "не отправлять"
+                    ]
+                },
+                {
+                    "name": "unloading_negation",
+                    "accepted": [
+                        "не разгрузился",
+                        "не закончил разгрузку",
+                        "не выгрузился",
+                        "не разгрузил",
+                        "не выгрузил"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-005",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "logistics",
+            "source": "The driver has finished unloading and is heading to Klaipeda.",
+            "reference": "Водитель закончил разгрузку и едет в Клайпеду.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "разгрузился",
+                        "закончил разгрузку",
+                        "разгрузку"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Клайпеда",
+                        "Клайпеду"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-006",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "identifier",
+            "source": "Leave trailer ZZ 546 in the parking area.",
+            "reference": "Оставь прицеп ZZ 546 на стоянке.",
+            "critical_elements": [
+                {
+                    "name": "trailer_identifier",
+                    "accepted": [
+                        "ZZ 546",
+                        "ZZ-546",
+                        "ZZ546"
+                    ]
+                },
+                {
+                    "name": "leave_action",
+                    "accepted": [
+                        "оставь",
+                        "оставьте",
+                        "оставить"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-007",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "distance",
+            "source": "The remaining distance is one hundred and fifty-four kilometers.",
+            "reference": "Осталось сто пятьдесят четыре километра.",
+            "critical_elements": [
+                {
+                    "name": "distance",
+                    "accepted": [
+                        "сто пятьдесят четыре",
+                        "154"
+                    ]
+                },
+                {
+                    "name": "distance_unit",
+                    "accepted": [
+                        "километр",
+                        "километра",
+                        "километров",
+                        "км"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-008",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "time",
+            "source": "Loading starts tomorrow at seven thirty in the morning.",
+            "reference": "Загрузка начинается завтра в семь тридцать утра.",
+            "critical_elements": [
+                {
+                    "name": "day",
+                    "accepted": [
+                        "завтра"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "семь тридцать",
+                        "7:30"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-009",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "instruction",
+            "source": "No, not this truck, take the next one.",
+            "reference": "Нет, не этот грузовик, возьми следующий.",
+            "critical_elements": [
+                {
+                    "name": "truck_negation",
+                    "accepted": [
+                        "не этот грузовик"
+                    ]
+                },
+                {
+                    "name": "take_next_vehicle",
+                    "accepted": [
+                        "возьми следующий",
+                        "возьмите следующий",
+                        "бери следующий",
+                        "берите следующий"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-010",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "logistics",
+            "source": "Collect the documents from the dispatcher and give them to the driver.",
+            "reference": "Забери документы у диспетчера и передай их водителю.",
+            "critical_elements": [
+                {
+                    "name": "dispatcher",
+                    "accepted": [
+                        "диспетчер",
+                        "диспетчера"
+                    ]
+                },
+                {
+                    "name": "driver",
+                    "accepted": [
+                        "водитель",
+                        "водителю"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-011",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "temperature",
+            "source": "The temperature must stay between two and six degrees.",
+            "reference": "Температура должна оставаться между двумя и шестью градусами.",
+            "critical_elements": [
+                {
+                    "name": "lower_temperature",
+                    "accepted": [
+                        "два",
+                        "двумя",
+                        "двух",
+                        "2"
+                    ]
+                },
+                {
+                    "name": "upper_temperature",
+                    "accepted": [
+                        "шесть",
+                        "шестью",
+                        "шести",
+                        "6"
+                    ]
+                },
+                {
+                    "name": "temperature_unit",
+                    "accepted": [
+                        "градус",
+                        "градуса",
+                        "градусов",
+                        "градусами",
+                        "°C",
+                        "°С",
+                        "цельсия"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-012",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "long_sentence",
+            "source": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+            "reference": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Каунас.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "разгрузку",
+                        "разгрузится",
+                        "выгрузку"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "восемь",
+                        "восьми",
+                        "8"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Каунас",
+                        "Каунасе"
+                    ]
+                },
+                {
+                    "name": "next_loading",
+                    "accepted": [
+                        "следующую загрузку",
+                        "следующая загрузка",
+                        "следующий пункт погрузки",
+                        "следующей погрузочной точке",
+                        "следующей погрузке",
+                        "следующую погрузку"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-013",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "pause",
+            "source": "I will arrive in fifteen minutes if there is no traffic.",
+            "reference": "Я приеду через пятнадцать минут, если не будет пробок.",
+            "critical_elements": [
+                {
+                    "name": "duration",
+                    "accepted": [
+                        "пятнадцать",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "traffic_condition",
+                    "accepted": [
+                        "не будет пробок",
+                        "без пробок"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-014",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "similar_sounding_words",
+            "source": "The driver said he can leave at eight, not eighteen.",
+            "reference": "Водитель сказал, что может уехать в восемь, а не в восемнадцать.",
+            "critical_elements": [
+                {
+                    "name": "leave_action",
+                    "accepted": [
+                        "уехать",
+                        "выехать",
+                        "уйти"
+                    ]
+                },
+                {
+                    "name": "time_8",
+                    "accepted": [
+                        "восемь",
+                        "8"
+                    ]
+                },
+                {
+                    "name": "time_18",
+                    "accepted": [
+                        "восемнадцать",
+                        "18"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "en-ru-015",
+            "source_language": "en",
+            "target_language": "ru",
+            "category": "context",
+            "source": "Please call me when the unloading is finished and tell me where the trailer was left.",
+            "reference": "Позвони мне, когда разгрузка закончится, и скажи, где оставили прицеп.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "разгрузка",
+                        "разгрузки"
+                    ]
+                },
+                {
+                    "name": "trailer",
+                    "accepted": [
+                        "прицеп",
+                        "трейлер"
+                    ]
+                }
+            ]
+        }
+    ]
+}
