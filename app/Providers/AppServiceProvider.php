@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\SpeechToTextProvider;
 use App\Services\Speech\DeepgramSpeechToTextProvider;
 use App\Services\Speech\GoogleSpeechToTextProvider;
+use App\Services\Speech\GoogleStreamingSpeechToTextProvider;
 use Google\Cloud\Speech\V2\Client\SpeechClient;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
@@ -70,6 +71,38 @@ class AppServiceProvider extends ServiceProvider
                     model: (string) config(
                         'services.google.speech.model',
                         'short',
+                    ),
+                );
+            },
+        );
+
+        $this->app->bind(
+            GoogleStreamingSpeechToTextProvider::class,
+            function ($app): GoogleStreamingSpeechToTextProvider {
+                $projectId = config(
+                    'services.google.speech.project_id',
+                );
+
+                if (! is_string($projectId) || $projectId === '') {
+                    throw new RuntimeException(
+                        'Google Cloud project ID is not configured.',
+                    );
+                }
+
+                return new GoogleStreamingSpeechToTextProvider(
+                    client: $app->make(SpeechClient::class),
+                    projectId: $projectId,
+                    location: (string) config(
+                        'services.google.speech.location',
+                        'global',
+                    ),
+                    model: (string) config(
+                        'services.google.speech.model',
+                        'chirp_3',
+                    ),
+                    endpointingSensitivity: (string) config(
+                        'services.google.speech.endpointing_sensitivity',
+                        'standard',
                     ),
                 );
             },
