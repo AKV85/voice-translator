@@ -7,6 +7,7 @@ services:
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP}'
+                PHP_EXTENSIONS: 'grpc protobuf'
 
         image: 'sail-8.4/app'
 
