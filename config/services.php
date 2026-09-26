@@ -103,6 +103,23 @@ return [
                 'wss://api.openai.com/v1/realtime/translations',
             ),
         ],
+
+        'text_to_speech' => [
+            'model' => env(
+                'OPENAI_TTS_MODEL',
+                'gpt-4o-mini-tts-2025-12-15',
+            ),
+
+            'endpoint' => env(
+                'OPENAI_TTS_ENDPOINT',
+                'https://api.openai.com/v1/audio/speech',
+            ),
+
+            'voice' => env(
+                'OPENAI_TTS_VOICE',
+                'marin',
+            ),
+        ],
     ],
 
     'deepgram' => [

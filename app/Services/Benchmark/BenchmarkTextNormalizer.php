@@ -17,7 +17,7 @@ final readonly class BenchmarkTextNormalizer
         );
 
         $text = preg_replace(
-            '/[^\p{L}\p{N}:]+/u',
+            '/[^\p{L}\p{N}:°]+/u',
             ' ',
             $text,
         ) ?? '';

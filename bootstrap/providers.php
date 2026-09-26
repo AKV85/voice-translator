@@ -5,6 +5,7 @@ use App\Providers\DeepgramFluxServiceProvider;
 use App\Providers\DeepLTranslationServiceProvider;
 use App\Providers\GoogleTranslationServiceProvider;
 use App\Providers\OpenAIRealtimeTranslationServiceProvider;
+use App\Providers\OpenAIStreamingTextToSpeechServiceProvider;
 use App\Providers\OpenAITranslationServiceProvider;
 
 return [
@@ -14,4 +15,5 @@ return [
     DeepLTranslationServiceProvider::class,
     OpenAITranslationServiceProvider::class,
     OpenAIRealtimeTranslationServiceProvider::class,
+    OpenAIStreamingTextToSpeechServiceProvider::class,
 ];
