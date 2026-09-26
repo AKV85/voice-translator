@@ -1,0 +1,87 @@
+{
+    "benchmark_version": 1,
+    "benchmark_type": "realtime_translation",
+    "speech_dataset_version": 1,
+    "translation_dataset_version": 1,
+    "profile": "openai-realtime",
+    "provider": "openai",
+    "model": "gpt-realtime-translate",
+    "language_pair_filter": "en-ru",
+    "phrase_filter": "en-001",
+    "chunk_duration_ms": 100,
+    "runs_per_fixture": 1,
+    "audio_input": {
+        "format": "pcm16",
+        "sample_rate_hz": 24000,
+        "channels": 1
+    },
+    "started_at": "2026-09-25T22:17:50+00:00",
+    "completed_at": "2026-09-25T22:18:01+00:00",
+    "fixture_count": 1,
+    "run_count": 1,
+    "results": [
+        {
+            "phrase_id": "en-001",
+            "translation_fixture_id": "en-ru-001",
+            "language_pair": "en-ru",
+            "source_language": "en",
+            "target_language": "ru",
+            "speech_category": "simple",
+            "translation_category": "simple",
+            "source": "I am ready to start the trip.",
+            "reference": "Я готов начать поездку.",
+            "critical_elements": [
+                {
+                    "name": "start_trip",
+                    "accepted": [
+                        "начать поездку",
+                        "начать рейс",
+                        "начать путешествие",
+                        "отправиться в путь"
+                    ]
+                }
+            ],
+            "audio": "audio/raw/en-001.webm",
+            "runs": [
+                {
+                    "run": 1,
+                    "success": true,
+                    "source_transcript": null,
+                    "translated_text": "Я уже готов начатьпутешествие.",
+                    "pcm_audio_duration_ms": 4320,
+                    "preparation_duration_ms": 820.34,
+                    "chunk_duration_ms": 100,
+                    "chunk_size_bytes": 4800,
+                    "chunk_count": 44,
+                    "first_source_transcript_ms": null,
+                    "time_to_first_translation_text_ms": 4443.825960159302,
+                    "first_input_audio_sent_ms": 2525.547981262207,
+                    "last_input_audio_sent_ms": 6819.500923156738,
+                    "input_finished_ms": 6842.509984970093,
+                    "input_audio_stream_duration_ms": 4316.962003707886,
+                    "time_to_first_audio_packet_ms": 3245.119094848633,
+                    "leading_silence_ms": 2170,
+                    "raw_playback_first_audible_audio_ms": 5415.119094848633,
+                    "first_audible_audio_available_ms": 5086.801052093506,
+                    "first_audio_packet_relative_to_input_end_ms": -3597.39089012146,
+                    "raw_playback_first_audible_audio_relative_to_input_end_ms": -1427.39089012146,
+                    "first_audible_audio_available_relative_to_input_end_ms": -1755.708932876587,
+                    "first_audible_audio_available_relative_to_first_input_ms": 2561.253070831299,
+                    "first_audible_audio_available_relative_to_last_input_ms": -1732.6998710632324,
+                    "translated_audio_duration_ms": 14400,
+                    "translated_audio_bytes": 691200,
+                    "session_closed_ms": 10240.689039230347,
+                    "total_duration_ms": 10332.09,
+                    "error": null,
+                    "error_message": null,
+                    "previous_error": null,
+                    "previous_error_message": null,
+                    "exception_chain": [],
+                    "provider": "openai",
+                    "model": "gpt-realtime-translate",
+                    "recorded_at": "2026-09-25T22:17:50+00:00"
+                }
+            ]
+        }
+    ]
+}
