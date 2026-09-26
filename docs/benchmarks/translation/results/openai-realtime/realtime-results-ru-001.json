@@ -1,0 +1,365 @@
+{
+    "benchmark_version": 1,
+    "benchmark_type": "realtime_translation",
+    "speech_dataset_version": 1,
+    "translation_dataset_version": 1,
+    "profile": "openai-realtime",
+    "provider": "openai",
+    "model": "gpt-realtime-translate",
+    "language_pair_filter": "ru-en",
+    "phrase_filter": "ru-001",
+    "chunk_duration_ms": 100,
+    "runs_per_fixture": 3,
+    "audio_input": {
+        "format": "pcm16",
+        "sample_rate_hz": 24000,
+        "channels": 1
+    },
+    "started_at": "2026-09-25T21:20:53+00:00",
+    "completed_at": "2026-09-25T21:21:26+00:00",
+    "fixture_count": 1,
+    "run_count": 3,
+    "results": [
+        {
+            "phrase_id": "ru-001",
+            "translation_fixture_id": "ru-en-001",
+            "language_pair": "ru-en",
+            "source_language": "ru",
+            "target_language": "en",
+            "speech_category": "ambiguity",
+            "translation_category": "ambiguity",
+            "source": "Я свободна или не свободна?",
+            "reference": "Am I free or not free?",
+            "critical_elements": [
+                {
+                    "name": "negation",
+                    "accepted": [
+                        "not"
+                    ]
+                }
+            ],
+            "audio": "audio/raw/ru-001.webm",
+            "runs": [
+                {
+                    "run": 1,
+                    "success": true,
+                    "source_transcript": null,
+                    "translated_text": "Yeah, Sobol, free or unfree?",
+                    "pcm_audio_duration_ms": 4860,
+                    "preparation_duration_ms": 445.77,
+                    "chunk_duration_ms": 100,
+                    "chunk_size_bytes": 4800,
+                    "chunk_count": 49,
+                    "first_source_transcript_ms": null,
+                    "time_to_first_translation_text_ms": 3409.1567993164062,
+                    "first_input_audio_sent_ms": 1345.9429740905762,
+                    "last_input_audio_sent_ms": 6144.8609828948975,
+                    "input_finished_ms": 6205.232858657837,
+                    "input_audio_stream_duration_ms": 4859.289884567261,
+                    "time_to_first_audio_packet_ms": 2359.1468334198,
+                    "leading_silence_ms": 2210,
+                    "raw_playback_first_audible_audio_ms": 4569.1468334198,
+                    "first_audible_audio_available_ms": 4085.7298374176025,
+                    "first_audio_packet_relative_to_input_end_ms": -3846.086025238037,
+                    "raw_playback_first_audible_audio_relative_to_input_end_ms": -1636.086025238037,
+                    "first_audible_audio_available_relative_to_input_end_ms": -2119.5030212402344,
+                    "first_audible_audio_available_relative_to_first_input_ms": 2739.7868633270264,
+                    "first_audible_audio_available_relative_to_last_input_ms": -2059.131145477295,
+                    "translated_audio_duration_ms": 18400,
+                    "translated_audio_bytes": 883200,
+                    "session_closed_ms": 11432.252883911133,
+                    "total_duration_ms": 11461.42,
+                    "error": null,
+                    "provider": "openai",
+                    "model": "gpt-realtime-translate",
+                    "recorded_at": "2026-09-25T21:20:53+00:00",
+                    "evaluation": {
+                        "normalized_reference": "am i free or not free",
+                        "normalized_translated_text": "yeah sobol free or unfree",
+                        "normalized_reference_exact": false,
+                        "critical_elements_ok": false,
+                        "critical_elements_passed": 0,
+                        "critical_elements_total": 1,
+                        "missing_critical_elements": [
+                            "negation"
+                        ],
+                        "manual_review_required": true,
+                        "manual_review_reasons": [
+                            "missing_critical_elements"
+                        ],
+                        "latency": {
+                            "stop_to_audio_ready_ms": 0,
+                            "session_close_after_input_end_ms": 5227.020025253296
+                        }
+                    }
+                },
+                {
+                    "run": 2,
+                    "success": true,
+                    "source_transcript": null,
+                    "translated_text": "And the gate is open, or not?",
+                    "pcm_audio_duration_ms": 4860,
+                    "preparation_duration_ms": 79.56,
+                    "chunk_duration_ms": 100,
+                    "chunk_size_bytes": 4800,
+                    "chunk_count": 49,
+                    "first_source_transcript_ms": null,
+                    "time_to_first_translation_text_ms": 3771.6729640960693,
+                    "first_input_audio_sent_ms": 1129.5368671417236,
+                    "last_input_audio_sent_ms": 5927.643775939941,
+                    "input_finished_ms": 5987.168788909912,
+                    "input_audio_stream_duration_ms": 4857.6319217681885,
+                    "time_to_first_audio_packet_ms": 2164.773941040039,
+                    "leading_silence_ms": 2780,
+                    "raw_playback_first_audible_audio_ms": 4944.773941040039,
+                    "first_audible_audio_available_ms": 4207.495927810669,
+                    "first_audio_packet_relative_to_input_end_ms": -3822.394847869873,
+                    "raw_playback_first_audible_audio_relative_to_input_end_ms": -1042.394847869873,
+                    "first_audible_audio_available_relative_to_input_end_ms": -1779.6728610992432,
+                    "first_audible_audio_available_relative_to_first_input_ms": 3077.9590606689453,
+                    "first_audible_audio_available_relative_to_last_input_ms": -1720.1478481292725,
+                    "translated_audio_duration_ms": 15200,
+                    "translated_audio_bytes": 729600,
+                    "session_closed_ms": 9825.46591758728,
+                    "total_duration_ms": 9838.39,
+                    "error": null,
+                    "provider": "openai",
+                    "model": "gpt-realtime-translate",
+                    "recorded_at": "2026-09-25T21:21:05+00:00",
+                    "evaluation": {
+                        "normalized_reference": "am i free or not free",
+                        "normalized_translated_text": "and the gate is open or not",
+                        "normalized_reference_exact": false,
+                        "critical_elements_ok": true,
+                        "critical_elements_passed": 1,
+                        "critical_elements_total": 1,
+                        "missing_critical_elements": [],
+                        "manual_review_required": false,
+                        "manual_review_reasons": [],
+                        "latency": {
+                            "stop_to_audio_ready_ms": 0,
+                            "session_close_after_input_end_ms": 3838.297128677368
+                        }
+                    }
+                },
+                {
+                    "run": 3,
+                    "success": true,
+                    "source_transcript": null,
+                    "translated_text": "Gee, if you're free, or not.",
+                    "pcm_audio_duration_ms": 4860,
+                    "preparation_duration_ms": 64.14,
+                    "chunk_duration_ms": 100,
+                    "chunk_size_bytes": 4800,
+                    "chunk_count": 49,
+                    "first_source_transcript_ms": null,
+                    "time_to_first_translation_text_ms": 2454.8420906066895,
+                    "first_input_audio_sent_ms": 643.1751251220703,
+                    "last_input_audio_sent_ms": 5439.25404548645,
+                    "input_finished_ms": 5498.695135116577,
+                    "input_audio_stream_duration_ms": 4855.520009994507,
+                    "time_to_first_audio_packet_ms": 7916.309118270874,
+                    "leading_silence_ms": null,
+                    "raw_playback_first_audible_audio_ms": null,
+                    "first_audible_audio_available_ms": null,
+                    "first_audio_packet_relative_to_input_end_ms": 2417.613983154297,
+                    "raw_playback_first_audible_audio_relative_to_input_end_ms": null,
+                    "first_audible_audio_available_relative_to_input_end_ms": null,
+                    "first_audible_audio_available_relative_to_first_input_ms": null,
+                    "first_audible_audio_available_relative_to_last_input_ms": null,
+                    "translated_audio_duration_ms": 1200,
+                    "translated_audio_bytes": 57600,
+                    "session_closed_ms": 10908.874988555908,
+                    "total_duration_ms": 10916.64,
+                    "error": null,
+                    "provider": "openai",
+                    "model": "gpt-realtime-translate",
+                    "recorded_at": "2026-09-25T21:21:15+00:00",
+                    "evaluation": {
+                        "normalized_reference": "am i free or not free",
+                        "normalized_translated_text": "gee if you re free or not",
+                        "normalized_reference_exact": false,
+                        "critical_elements_ok": true,
+                        "critical_elements_passed": 1,
+                        "critical_elements_total": 1,
+                        "missing_critical_elements": [],
+                        "manual_review_required": true,
+                        "manual_review_reasons": [
+                            "audible_audio_not_detected"
+                        ],
+                        "latency": {
+                            "stop_to_audio_ready_ms": null,
+                            "session_close_after_input_end_ms": 5410.179853439331
+                        }
+                    }
+                }
+            ],
+            "evaluation": {
+                "successful_runs": 3,
+                "failed_runs": 0,
+                "manual_review_required_runs": 2,
+                "critical_elements": {
+                    "passed": 2,
+                    "total": 3,
+                    "failed": 1,
+                    "pass_rate_percent": 66.67,
+                    "runs_with_missing_critical_elements": 1
+                },
+                "audio_output": {
+                    "audible_detected_runs": 2,
+                    "audible_missing_runs": 1,
+                    "audible_detection_rate_percent": 66.67
+                },
+                "latency": {
+                    "setup_before_first_input_ms": {
+                        "count": 3,
+                        "avg_ms": 1039.55,
+                        "median_ms": 1129.54,
+                        "min_ms": 643.18,
+                        "max_ms": 1345.94,
+                        "p95_ms": 1324.3
+                    },
+                    "time_to_first_translation_text_ms": {
+                        "count": 3,
+                        "avg_ms": 3211.89,
+                        "median_ms": 3409.16,
+                        "min_ms": 2454.84,
+                        "max_ms": 3771.67,
+                        "p95_ms": 3735.42
+                    },
+                    "first_audio_packet_relative_to_input_end_ms": {
+                        "count": 3,
+                        "avg_ms": -1750.29,
+                        "median_ms": -3822.39,
+                        "min_ms": -3846.09,
+                        "max_ms": 2417.61,
+                        "p95_ms": 1793.61
+                    },
+                    "raw_playback_first_audible_audio_relative_to_input_end_ms": {
+                        "count": 2,
+                        "avg_ms": -1339.24,
+                        "median_ms": -1339.24,
+                        "min_ms": -1636.09,
+                        "max_ms": -1042.39,
+                        "p95_ms": -1072.08
+                    },
+                    "first_audible_audio_available_relative_to_first_input_ms": {
+                        "count": 2,
+                        "avg_ms": 2908.87,
+                        "median_ms": 2908.87,
+                        "min_ms": 2739.79,
+                        "max_ms": 3077.96,
+                        "p95_ms": 3061.05
+                    },
+                    "first_audible_audio_available_relative_to_input_end_ms": {
+                        "count": 2,
+                        "avg_ms": -1949.59,
+                        "median_ms": -1949.59,
+                        "min_ms": -2119.5,
+                        "max_ms": -1779.67,
+                        "p95_ms": -1796.66
+                    },
+                    "stop_to_audio_ready_ms": {
+                        "count": 2,
+                        "avg_ms": 0,
+                        "median_ms": 0,
+                        "min_ms": 0,
+                        "max_ms": 0,
+                        "p95_ms": 0
+                    },
+                    "session_close_after_input_end_ms": {
+                        "count": 3,
+                        "avg_ms": 4825.17,
+                        "median_ms": 5227.02,
+                        "min_ms": 3838.3,
+                        "max_ms": 5410.18,
+                        "p95_ms": 5391.86
+                    }
+                }
+            }
+        }
+    ],
+    "evaluation": {
+        "successful_runs": 3,
+        "failed_runs": 0,
+        "manual_review_required_runs": 2,
+        "critical_elements": {
+            "passed": 2,
+            "total": 3,
+            "failed": 1,
+            "pass_rate_percent": 66.67,
+            "runs_with_missing_critical_elements": 1
+        },
+        "audio_output": {
+            "audible_detected_runs": 2,
+            "audible_missing_runs": 1,
+            "audible_detection_rate_percent": 66.67
+        },
+        "latency": {
+            "setup_before_first_input_ms": {
+                "count": 3,
+                "avg_ms": 1039.55,
+                "median_ms": 1129.54,
+                "min_ms": 643.18,
+                "max_ms": 1345.94,
+                "p95_ms": 1324.3
+            },
+            "time_to_first_translation_text_ms": {
+                "count": 3,
+                "avg_ms": 3211.89,
+                "median_ms": 3409.16,
+                "min_ms": 2454.84,
+                "max_ms": 3771.67,
+                "p95_ms": 3735.42
+            },
+            "first_audio_packet_relative_to_input_end_ms": {
+                "count": 3,
+                "avg_ms": -1750.29,
+                "median_ms": -3822.39,
+                "min_ms": -3846.09,
+                "max_ms": 2417.61,
+                "p95_ms": 1793.61
+            },
+            "raw_playback_first_audible_audio_relative_to_input_end_ms": {
+                "count": 2,
+                "avg_ms": -1339.24,
+                "median_ms": -1339.24,
+                "min_ms": -1636.09,
+                "max_ms": -1042.39,
+                "p95_ms": -1072.08
+            },
+            "first_audible_audio_available_relative_to_first_input_ms": {
+                "count": 2,
+                "avg_ms": 2908.87,
+                "median_ms": 2908.87,
+                "min_ms": 2739.79,
+                "max_ms": 3077.96,
+                "p95_ms": 3061.05
+            },
+            "first_audible_audio_available_relative_to_input_end_ms": {
+                "count": 2,
+                "avg_ms": -1949.59,
+                "median_ms": -1949.59,
+                "min_ms": -2119.5,
+                "max_ms": -1779.67,
+                "p95_ms": -1796.66
+            },
+            "stop_to_audio_ready_ms": {
+                "count": 2,
+                "avg_ms": 0,
+                "median_ms": 0,
+                "min_ms": 0,
+                "max_ms": 0,
+                "p95_ms": 0
+            },
+            "session_close_after_input_end_ms": {
+                "count": 3,
+                "avg_ms": 4825.17,
+                "median_ms": 5227.02,
+                "min_ms": 3838.3,
+                "max_ms": 5410.18,
+                "p95_ms": 5391.86
+            }
+        }
+    }
+}

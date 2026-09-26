@@ -10,7 +10,9 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "deeplcom/deepl-php": "^1.20",
         "google/cloud-speech": "^2.5",
+        "google/cloud-translate": "^2.3",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "phrity/websocket": "^4.0"

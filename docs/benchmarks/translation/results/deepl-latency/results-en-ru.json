@@ -1,0 +1,512 @@
+{
+    "benchmark_version": 1,
+    "benchmark_type": "translation",
+    "dataset_version": 1,
+    "profile": "deepl-latency",
+    "provider": "deepl",
+    "model": "latency_optimized",
+    "language_pair": "en-ru",
+    "started_at": "2026-09-23T20:55:11+00:00",
+    "completed_at": "2026-09-23T20:55:15+00:00",
+    "fixture_count": 15,
+    "results": [
+        {
+            "phrase_id": "en-ru-001",
+            "category": "simple",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "I am ready to start the trip.",
+            "reference": "Я готов начать поездку.",
+            "critical_elements": [
+                {
+                    "name": "start_trip",
+                    "accepted": [
+                        "начать поездку",
+                        "начать рейс",
+                        "начать путешествие",
+                        "отправиться в путь"
+                    ]
+                }
+            ],
+            "actual": "Я готов отправиться в путь.",
+            "success": true,
+            "latency_ms": 348.17,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:11+00:00"
+        },
+        {
+            "phrase_id": "en-ru-002",
+            "category": "proper_nouns",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "My cat Persik is a ginger hooligan.",
+            "reference": "Мой кот Персик — рыжий хулиган.",
+            "critical_elements": [
+                {
+                    "name": "cat_name",
+                    "accepted": [
+                        "Персик",
+                        "Persik"
+                    ]
+                }
+            ],
+            "actual": "Мой кот Персик — рыжий хулиган.",
+            "success": true,
+            "latency_ms": 221.19,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:12+00:00"
+        },
+        {
+            "phrase_id": "en-ru-003",
+            "category": "numbers",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "Did you say fifteen or fifty?",
+            "reference": "Ты сказал пятнадцать или пятьдесят?",
+            "critical_elements": [
+                {
+                    "name": "number_15",
+                    "accepted": [
+                        "пятнадцать",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "number_50",
+                    "accepted": [
+                        "пятьдесят",
+                        "50"
+                    ]
+                }
+            ],
+            "actual": "Ты сказал «пятнадцать» или «пятьдесят»?",
+            "success": true,
+            "latency_ms": 193.67,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:12+00:00"
+        },
+        {
+            "phrase_id": "en-ru-004",
+            "category": "negation",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "Do not send this truck because the driver has not unloaded yet.",
+            "reference": "Не отправляй этот грузовик, потому что водитель ещё не разгрузился.",
+            "critical_elements": [
+                {
+                    "name": "send_negation",
+                    "accepted": [
+                        "не отправляй",
+                        "не отправляйте",
+                        "не отправлять"
+                    ]
+                },
+                {
+                    "name": "unloading_negation",
+                    "accepted": [
+                        "не разгрузился",
+                        "не закончил разгрузку",
+                        "не выгрузился"
+                    ]
+                }
+            ],
+            "actual": "Не отправляйте этот грузовик, так как водитель ещё не разгрузился.",
+            "success": true,
+            "latency_ms": 193.67,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:12+00:00"
+        },
+        {
+            "phrase_id": "en-ru-005",
+            "category": "logistics",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "The driver has finished unloading and is heading to Klaipeda.",
+            "reference": "Водитель закончил разгрузку и едет в Клайпеду.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "разгрузился",
+                        "закончил разгрузку",
+                        "разгрузку"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Клайпеда",
+                        "Клайпеду"
+                    ]
+                }
+            ],
+            "actual": "Водитель завершил разгрузку и направляется в Клайпеду.",
+            "success": true,
+            "latency_ms": 217.79,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:12+00:00"
+        },
+        {
+            "phrase_id": "en-ru-006",
+            "category": "identifier",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "Leave trailer ZZ 546 in the parking area.",
+            "reference": "Оставь прицеп ZZ 546 на стоянке.",
+            "critical_elements": [
+                {
+                    "name": "trailer_identifier",
+                    "accepted": [
+                        "ZZ 546",
+                        "ZZ-546",
+                        "ZZ546"
+                    ]
+                },
+                {
+                    "name": "leave_action",
+                    "accepted": [
+                        "оставь",
+                        "оставьте",
+                        "оставить"
+                    ]
+                }
+            ],
+            "actual": "Оставьте прицеп ZZ 546 на стоянке.",
+            "success": true,
+            "latency_ms": 198.92,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:12+00:00"
+        },
+        {
+            "phrase_id": "en-ru-007",
+            "category": "distance",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "The remaining distance is one hundred and fifty-four kilometers.",
+            "reference": "Осталось сто пятьдесят четыре километра.",
+            "critical_elements": [
+                {
+                    "name": "distance",
+                    "accepted": [
+                        "сто пятьдесят четыре",
+                        "154"
+                    ]
+                },
+                {
+                    "name": "distance_unit",
+                    "accepted": [
+                        "километр",
+                        "километра",
+                        "километров",
+                        "км"
+                    ]
+                }
+            ],
+            "actual": "Осталось сто пятьдесят четыре километра.",
+            "success": true,
+            "latency_ms": 407.17,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:13+00:00"
+        },
+        {
+            "phrase_id": "en-ru-008",
+            "category": "time",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "Loading starts tomorrow at seven thirty in the morning.",
+            "reference": "Загрузка начинается завтра в семь тридцать утра.",
+            "critical_elements": [
+                {
+                    "name": "day",
+                    "accepted": [
+                        "завтра"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "семь тридцать",
+                        "7:30"
+                    ]
+                }
+            ],
+            "actual": "Погрузка начнется завтра в половине восьмого утра.",
+            "success": true,
+            "latency_ms": 250.27,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:13+00:00"
+        },
+        {
+            "phrase_id": "en-ru-009",
+            "category": "instruction",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "No, not this truck, take the next one.",
+            "reference": "Нет, не этот грузовик, возьми следующий.",
+            "critical_elements": [
+                {
+                    "name": "truck_negation",
+                    "accepted": [
+                        "не этот грузовик"
+                    ]
+                },
+                {
+                    "name": "take_next_vehicle",
+                    "accepted": [
+                        "возьми следующий",
+                        "возьмите следующий",
+                        "бери следующий",
+                        "берите следующий"
+                    ]
+                }
+            ],
+            "actual": "Нет, не этот грузовик, садись в следующий.",
+            "success": true,
+            "latency_ms": 224.07,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:13+00:00"
+        },
+        {
+            "phrase_id": "en-ru-010",
+            "category": "logistics",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "Collect the documents from the dispatcher and give them to the driver.",
+            "reference": "Забери документы у диспетчера и передай их водителю.",
+            "critical_elements": [
+                {
+                    "name": "dispatcher",
+                    "accepted": [
+                        "диспетчер",
+                        "диспетчера"
+                    ]
+                },
+                {
+                    "name": "driver",
+                    "accepted": [
+                        "водитель",
+                        "водителю"
+                    ]
+                }
+            ],
+            "actual": "Заберите документы у диспетчера и передайте их водителю.",
+            "success": true,
+            "latency_ms": 184.03,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:14+00:00"
+        },
+        {
+            "phrase_id": "en-ru-011",
+            "category": "temperature",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "The temperature must stay between two and six degrees.",
+            "reference": "Температура должна оставаться между двумя и шестью градусами.",
+            "critical_elements": [
+                {
+                    "name": "lower_temperature",
+                    "accepted": [
+                        "два",
+                        "двумя",
+                        "двух",
+                        "2"
+                    ]
+                },
+                {
+                    "name": "upper_temperature",
+                    "accepted": [
+                        "шесть",
+                        "шестью",
+                        "шести",
+                        "6"
+                    ]
+                },
+                {
+                    "name": "temperature_unit",
+                    "accepted": [
+                        "градус",
+                        "градуса",
+                        "градусов",
+                        "градусами"
+                    ]
+                }
+            ],
+            "actual": "Температура должна оставаться в пределах от двух до шести градусов.",
+            "success": true,
+            "latency_ms": 211.1,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:14+00:00"
+        },
+        {
+            "phrase_id": "en-ru-012",
+            "category": "long_sentence",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "If the driver finishes unloading before eight in the evening, send him to the next loading point in Kaunas.",
+            "reference": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Каунас.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "разгрузку",
+                        "разгрузится"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "восемь",
+                        "восьми",
+                        "8"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Каунас",
+                        "Каунасе"
+                    ]
+                },
+                {
+                    "name": "next_loading",
+                    "accepted": [
+                        "следующую загрузку",
+                        "следующая загрузка",
+                        "следующий пункт погрузки",
+                        "следующей погрузочной точке"
+                    ]
+                }
+            ],
+            "actual": "Если водитель закончит разгрузку до восьми вечера, отправьте его к следующему месту погрузки в Каунасе.",
+            "success": true,
+            "latency_ms": 289.37,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:14+00:00"
+        },
+        {
+            "phrase_id": "en-ru-013",
+            "category": "pause",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "I will arrive in fifteen minutes if there is no traffic.",
+            "reference": "Я приеду через пятнадцать минут, если не будет пробок.",
+            "critical_elements": [
+                {
+                    "name": "duration",
+                    "accepted": [
+                        "пятнадцать",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "traffic_condition",
+                    "accepted": [
+                        "не будет пробок",
+                        "без пробок"
+                    ]
+                }
+            ],
+            "actual": "Если не будет пробок, я прибуду через пятнадцать минут.",
+            "success": true,
+            "latency_ms": 177.94,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:14+00:00"
+        },
+        {
+            "phrase_id": "en-ru-014",
+            "category": "similar_sounding_words",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "The driver said he can leave at eight, not eighteen.",
+            "reference": "Водитель сказал, что может уехать в восемь, а не в восемнадцать.",
+            "critical_elements": [
+                {
+                    "name": "leave_action",
+                    "accepted": [
+                        "уехать",
+                        "выехать",
+                        "уйти"
+                    ]
+                },
+                {
+                    "name": "time_8",
+                    "accepted": [
+                        "восемь",
+                        "8"
+                    ]
+                },
+                {
+                    "name": "time_18",
+                    "accepted": [
+                        "восемнадцать",
+                        "18"
+                    ]
+                }
+            ],
+            "actual": "Водитель сказал, что может уехать в восемь, а не в восемнадцать.",
+            "success": true,
+            "latency_ms": 264.08,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:14+00:00"
+        },
+        {
+            "phrase_id": "en-ru-015",
+            "category": "context",
+            "source_language": "en",
+            "target_language": "ru",
+            "source": "Please call me when the unloading is finished and tell me where the trailer was left.",
+            "reference": "Позвони мне, когда разгрузка закончится, и скажи, где оставили прицеп.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "разгрузка",
+                        "разгрузки"
+                    ]
+                },
+                {
+                    "name": "trailer",
+                    "accepted": [
+                        "прицеп",
+                        "трейлер"
+                    ]
+                }
+            ],
+            "actual": "Пожалуйста, позвоните мне, когда разгрузка закончится, и сообщите, где оставили прицеп.",
+            "success": true,
+            "latency_ms": 286.01,
+            "error": null,
+            "provider": "deepl",
+            "model": "latency_optimized",
+            "recorded_at": "2026-09-23T20:55:15+00:00"
+        }
+    ]
+}

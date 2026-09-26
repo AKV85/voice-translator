@@ -1,0 +1,600 @@
+{
+    "benchmark_version": 1,
+    "benchmark_type": "translation",
+    "dataset_version": 1,
+    "profile": "openai-gpt54-mini",
+    "provider": "openai",
+    "model": "gpt-5.4-mini-2026-03-17",
+    "language_pair": "ru-en",
+    "started_at": "2026-09-23T20:47:31+00:00",
+    "completed_at": "2026-09-23T20:47:52+00:00",
+    "fixture_count": 15,
+    "results": [
+        {
+            "phrase_id": "ru-en-001",
+            "category": "ambiguity",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Я свободна или не свободна?",
+            "reference": "Am I free or not free?",
+            "critical_elements": [
+                {
+                    "name": "negation",
+                    "accepted": [
+                        "not"
+                    ]
+                }
+            ],
+            "actual": "Am I free or not free?",
+            "success": true,
+            "latency_ms": 2430.62,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:31+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 1,
+                "critical_elements_total": 1,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-002",
+            "category": "proper_nouns",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Кот Персик рыжий хулиган.",
+            "reference": "The cat Persik is a ginger hooligan.",
+            "critical_elements": [
+                {
+                    "name": "cat_name",
+                    "accepted": [
+                        "Persik"
+                    ]
+                }
+            ],
+            "actual": "Cat Persik is a red-haired hooligan.",
+            "success": true,
+            "latency_ms": 1612.95,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:33+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 1,
+                "critical_elements_total": 1,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-003",
+            "category": "context",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "У меня есть кот Персик, он рыжий хулиган.",
+            "reference": "I have a cat named Persik; he is a ginger hooligan.",
+            "critical_elements": [
+                {
+                    "name": "cat_name",
+                    "accepted": [
+                        "Persik"
+                    ]
+                }
+            ],
+            "actual": "I have a cat named Persik, he is a ginger hooligan.",
+            "success": true,
+            "latency_ms": 757.54,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:35+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 1,
+                "critical_elements_total": 1,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-004",
+            "category": "numbers",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Ты сказал пятнадцать или пятьдесят?",
+            "reference": "Did you say fifteen or fifty?",
+            "critical_elements": [
+                {
+                    "name": "number_15",
+                    "accepted": [
+                        "fifteen",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "number_50",
+                    "accepted": [
+                        "fifty",
+                        "50"
+                    ]
+                }
+            ],
+            "actual": "Did you say fifteen or fifty?",
+            "success": true,
+            "latency_ms": 1331.4,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:36+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-005",
+            "category": "negation",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Не отправляй этот грузовик, он ещё не разгрузился.",
+            "reference": "Do not send this truck; it has not been unloaded yet.",
+            "critical_elements": [
+                {
+                    "name": "send_negation",
+                    "accepted": [
+                        "do not send",
+                        "don't send"
+                    ]
+                },
+                {
+                    "name": "unloading_negation",
+                    "accepted": [
+                        "not unloaded",
+                        "not been unloaded",
+                        "hasn't unloaded",
+                        "has not unloaded",
+                        "hasn't been unloaded"
+                    ]
+                }
+            ],
+            "actual": "Do not send this truck, it has not been unloaded yet.",
+            "success": true,
+            "latency_ms": 1899.47,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:37+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-006",
+            "category": "logistics",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Водитель уже разгрузился и едет в Клайпеду.",
+            "reference": "The driver has already unloaded and is heading to Klaipeda.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "unloaded",
+                        "unloading"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Klaipeda",
+                        "Klaipėda"
+                    ]
+                }
+            ],
+            "actual": "The driver has already unloaded and is heading to Klaipėda.",
+            "success": true,
+            "latency_ms": 1478.97,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:39+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-007",
+            "category": "identifier",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Прицеп ZZ 546 нужно оставить на стоянке.",
+            "reference": "Trailer ZZ 546 needs to be left in the parking area.",
+            "critical_elements": [
+                {
+                    "name": "trailer_identifier",
+                    "accepted": [
+                        "ZZ 546",
+                        "ZZ-546",
+                        "ZZ546"
+                    ]
+                },
+                {
+                    "name": "leave_action",
+                    "accepted": [
+                        "leave",
+                        "left",
+                        "be left"
+                    ]
+                }
+            ],
+            "actual": "Trailer ZZ 546 must be left in the parking lot.",
+            "success": true,
+            "latency_ms": 1219.39,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:40+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-008",
+            "category": "distance",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "До точки назначения осталось сто пятьдесят четыре километра.",
+            "reference": "There are one hundred and fifty-four kilometers left to the destination.",
+            "critical_elements": [
+                {
+                    "name": "distance",
+                    "accepted": [
+                        "154",
+                        "one hundred and fifty-four",
+                        "one hundred fifty-four"
+                    ]
+                },
+                {
+                    "name": "distance_unit",
+                    "accepted": [
+                        "kilometers",
+                        "kilometres",
+                        "km"
+                    ]
+                }
+            ],
+            "actual": "There are one hundred fifty-four kilometers left to the destination.",
+            "success": true,
+            "latency_ms": 808.85,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:42+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-009",
+            "category": "time",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Загрузка начнётся завтра в семь тридцать утра.",
+            "reference": "Loading will start tomorrow at seven thirty in the morning.",
+            "critical_elements": [
+                {
+                    "name": "day",
+                    "accepted": [
+                        "tomorrow"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "seven thirty",
+                        "7:30"
+                    ]
+                }
+            ],
+            "actual": "Loading will begin tomorrow at 7:30 a.m.",
+            "success": true,
+            "latency_ms": 1104.01,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:42+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-010",
+            "category": "instruction",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Нет, не этот грузовик, возьми следующий.",
+            "reference": "No, not this truck, take the next one.",
+            "critical_elements": [
+                {
+                    "name": "truck_negation",
+                    "accepted": [
+                        "not this truck",
+                        "not that truck"
+                    ]
+                },
+                {
+                    "name": "next_vehicle",
+                    "accepted": [
+                        "next one",
+                        "next truck"
+                    ]
+                }
+            ],
+            "actual": "No, not this truck, take the next one.",
+            "success": true,
+            "latency_ms": 875.22,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:43+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-011",
+            "category": "logistics",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Забери документы у диспетчера и передай их водителю.",
+            "reference": "Collect the documents from the dispatcher and give them to the driver.",
+            "critical_elements": [
+                {
+                    "name": "dispatcher",
+                    "accepted": [
+                        "dispatcher"
+                    ]
+                },
+                {
+                    "name": "driver",
+                    "accepted": [
+                        "driver"
+                    ]
+                }
+            ],
+            "actual": "Take the documents from the dispatcher and hand them over to the driver.",
+            "success": true,
+            "latency_ms": 2041.77,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:44+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-012",
+            "category": "temperature",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Температура должна оставаться между двумя и шестью градусами.",
+            "reference": "The temperature must remain between two and six degrees.",
+            "critical_elements": [
+                {
+                    "name": "lower_temperature",
+                    "accepted": [
+                        "two",
+                        "2"
+                    ]
+                },
+                {
+                    "name": "upper_temperature",
+                    "accepted": [
+                        "six",
+                        "6"
+                    ]
+                },
+                {
+                    "name": "temperature_unit",
+                    "accepted": [
+                        "degree",
+                        "degrees"
+                    ]
+                }
+            ],
+            "actual": "The temperature must remain between two and six degrees.",
+            "success": true,
+            "latency_ms": 1430.71,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:46+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 3,
+                "critical_elements_total": 3,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-013",
+            "category": "long_sentence",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Если водитель закончит разгрузку до восьми вечера, отправь его на следующую загрузку в Каунас.",
+            "reference": "If the driver finishes unloading before eight in the evening, send him to the next loading in Kaunas.",
+            "critical_elements": [
+                {
+                    "name": "unloading",
+                    "accepted": [
+                        "unloading",
+                        "unloads"
+                    ]
+                },
+                {
+                    "name": "time",
+                    "accepted": [
+                        "eight",
+                        "8"
+                    ]
+                },
+                {
+                    "name": "destination",
+                    "accepted": [
+                        "Kaunas"
+                    ]
+                },
+                {
+                    "name": "next_loading",
+                    "accepted": [
+                        "next loading",
+                        "next load",
+                        "next pickup"
+                    ]
+                }
+            ],
+            "actual": "If the driver finishes unloading before eight in the evening, send him to the next loading in Kaunas.",
+            "success": true,
+            "latency_ms": 918.79,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:48+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 4,
+                "critical_elements_total": 4,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-014",
+            "category": "pause",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Я приеду через пятнадцать минут, если не будет пробок.",
+            "reference": "I will arrive in fifteen minutes if there is no traffic.",
+            "critical_elements": [
+                {
+                    "name": "duration",
+                    "accepted": [
+                        "fifteen",
+                        "15"
+                    ]
+                },
+                {
+                    "name": "traffic_condition",
+                    "accepted": [
+                        "no traffic",
+                        "without traffic",
+                        "traffic permitting",
+                        "if traffic permits"
+                    ]
+                }
+            ],
+            "actual": "I will arrive in fifteen minutes if there are no traffic jams.",
+            "success": true,
+            "latency_ms": 1205.68,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:49+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        },
+        {
+            "phrase_id": "ru-en-015",
+            "category": "proper_nouns",
+            "source_language": "ru",
+            "target_language": "en",
+            "source": "Андрей Котов встретит водителя в Клайпеде возле терминала.",
+            "reference": "Andrej Kotov will meet the driver in Klaipeda near the terminal.",
+            "critical_elements": [
+                {
+                    "name": "person",
+                    "accepted": [
+                        "Andrej Kotov",
+                        "Andrey Kotov",
+                        "Andrei Kotov"
+                    ]
+                },
+                {
+                    "name": "location",
+                    "accepted": [
+                        "Klaipeda",
+                        "Klaipėda"
+                    ]
+                }
+            ],
+            "actual": "Andrey Kotov will meet the driver in Klaipeda near the terminal.",
+            "success": true,
+            "latency_ms": 1577,
+            "error": null,
+            "provider": "openai",
+            "model": "gpt-5.4-mini-2026-03-17",
+            "recorded_at": "2026-09-23T20:47:50+00:00",
+            "evaluation": {
+                "critical_elements_ok": true,
+                "critical_elements_passed": 2,
+                "critical_elements_total": 2,
+                "missing_critical_elements": []
+            }
+        }
+    ],
+    "evaluation": {
+        "successful": 15,
+        "failed": 0,
+        "critical_elements": {
+            "passed": 30,
+            "total": 30,
+            "failed": 0,
+            "pass_rate_percent": 100,
+            "fixtures_with_missing_critical_elements": 0
+        },
+        "latency": {
+            "cold_start": {
+                "phrase_id": "ru-en-001",
+                "success": true,
+                "latency_ms": 2430.62
+            },
+            "warm": {
+                "count": 14,
+                "avg_ms": 1304.41,
+                "median_ms": 1275.4,
+                "min_ms": 757.54,
+                "max_ms": 2041.77,
+                "p95_ms": 1949.27
+            },
+            "warm_failed_count": 0
+        }
+    }
+}
