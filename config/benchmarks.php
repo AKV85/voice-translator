@@ -5,6 +5,7 @@ use App\Contracts\TranslationProvider;
 use App\Services\Speech\BatchSpeechToTextStreamingAdapter;
 use App\Services\Speech\DeepgramFluxSpeechToTextProvider;
 use App\Services\Speech\DeepgramSpeechToTextProvider;
+use App\Services\Speech\GoogleStreamingSpeechToTextProvider;
 use App\Services\Speech\OpenAIStreamingTextToSpeechProvider;
 use App\Services\Translation\DeepLTranslationProvider;
 use App\Services\Translation\OpenAIRealtimeTranslationProvider;
@@ -314,6 +315,102 @@ return [
                             'services.google.speech.location' => 'eu',
 
                             'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
+                        ],
+                    ],
+
+                    'translation' => [
+                        'contract' => DeepLTranslationProvider::class,
+
+                        'provider' => 'deepl',
+
+                        'model' => 'latency_optimized',
+
+                        'config' => [
+                            'services.deepl.model_type' => 'latency_optimized',
+                        ],
+                    ],
+
+                    'text_to_speech' => [
+                        'contract' => OpenAIStreamingTextToSpeechProvider::class,
+
+                        'provider' => 'openai',
+
+                        'model' => 'gpt-4o-mini-tts-2025-12-15',
+
+                        'config' => [
+                            'services.openai.text_to_speech.model' => 'gpt-4o-mini-tts-2025-12-15',
+
+                            'services.openai.text_to_speech.endpoint' => 'https://api.openai.com/v1/audio/speech',
+
+                            'services.openai.text_to_speech.voice' => 'marin',
+                        ],
+                    ],
+                ],
+
+                'chirp3-streaming-standard-deepl-openai' => [
+                    'speech_to_text' => [
+                        'contract' => GoogleStreamingSpeechToTextProvider::class,
+
+                        'provider' => 'google',
+
+                        'model' => 'chirp_3',
+
+                        'config' => [
+                            'services.google.speech.model' => 'chirp_3',
+
+                            'services.google.speech.location' => 'eu',
+
+                            'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
+
+                            'services.google.speech.endpointing_sensitivity' => 'standard',
+                        ],
+                    ],
+
+                    'translation' => [
+                        'contract' => DeepLTranslationProvider::class,
+
+                        'provider' => 'deepl',
+
+                        'model' => 'latency_optimized',
+
+                        'config' => [
+                            'services.deepl.model_type' => 'latency_optimized',
+                        ],
+                    ],
+
+                    'text_to_speech' => [
+                        'contract' => OpenAIStreamingTextToSpeechProvider::class,
+
+                        'provider' => 'openai',
+
+                        'model' => 'gpt-4o-mini-tts-2025-12-15',
+
+                        'config' => [
+                            'services.openai.text_to_speech.model' => 'gpt-4o-mini-tts-2025-12-15',
+
+                            'services.openai.text_to_speech.endpoint' => 'https://api.openai.com/v1/audio/speech',
+
+                            'services.openai.text_to_speech.voice' => 'marin',
+                        ],
+                    ],
+                ],
+
+                'chirp3-streaming-short-deepl-openai' => [
+                    'speech_to_text' => [
+                        'contract' => GoogleStreamingSpeechToTextProvider::class,
+
+                        'provider' => 'google',
+
+                        'model' => 'chirp_3',
+
+                        'config' => [
+                            'services.google.speech.model' => 'chirp_3',
+
+                            'services.google.speech.location' => 'eu',
+
+                            'services.google.speech.api_endpoint' => 'eu-speech.googleapis.com',
+
+                            'services.google.speech.endpointing_sensitivity' => 'short',
                         ],
                     ],
 
