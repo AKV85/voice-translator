@@ -127,13 +127,34 @@ final readonly class CriticalElementEvaluator
             return false;
         }
 
-        $pattern = sprintf(
-            '/(?<![\p{L}\p{N}])%s(?![\p{L}\p{N}])/u',
+        $escapedAccepted =
             preg_quote(
                 $normalizedAccepted,
                 '/',
-            ),
-        );
+            );
+
+        $startsWithLetterOrNumber =
+            preg_match(
+                '/^[\p{L}\p{N}]/u',
+                $normalizedAccepted,
+            ) === 1;
+
+        $endsWithLetterOrNumber =
+            preg_match(
+                '/[\p{L}\p{N}]$/u',
+                $normalizedAccepted,
+            ) === 1;
+
+        $pattern =
+            '/'
+            .($startsWithLetterOrNumber
+                ? '(?<![\p{L}\p{N}])'
+                : '')
+            .$escapedAccepted
+            .($endsWithLetterOrNumber
+                ? '(?![\p{L}\p{N}])'
+                : '')
+            .'/u';
 
         return preg_match(
             $pattern,
