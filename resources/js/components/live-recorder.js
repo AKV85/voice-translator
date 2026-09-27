@@ -21,9 +21,23 @@ export default (config = {}) => ({
     sourceLanguage: 'ru',
 
     transcription: '',
+    translatedText: '',
 
     serverStopToSttMs: null,
+    translationMs: null,
+    serverStopToTranslationMs: null,
+
+    ttsFirstAudioMs: null,
+    serverStopToFirstTtsAudioMs: null,
+    ttsDurationMs: null,
+    serverStopToTtsCompletedMs: null,
+
+    browserStopToTranslatedMs: null,
+    browserStopToFirstAudioReceivedMs: null,
+    browserStopToFirstAudiblePlaybackMs: null,
     browserStopToCompletedMs: null,
+
+    translatedAudioDurationMs: null,
 
     isConnecting: false,
     isRecording: false,
@@ -45,10 +59,30 @@ export default (config = {}) => ({
     runCompleted: false,
     aborted: false,
 
+    audioContext: null,
+    audioSources: [],
+    nextPlaybackTime: 0,
+
+    ttsSampleRate: 24000,
+    ttsChannels: 1,
+    ttsBytesPerSample: 2,
+
+    audibleRmsThreshold: 328,
+
+    firstAudioReceived: false,
+    firstAudiblePlaybackScheduled: false,
+    audiblePlaybackTimer: null,
+
     get isBusy() {
         return this.isConnecting
             || this.isRecording
             || this.isStopping;
+    },
+
+    get targetLanguage() {
+        return this.sourceLanguage === 'ru'
+            ? 'en'
+            : 'ru';
     },
 
     async startRecording() {
@@ -86,9 +120,14 @@ export default (config = {}) => ({
         }
 
         this.isConnecting = true;
-        this.status = 'Requesting microphone';
+        this.status = 'Preparing audio';
 
         try {
+            await this.prepareAudioPlayback();
+
+            this.status =
+                'Requesting microphone';
+
             this.mediaStream =
                 await navigator.mediaDevices.getUserMedia({
                     audio: true,
@@ -156,7 +195,7 @@ export default (config = {}) => ({
         if (
             !this.mediaRecorder
             || this.mediaRecorder.state
-            !== 'recording'
+                !== 'recording'
         ) {
             return;
         }
@@ -184,7 +223,7 @@ export default (config = {}) => ({
         if (
             !this.socket
             || this.socket.readyState
-            !== WebSocket.OPEN
+                !== WebSocket.OPEN
             || !this.sessionStarted
         ) {
             this.setError(
@@ -211,7 +250,7 @@ export default (config = {}) => ({
         if (
             !this.socket
             || this.socket.readyState
-            !== WebSocket.OPEN
+                !== WebSocket.OPEN
         ) {
             this.setError(
                 'Live pipeline connection closed before STOP.',
@@ -220,13 +259,6 @@ export default (config = {}) => ({
             return;
         }
 
-        /*
-         * MediaRecorder emits the final dataavailable event
-         * before the stop event.
-         *
-         * Therefore the final audio chunk has already been
-         * queued on the WebSocket before this control message.
-         */
         this.socket.send(
             JSON.stringify({
                 type: 'stop',
@@ -262,6 +294,9 @@ export default (config = {}) => ({
                     new WebSocket(
                         this.wsUrl,
                     );
+
+                socket.binaryType =
+                    'arraybuffer';
 
                 this.socket =
                     socket;
@@ -354,6 +389,17 @@ export default (config = {}) => ({
 
     handleSocketMessage(event) {
         if (
+            event.data
+            instanceof ArrayBuffer
+        ) {
+            this.handleTtsAudioChunk(
+                event.data,
+            );
+
+            return;
+        }
+
+        if (
             typeof event.data
             !== 'string'
         ) {
@@ -378,7 +424,7 @@ export default (config = {}) => ({
         if (
             !payload
             || typeof payload
-            !== 'object'
+                !== 'object'
         ) {
             return;
         }
@@ -406,6 +452,36 @@ export default (config = {}) => ({
                 this.transcription =
                     payload.text;
             }
+
+            if (
+                payload.is_final === true
+                && this.isStopping
+            ) {
+                this.status =
+                    'Translating';
+            }
+
+            return;
+        }
+
+        if (
+            payload.type
+            === 'translation_completed'
+        ) {
+            this.handleTranslationCompleted(
+                payload,
+            );
+
+            return;
+        }
+
+        if (
+            payload.type
+            === 'tts_started'
+        ) {
+            this.handleTtsStarted(
+                payload,
+            );
 
             return;
         }
@@ -449,6 +525,300 @@ export default (config = {}) => ({
         }
     },
 
+    handleTranslationCompleted(payload) {
+        if (
+            typeof payload.text
+            === 'string'
+        ) {
+            this.transcription =
+                payload.text;
+        }
+
+        if (
+            typeof payload.translated_text
+            === 'string'
+        ) {
+            this.translatedText =
+                payload.translated_text;
+        }
+
+        this.applyTranslationMetrics(
+            payload,
+        );
+
+        if (
+            this.stopStartedAt
+            !== null
+        ) {
+            this.browserStopToTranslatedMs =
+                this.roundMilliseconds(
+                    performance.now()
+                    - this.stopStartedAt,
+                );
+        }
+
+        this.status =
+            'Synthesizing speech';
+    },
+
+    handleTtsStarted(payload) {
+        if (
+            typeof payload.sample_rate_hz
+            === 'number'
+        ) {
+            this.ttsSampleRate =
+                payload.sample_rate_hz;
+        }
+
+        if (
+            typeof payload.channels
+            === 'number'
+        ) {
+            this.ttsChannels =
+                payload.channels;
+        }
+
+        if (
+            typeof payload.bytes_per_sample
+            === 'number'
+        ) {
+            this.ttsBytesPerSample =
+                payload.bytes_per_sample;
+        }
+
+        this.status =
+            'Streaming translated speech';
+    },
+
+    handleTtsAudioChunk(arrayBuffer) {
+        if (
+            !this.firstAudioReceived
+            && this.stopStartedAt !== null
+        ) {
+            this.firstAudioReceived =
+                true;
+
+            this.browserStopToFirstAudioReceivedMs =
+                this.roundMilliseconds(
+                    performance.now()
+                    - this.stopStartedAt,
+                );
+        }
+
+        try {
+            this.schedulePcm16Chunk(
+                arrayBuffer,
+            );
+        } catch (error) {
+            this.setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Could not play translated speech.',
+            );
+        }
+    },
+
+    schedulePcm16Chunk(arrayBuffer) {
+        if (!this.audioContext) {
+            throw new Error(
+                'Audio playback context is not available.',
+            );
+        }
+
+        if (this.ttsChannels !== 1) {
+            throw new Error(
+                'Only mono TTS audio is currently supported.',
+            );
+        }
+
+        if (this.ttsBytesPerSample !== 2) {
+            throw new Error(
+                'Only PCM16 TTS audio is currently supported.',
+            );
+        }
+
+        if (
+            arrayBuffer.byteLength === 0
+            || arrayBuffer.byteLength % 2 !== 0
+        ) {
+            throw new Error(
+                'Received invalid PCM16 audio chunk.',
+            );
+        }
+
+        const view =
+            new DataView(
+                arrayBuffer,
+            );
+
+        const sampleCount =
+            arrayBuffer.byteLength / 2;
+
+        const samples =
+            new Float32Array(
+                sampleCount,
+            );
+
+        let sumSquares = 0;
+
+        for (
+            let index = 0;
+            index < sampleCount;
+            index += 1
+        ) {
+            const sample =
+                view.getInt16(
+                    index * 2,
+                    true,
+                );
+
+            samples[index] =
+                sample / 32768;
+
+            sumSquares +=
+                sample * sample;
+        }
+
+        const rms =
+            Math.sqrt(
+                sumSquares
+                / sampleCount,
+            );
+
+        const buffer =
+            this.audioContext.createBuffer(
+                1,
+                sampleCount,
+                this.ttsSampleRate,
+            );
+
+        buffer.copyToChannel(
+            samples,
+            0,
+        );
+
+        const source =
+            this.audioContext.createBufferSource();
+
+        source.buffer =
+            buffer;
+
+        source.connect(
+            this.audioContext.destination,
+        );
+
+        const now =
+            this.audioContext.currentTime;
+
+        if (
+            this.nextPlaybackTime
+            <= now + 0.005
+        ) {
+            this.nextPlaybackTime =
+                now + 0.05;
+        }
+
+        const startAt =
+            this.nextPlaybackTime;
+
+        this.nextPlaybackTime +=
+            buffer.duration;
+
+        this.audioSources.push(
+            source,
+        );
+
+        source.addEventListener(
+            'ended',
+            () => {
+                source.disconnect();
+
+                this.audioSources =
+                    this.audioSources.filter(
+                        (item) =>
+                            item !== source,
+                    );
+
+                if (
+                    this.runCompleted
+                    && this.audioSources.length
+                        === 0
+                ) {
+                    this.status =
+                        'Completed';
+                }
+            },
+            {
+                once: true,
+            },
+        );
+
+        source.start(
+            startAt,
+        );
+
+        if (
+            rms >= this.audibleRmsThreshold
+            && !this.firstAudiblePlaybackScheduled
+        ) {
+            this.firstAudiblePlaybackScheduled =
+                true;
+
+            this.scheduleFirstAudibleMeasurement(
+                startAt,
+            );
+        }
+    },
+
+    scheduleFirstAudibleMeasurement(startAt) {
+        if (
+            !this.audioContext
+            || this.stopStartedAt === null
+        ) {
+            return;
+        }
+
+        const outputLatencySeconds =
+            typeof this.audioContext.outputLatency
+                === 'number'
+                ? this.audioContext.outputLatency
+                : 0;
+
+        const delayMs =
+            Math.max(
+                0,
+                (
+                    startAt
+                    - this.audioContext.currentTime
+                    + outputLatencySeconds
+                ) * 1000,
+            );
+
+        this.audiblePlaybackTimer =
+            window.setTimeout(
+                () => {
+                    if (
+                        this.stopStartedAt
+                        === null
+                    ) {
+                        return;
+                    }
+
+                    this.browserStopToFirstAudiblePlaybackMs =
+                        this.roundMilliseconds(
+                            performance.now()
+                            - this.stopStartedAt,
+                        );
+
+                    if (!this.runCompleted) {
+                        this.status =
+                            'Playing translated speech';
+                    }
+                },
+                delayMs,
+            );
+    },
+
     handleCompleted(payload) {
         if (
             typeof payload.text
@@ -459,6 +829,84 @@ export default (config = {}) => ({
         }
 
         if (
+            typeof payload.translated_text
+            === 'string'
+        ) {
+            this.translatedText =
+                payload.translated_text;
+        }
+
+        this.applyTranslationMetrics(
+            payload,
+        );
+
+        if (
+            typeof payload.tts_first_audio_ms
+            === 'number'
+        ) {
+            this.ttsFirstAudioMs =
+                payload.tts_first_audio_ms;
+        }
+
+        if (
+            typeof payload.server_stop_to_first_tts_audio_ms
+            === 'number'
+        ) {
+            this.serverStopToFirstTtsAudioMs =
+                payload.server_stop_to_first_tts_audio_ms;
+        }
+
+        if (
+            typeof payload.tts_duration_ms
+            === 'number'
+        ) {
+            this.ttsDurationMs =
+                payload.tts_duration_ms;
+        }
+
+        if (
+            typeof payload.server_stop_to_tts_completed_ms
+            === 'number'
+        ) {
+            this.serverStopToTtsCompletedMs =
+                payload.server_stop_to_tts_completed_ms;
+        }
+
+        if (
+            typeof payload.translated_audio_duration_ms
+            === 'number'
+        ) {
+            this.translatedAudioDurationMs =
+                payload.translated_audio_duration_ms;
+        }
+
+        if (
+            this.stopStartedAt
+            !== null
+        ) {
+            this.browserStopToCompletedMs =
+                this.roundMilliseconds(
+                    performance.now()
+                    - this.stopStartedAt,
+                );
+        }
+
+        this.runCompleted =
+            true;
+
+        this.isStopping =
+            false;
+
+        this.status =
+            this.audioSources.length > 0
+                ? 'Playing translated speech'
+                : 'Completed';
+
+        this.closeSocket();
+    },
+
+    applyTranslationMetrics(payload) {
+        if (
             typeof payload.server_stop_to_stt_ms
             === 'number'
         ) {
@@ -467,24 +915,80 @@ export default (config = {}) => ({
         }
 
         if (
-            this.stopStartedAt
-            !== null
+            typeof payload.translation_ms
+            === 'number'
         ) {
-            this.browserStopToCompletedMs =
-                Math.round(
-                    (
-                        performance.now()
-                        - this.stopStartedAt
-                    )
-                    * 100,
-                ) / 100;
+            this.translationMs =
+                payload.translation_ms;
         }
 
-        this.runCompleted = true;
-        this.isStopping = false;
-        this.status = 'Completed';
+        if (
+            typeof payload.server_stop_to_translation_ms
+            === 'number'
+        ) {
+            this.serverStopToTranslationMs =
+                payload.server_stop_to_translation_ms;
+        }
+    },
 
-        this.closeSocket();
+    async prepareAudioPlayback() {
+        const AudioContextClass =
+            window.AudioContext
+            || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            throw new Error(
+                'Web Audio playback is not supported by this browser.',
+            );
+        }
+
+        if (!this.audioContext) {
+            this.audioContext =
+                new AudioContextClass();
+        }
+
+        if (
+            this.audioContext.state
+            === 'suspended'
+        ) {
+            await this.audioContext.resume();
+        }
+
+        this.nextPlaybackTime =
+            this.audioContext.currentTime;
+    },
+
+    stopAudioPlayback() {
+        this.audioSources.forEach(
+            (source) => {
+                try {
+                    source.stop();
+                } catch {
+                    //
+                }
+
+                try {
+                    source.disconnect();
+                } catch {
+                    //
+                }
+            },
+        );
+
+        this.audioSources = [];
+        this.nextPlaybackTime = 0;
+
+        if (
+            this.audiblePlaybackTimer
+            !== null
+        ) {
+            window.clearTimeout(
+                this.audiblePlaybackTimer,
+            );
+
+            this.audiblePlaybackTimer =
+                null;
+        }
     },
 
     resolveSessionStart() {
@@ -572,9 +1076,9 @@ export default (config = {}) => ({
 
         if (
             this.socket.readyState
-            === WebSocket.OPEN
+                === WebSocket.OPEN
             || this.socket.readyState
-            === WebSocket.CONNECTING
+                === WebSocket.CONNECTING
         ) {
             this.socket.close();
         }
@@ -591,14 +1095,29 @@ export default (config = {}) => ({
 
         this.closeSocket();
         this.stopMediaStream();
+        this.stopAudioPlayback();
 
         this.status = 'Idle';
         this.error = null;
 
         this.transcription = '';
+        this.translatedText = '';
 
         this.serverStopToSttMs = null;
+        this.translationMs = null;
+        this.serverStopToTranslationMs = null;
+
+        this.ttsFirstAudioMs = null;
+        this.serverStopToFirstTtsAudioMs = null;
+        this.ttsDurationMs = null;
+        this.serverStopToTtsCompletedMs = null;
+
+        this.browserStopToTranslatedMs = null;
+        this.browserStopToFirstAudioReceivedMs = null;
+        this.browserStopToFirstAudiblePlaybackMs = null;
         this.browserStopToCompletedMs = null;
+
+        this.translatedAudioDurationMs = null;
 
         this.mimeType = null;
         this.stopStartedAt = null;
@@ -610,6 +1129,15 @@ export default (config = {}) => ({
         this.socketCloseExpected = false;
         this.runCompleted = false;
         this.aborted = false;
+
+        this.firstAudioReceived = false;
+        this.firstAudiblePlaybackScheduled = false;
+    },
+
+    roundMilliseconds(value) {
+        return Math.round(
+            value * 100,
+        ) / 100;
     },
 
     setError(message) {
@@ -644,12 +1172,13 @@ export default (config = {}) => ({
         if (
             this.mediaRecorder
             && this.mediaRecorder.state
-            === 'recording'
+                === 'recording'
         ) {
             this.mediaRecorder.stop();
         }
 
         this.stopMediaStream();
         this.closeSocket();
+        this.stopAudioPlayback();
     },
 });
