@@ -23,8 +23,15 @@ use WebSocket\Server;
 
 final class ServeLivePipelineCommand extends Command
 {
-    private const PROFILE =
+    private const DEFAULT_PROFILE =
         'chirp3-streaming-standard-deepl-openai';
+
+    private const LIVE_PROFILES = [
+        'chirp3-deepl-openai',
+        'chirp3-streaming-standard-deepl-openai',
+        'chirp3-streaming-short-deepl-openai',
+        'flux-deepl-openai',
+    ];
 
     private const TTS_SAMPLE_RATE = 24000;
 
@@ -51,16 +58,13 @@ final class ServeLivePipelineCommand extends Command
             return self::FAILURE;
         }
 
-        [
-            $speechToText,
-            $translation,
-            $textToSpeech,
-        ] = $this->resolvePipelineProviders();
-
         /**
          * @var array<int, array{
          *     session: LiveSpeechRecognitionSession,
-         *     source_language: Language
+         *     profile: string,
+         *     source_language: Language,
+         *     translation: TranslationProvider,
+         *     text_to_speech: StreamingTextToSpeechProvider
          * }> $sessions
          */
         $sessions = [];
@@ -74,26 +78,18 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
                 Text $message,
-            ) use (
-                $speechToText,
-                $translation,
-                $textToSpeech,
-                &$sessions,
-            ): void {
+            ) use (&$sessions): void {
                 try {
                     $this->handleTextMessage(
                         connection: $connection,
                         message: $message,
-                        speechToText: $speechToText,
-                        translation: $translation,
-                        textToSpeech: $textToSpeech,
                         sessions: $sessions,
                     );
                 } catch (Throwable $exception) {
                     unset(
                         $sessions[spl_object_id($connection)],
                     );
-
+                    report($exception);
                     $this->sendError(
                         connection: $connection,
                         message: $exception->getMessage(),
@@ -118,7 +114,7 @@ final class ServeLivePipelineCommand extends Command
                     unset(
                         $sessions[spl_object_id($connection)],
                     );
-
+                    report($exception);
                     $this->sendError(
                         connection: $connection,
                         message: $exception->getMessage(),
@@ -165,7 +161,16 @@ final class ServeLivePipelineCommand extends Command
         );
 
         $this->line(
-            'Profile: '.self::PROFILE,
+            'Default profile: '
+                .self::DEFAULT_PROFILE,
+        );
+
+        $this->line(
+            'Live profiles: '
+                .implode(
+                    ', ',
+                    self::LIVE_PROFILES,
+                ),
         );
 
         $server->start(
@@ -178,7 +183,10 @@ final class ServeLivePipelineCommand extends Command
     /**
      * @param  array<int, array{
      *     session: LiveSpeechRecognitionSession,
-     *     source_language: Language
+     *     profile: string,
+     *     source_language: Language,
+     *     translation: TranslationProvider,
+     *     text_to_speech: StreamingTextToSpeechProvider
      * }>  $sessions
      *
      * @throws JsonException
@@ -186,9 +194,6 @@ final class ServeLivePipelineCommand extends Command
     private function handleTextMessage(
         Connection $connection,
         Text $message,
-        StreamingSpeechToTextProvider $speechToText,
-        TranslationProvider $translation,
-        StreamingTextToSpeechProvider $textToSpeech,
         array &$sessions,
     ): void {
         $payload = json_decode(
@@ -211,7 +216,6 @@ final class ServeLivePipelineCommand extends Command
             $this->startSession(
                 connection: $connection,
                 payload: $payload,
-                speechToText: $speechToText,
                 sessions: $sessions,
             );
 
@@ -221,8 +225,6 @@ final class ServeLivePipelineCommand extends Command
         if ($type === 'stop') {
             $this->finishSession(
                 connection: $connection,
-                translation: $translation,
-                textToSpeech: $textToSpeech,
                 sessions: $sessions,
             );
 
@@ -237,7 +239,10 @@ final class ServeLivePipelineCommand extends Command
     /**
      * @param  array<int, array{
      *     session: LiveSpeechRecognitionSession,
-     *     source_language: Language
+     *     profile: string,
+     *     source_language: Language,
+     *     translation: TranslationProvider,
+     *     text_to_speech: StreamingTextToSpeechProvider
      * }>  $sessions
      */
     private function handleBinaryMessage(
@@ -269,13 +274,15 @@ final class ServeLivePipelineCommand extends Command
      * @param  array<string, mixed>  $payload
      * @param  array<int, array{
      *     session: LiveSpeechRecognitionSession,
-     *     source_language: Language
+     *     profile: string,
+     *     source_language: Language,
+     *     translation: TranslationProvider,
+     *     text_to_speech: StreamingTextToSpeechProvider
      * }>  $sessions
      */
     private function startSession(
         Connection $connection,
         array $payload,
-        StreamingSpeechToTextProvider $speechToText,
         array &$sessions,
     ): void {
         $key =
@@ -292,16 +299,23 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
-        $profile =
+        $profileName =
             $payload['profile']
-            ?? self::PROFILE;
+            ?? self::DEFAULT_PROFILE;
 
-        if ($profile !== self::PROFILE) {
+        if (
+            ! is_string($profileName)
+            || ! in_array(
+                $profileName,
+                self::LIVE_PROFILES,
+                true,
+            )
+        ) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Unsupported live pipeline profile [%s].',
-                    is_scalar($profile)
-                        ? (string) $profile
+                    is_scalar($profileName)
+                        ? (string) $profileName
                         : 'invalid',
                 ),
             );
@@ -341,6 +355,14 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
+        [
+            $speechToText,
+            $translation,
+            $textToSpeech,
+        ] = $this->resolvePipelineProviders(
+            $profileName,
+        );
+
         $session =
             new LiveSpeechRecognitionSession(
                 speechToText: $speechToText,
@@ -363,22 +385,36 @@ final class ServeLivePipelineCommand extends Command
 
         $session->start();
 
+        /*
+         * Providers are deliberately stored with the session.
+         *
+         * Resolving another profile may mutate Laravel config,
+         * but this run keeps the provider instances created
+         * from the configuration selected at START.
+         */
         $sessions[$key] = [
             'session' => $session,
+            'profile' => $profileName,
             'source_language' => $sourceLanguage,
+            'translation' => $translation,
+            'text_to_speech' => $textToSpeech,
         ];
 
         $this->sendJson(
             $connection,
             [
                 'type' => 'session_started',
-                'profile' => self::PROFILE,
+
+                'profile' => $profileName,
+
                 'source_language' => $sourceLanguage->value,
+
                 'target_language' => $this
                     ->targetLanguage(
                         $sourceLanguage,
                     )
                     ->value,
+
                 'mime_type' => $mimeType,
             ],
         );
@@ -387,13 +423,14 @@ final class ServeLivePipelineCommand extends Command
     /**
      * @param  array<int, array{
      *     session: LiveSpeechRecognitionSession,
-     *     source_language: Language
+     *     profile: string,
+     *     source_language: Language,
+     *     translation: TranslationProvider,
+     *     text_to_speech: StreamingTextToSpeechProvider
      * }>  $sessions
      */
     private function finishSession(
         Connection $connection,
-        TranslationProvider $translation,
-        StreamingTextToSpeechProvider $textToSpeech,
         array &$sessions,
     ): void {
         $key =
@@ -414,8 +451,17 @@ final class ServeLivePipelineCommand extends Command
         $session =
             $sessionContext['session'];
 
+        $profileName =
+            $sessionContext['profile'];
+
         $sourceLanguage =
             $sessionContext['source_language'];
+
+        $translation =
+            $sessionContext['translation'];
+
+        $textToSpeech =
+            $sessionContext['text_to_speech'];
 
         $targetLanguage =
             $this->targetLanguage(
@@ -459,16 +505,12 @@ final class ServeLivePipelineCommand extends Command
                 $translationCompletedAt,
             );
 
-        /*
-         * Send the translated text immediately.
-         *
-         * The browser does not need to wait for the entire
-         * TTS response before it can show the translation.
-         */
         $this->sendJson(
             $connection,
             [
                 'type' => 'translation_completed',
+
+                'profile' => $profileName,
 
                 'text' => $speechResult->text,
 
@@ -506,6 +548,8 @@ final class ServeLivePipelineCommand extends Command
             [
                 'type' => 'tts_started',
 
+                'profile' => $profileName,
+
                 'format' => 'pcm16',
 
                 'sample_rate_hz' => self::TTS_SAMPLE_RATE,
@@ -534,10 +578,6 @@ final class ServeLivePipelineCommand extends Command
                             hrtime(true);
                     }
 
-                    /*
-                     * Raw PCM is sent as a binary WebSocket
-                     * message, not base64 JSON.
-                     */
                     $connection->binary(
                         $chunk,
                     );
@@ -583,6 +623,8 @@ final class ServeLivePipelineCommand extends Command
             $connection,
             [
                 'type' => 'completed',
+
+                'profile' => $profileName,
 
                 'text' => $speechResult->text,
 
@@ -652,16 +694,20 @@ final class ServeLivePipelineCommand extends Command
      *     2: StreamingTextToSpeechProvider
      * }
      */
-    private function resolvePipelineProviders(): array
-    {
+    private function resolvePipelineProviders(
+        string $profileName,
+    ): array {
         $profile = config(
             'benchmarks.translation.pipeline.providers.'
-                .self::PROFILE,
+                .$profileName,
         );
 
         if (! is_array($profile)) {
             throw new RuntimeException(
-                'Live pipeline profile is not configured.',
+                sprintf(
+                    'Live pipeline profile [%s] is not configured.',
+                    $profileName,
+                ),
             );
         }
 
@@ -683,7 +729,10 @@ final class ServeLivePipelineCommand extends Command
             || ! is_array($textToSpeechProfile)
         ) {
             throw new RuntimeException(
-                'Live pipeline profile is invalid.',
+                sprintf(
+                    'Live pipeline profile [%s] is invalid.',
+                    $profileName,
+                ),
             );
         }
 
@@ -720,16 +769,27 @@ final class ServeLivePipelineCommand extends Command
             || ! is_array($textToSpeechConfig)
         ) {
             throw new RuntimeException(
-                'Live pipeline provider configuration is invalid.',
+                sprintf(
+                    'Live pipeline provider configuration [%s] is invalid.',
+                    $profileName,
+                ),
             );
         }
 
+        /*
+         * Provider settings come directly from the benchmark
+         * profile selected by the browser.
+         */
         config([
             ...$speechConfig,
             ...$translationConfig,
             ...$textToSpeechConfig,
         ]);
 
+        /*
+         * SpeechClient is a singleton and its API endpoint
+         * depends on the selected Google profile.
+         */
         app()->forgetInstance(
             SpeechClient::class,
         );
