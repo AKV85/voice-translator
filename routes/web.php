@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'translator')
     ->name('translator');
 
+Route::view('/live', 'live')
+    ->name('live');
+
 Route::post('/transcribe', TranscriptionController::class)
     ->name('transcribe');
 
