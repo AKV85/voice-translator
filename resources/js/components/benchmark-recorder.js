@@ -23,9 +23,8 @@ export default function benchmarkRecorder(config) {
                 (phrase) => !phrase.completed,
             );
 
-            this.currentIndex = firstIncompleteIndex >= 0
-                ? firstIncompleteIndex
-                : 0;
+            this.currentIndex =
+                firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
         },
 
         get currentPhrase() {
@@ -52,27 +51,31 @@ export default function benchmarkRecorder(config) {
                 const mimeType = this.getSupportedMimeType();
 
                 if (!mimeType) {
-                    throw new Error('WebM audio recording is not supported by this browser.');
+                    throw new Error(
+                        "WebM audio recording is not supported by this browser.",
+                    );
                 }
 
                 this.mediaStream = await navigator.mediaDevices.getUserMedia({
                     audio: true,
                 });
 
-                this.mediaRecorder = new MediaRecorder(
-                    this.mediaStream,
-                    { mimeType },
-                );
+                this.mediaRecorder = new MediaRecorder(this.mediaStream, {
+                    mimeType,
+                });
 
                 this.chunks = [];
 
-                this.mediaRecorder.addEventListener('dataavailable', (event) => {
-                    if (event.data.size > 0) {
-                        this.chunks.push(event.data);
-                    }
-                });
+                this.mediaRecorder.addEventListener(
+                    "dataavailable",
+                    (event) => {
+                        if (event.data.size > 0) {
+                            this.chunks.push(event.data);
+                        }
+                    },
+                );
 
-                this.mediaRecorder.addEventListener('stop', () => {
+                this.mediaRecorder.addEventListener("stop", () => {
                     this.audioBlob = new Blob(this.chunks, {
                         type: this.mediaRecorder.mimeType,
                     });
@@ -85,9 +88,10 @@ export default function benchmarkRecorder(config) {
                 this.mediaRecorder.start();
                 this.isRecording = true;
             } catch (error) {
-                this.error = error instanceof Error
-                    ? error.message
-                    : 'Could not start audio recording.';
+                this.error =
+                    error instanceof Error
+                        ? error.message
+                        : "Could not start audio recording.";
 
                 this.stopMediaStream();
             }
@@ -95,8 +99,8 @@ export default function benchmarkRecorder(config) {
 
         stopRecording() {
             if (
-                !this.mediaRecorder
-                || this.mediaRecorder.state !== 'recording'
+                !this.mediaRecorder ||
+                this.mediaRecorder.state !== "recording"
             ) {
                 return;
             }
@@ -116,22 +120,19 @@ export default function benchmarkRecorder(config) {
             try {
                 const formData = new FormData();
 
-                formData.append(
-                    'phrase_id',
-                    this.currentPhrase.id,
-                );
+                formData.append("phrase_id", this.currentPhrase.id);
 
                 formData.append(
-                    'audio',
+                    "audio",
                     this.audioBlob,
                     `${this.currentPhrase.id}.webm`,
                 );
 
                 const response = await fetch(this.storeUrl, {
-                    method: 'POST',
+                    method: "POST",
                     headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken,
+                        Accept: "application/json",
+                        "X-CSRF-TOKEN": this.csrfToken,
                     },
                     body: formData,
                 });
@@ -140,7 +141,7 @@ export default function benchmarkRecorder(config) {
                     const data = await response.json().catch(() => null);
 
                     throw new Error(
-                        data?.message ?? 'Could not save benchmark audio.',
+                        data?.message ?? "Could not save benchmark audio.",
                     );
                 }
 
@@ -149,9 +150,10 @@ export default function benchmarkRecorder(config) {
                 this.clearRecording();
                 this.goToNextIncompletePhrase();
             } catch (error) {
-                this.error = error instanceof Error
-                    ? error.message
-                    : 'Could not save benchmark audio.';
+                this.error =
+                    error instanceof Error
+                        ? error.message
+                        : "Could not save benchmark audio.";
             } finally {
                 this.isSaving = false;
             }
@@ -172,10 +174,8 @@ export default function benchmarkRecorder(config) {
 
         goToNextIncompletePhrase() {
             const nextIndex = this.phrases.findIndex(
-                (phrase, index) => (
-                    index > this.currentIndex
-                    && !phrase.completed
-                ),
+                (phrase, index) =>
+                    index > this.currentIndex && !phrase.completed,
             );
 
             if (nextIndex >= 0) {
@@ -208,22 +208,18 @@ export default function benchmarkRecorder(config) {
                 return;
             }
 
-            this.mediaStream
-                .getTracks()
-                .forEach((track) => track.stop());
+            this.mediaStream.getTracks().forEach((track) => track.stop());
 
             this.mediaStream = null;
         },
 
         getSupportedMimeType() {
-            const types = [
-                'audio/webm;codecs=opus',
-                'audio/webm',
-            ];
+            const types = ["audio/webm;codecs=opus", "audio/webm"];
 
-            return types.find((type) => (
-                MediaRecorder.isTypeSupported(type)
-            )) ?? null;
+            return (
+                types.find((type) => MediaRecorder.isTypeSupported(type)) ??
+                null
+            );
         },
     };
 }
