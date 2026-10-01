@@ -6,7 +6,10 @@ use App\Contracts\StreamingSpeechToTextProvider;
 use App\Contracts\StreamingTextToSpeechProvider;
 use App\Contracts\TranslationProvider;
 use App\Enums\Language;
+use App\Exceptions\PublicDemoException;
 use App\Services\Live\LiveSpeechRecognitionSession;
+use App\Services\PublicDemo\PublicDemoTokenStore;
+use App\Services\PublicDemo\PublicDemoWebSocketSession;
 use Google\Cloud\Speech\V2\Client\SpeechClient;
 use Illuminate\Console\Command;
 use InvalidArgumentException;
@@ -64,7 +67,8 @@ final class ServeLivePipelineCommand extends Command
          *     profile: string,
          *     source_language: Language,
          *     translation: TranslationProvider,
-         *     text_to_speech: StreamingTextToSpeechProvider
+         *     text_to_speech: StreamingTextToSpeechProvider,
+         *     public_demo: PublicDemoWebSocketSession|null
          * }> $sessions
          */
         $sessions = [];
@@ -86,13 +90,22 @@ final class ServeLivePipelineCommand extends Command
                         sessions: $sessions,
                     );
                 } catch (Throwable $exception) {
-                    unset(
-                        $sessions[spl_object_id($connection)],
-                    );
+                    $isPublicDemo =
+                        $this->cleanupSession(
+                            connection: $connection,
+                            sessions: $sessions,
+                        );
+
                     report($exception);
+
                     $this->sendError(
                         connection: $connection,
-                        message: $exception->getMessage(),
+                        message: (
+                            $isPublicDemo
+                            || $exception instanceof PublicDemoException
+                        )
+                            ? 'Public voice demo request failed.'
+                            : $exception->getMessage(),
                     );
                 }
             },
@@ -111,13 +124,22 @@ final class ServeLivePipelineCommand extends Command
                         sessions: $sessions,
                     );
                 } catch (Throwable $exception) {
-                    unset(
-                        $sessions[spl_object_id($connection)],
-                    );
+                    $isPublicDemo =
+                        $this->cleanupSession(
+                            connection: $connection,
+                            sessions: $sessions,
+                        );
+
                     report($exception);
+
                     $this->sendError(
                         connection: $connection,
-                        message: $exception->getMessage(),
+                        message: (
+                            $isPublicDemo
+                            || $exception instanceof PublicDemoException
+                        )
+                            ? 'Public voice demo request failed.'
+                            : $exception->getMessage(),
                     );
                 }
             },
@@ -128,8 +150,9 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
             ) use (&$sessions): void {
-                unset(
-                    $sessions[spl_object_id($connection)],
+                $this->cleanupSession(
+                    connection: $connection,
+                    sessions: $sessions,
                 );
             },
         );
@@ -186,7 +209,8 @@ final class ServeLivePipelineCommand extends Command
      *     profile: string,
      *     source_language: Language,
      *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider
+     *     text_to_speech: StreamingTextToSpeechProvider,
+     *     public_demo: PublicDemoWebSocketSession|null
      * }>  $sessions
      *
      * @throws JsonException
@@ -242,7 +266,8 @@ final class ServeLivePipelineCommand extends Command
      *     profile: string,
      *     source_language: Language,
      *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider
+     *     text_to_speech: StreamingTextToSpeechProvider,
+     *     public_demo: PublicDemoWebSocketSession|null
      * }>  $sessions
      */
     private function handleBinaryMessage(
@@ -265,8 +290,23 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
+        $audio =
+            $message->getContent();
+
+        $publicDemo =
+            $sessionContext['public_demo'];
+
+        if (
+            $publicDemo
+            instanceof PublicDemoWebSocketSession
+        ) {
+            $publicDemo->acceptAudioChunk(
+                $audio,
+            );
+        }
+
         $sessionContext['session']->pushAudio(
-            $message->getContent(),
+            $audio,
         );
     }
 
@@ -277,7 +317,8 @@ final class ServeLivePipelineCommand extends Command
      *     profile: string,
      *     source_language: Language,
      *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider
+     *     text_to_speech: StreamingTextToSpeechProvider,
+     *     public_demo: PublicDemoWebSocketSession|null
      * }>  $sessions
      */
     private function startSession(
@@ -299,49 +340,6 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
-        $profileName =
-            $payload['profile']
-            ?? self::DEFAULT_PROFILE;
-
-        if (
-            ! is_string($profileName)
-            || ! in_array(
-                $profileName,
-                self::LIVE_PROFILES,
-                true,
-            )
-        ) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Unsupported live pipeline profile [%s].',
-                    is_scalar($profileName)
-                        ? (string) $profileName
-                        : 'invalid',
-                ),
-            );
-        }
-
-        $sourceLanguageValue =
-            $payload['source_language']
-            ?? null;
-
-        if (! is_string($sourceLanguageValue)) {
-            throw new InvalidArgumentException(
-                'Source language is required.',
-            );
-        }
-
-        $sourceLanguage =
-            Language::tryFrom(
-                $sourceLanguageValue,
-            );
-
-        if ($sourceLanguage === null) {
-            throw new InvalidArgumentException(
-                'Unsupported source language.',
-            );
-        }
-
         $mimeType =
             $payload['mime_type']
             ?? null;
@@ -355,35 +353,156 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
-        [
-            $speechToText,
-            $translation,
-            $textToSpeech,
-        ] = $this->resolvePipelineProviders(
-            $profileName,
-        );
+        $publicDemoSession =
+            null;
 
-        $session =
-            new LiveSpeechRecognitionSession(
-                speechToText: $speechToText,
-                mimeType: $mimeType,
-                sourceLanguage: $sourceLanguage,
-                onTranscript: function (
-                    string $text,
-                    bool $isFinal,
-                ) use ($connection): void {
-                    $this->sendJson(
-                        $connection,
-                        [
-                            'type' => 'transcript',
-                            'text' => $text,
-                            'is_final' => $isFinal,
-                        ],
-                    );
-                },
+        $demoToken =
+            $payload['demo_token']
+            ?? null;
+
+        if ($demoToken !== null) {
+            if (
+                ! is_string($demoToken)
+                || trim($demoToken) === ''
+            ) {
+                throw new PublicDemoException(
+                    'Invalid public demo token.',
+                );
+            }
+
+            $publicDemoSession =
+                PublicDemoWebSocketSession::consume(
+                    tokenStore: app(
+                        PublicDemoTokenStore::class,
+                    ),
+
+                    token: trim(
+                        $demoToken,
+                    ),
+                );
+
+            $profileName =
+                $publicDemoSession->profile();
+
+            $sourceLanguage =
+                $publicDemoSession
+                    ->sourceLanguage();
+        } else {
+            if (
+                ! config(
+                    'live_pipeline.lab_enabled',
+                    false,
+                )
+            ) {
+                throw new PublicDemoException(
+                    'A public demo token is required.',
+                );
+            }
+
+            $profileName =
+                $payload['profile']
+                ?? self::DEFAULT_PROFILE;
+
+            $sourceLanguageValue =
+                $payload['source_language']
+                ?? null;
+
+            if (
+                ! is_string(
+                    $sourceLanguageValue,
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    'Source language is required.',
+                );
+            }
+
+            $sourceLanguage =
+                Language::tryFrom(
+                    $sourceLanguageValue,
+                );
+
+            if ($sourceLanguage === null) {
+                throw new InvalidArgumentException(
+                    'Unsupported source language.',
+                );
+            }
+        }
+
+        if (
+            ! is_string($profileName)
+            || ! in_array(
+                $profileName,
+                self::LIVE_PROFILES,
+                true,
+            )
+        ) {
+            if (
+                $publicDemoSession
+                instanceof PublicDemoWebSocketSession
+            ) {
+                $publicDemoSession->release();
+
+                throw new PublicDemoException(
+                    'Public demo pipeline is unavailable.',
+                );
+            }
+
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Unsupported live pipeline profile [%s].',
+                    is_scalar($profileName)
+                        ? (string) $profileName
+                        : 'invalid',
+                ),
+            );
+        }
+
+        try {
+            [
+                $speechToText,
+                $translation,
+                $textToSpeech,
+            ] = $this->resolvePipelineProviders(
+                $profileName,
             );
 
-        $session->start();
+            $session =
+                new LiveSpeechRecognitionSession(
+                    speechToText: $speechToText,
+                    mimeType: $mimeType,
+                    sourceLanguage: $sourceLanguage,
+                    onTranscript: function (
+                        string $text,
+                        bool $isFinal,
+                    ) use ($connection): void {
+                        $this->sendJson(
+                            $connection,
+                            [
+                                'type' => 'transcript',
+                                'text' => $text,
+                                'is_final' => $isFinal,
+                            ],
+                        );
+                    },
+                );
+
+            $session->start();
+        } catch (Throwable $exception) {
+            if (
+                $publicDemoSession
+                instanceof PublicDemoWebSocketSession
+            ) {
+                $publicDemoSession->release();
+
+                throw new PublicDemoException(
+                    'Public voice demo could not start.',
+                    previous: $exception,
+                );
+            }
+
+            throw $exception;
+        }
 
         /*
          * Providers are deliberately stored with the session.
@@ -398,6 +517,7 @@ final class ServeLivePipelineCommand extends Command
             'source_language' => $sourceLanguage,
             'translation' => $translation,
             'text_to_speech' => $textToSpeech,
+            'public_demo' => $publicDemoSession,
         ];
 
         $this->sendJson(
@@ -426,7 +546,8 @@ final class ServeLivePipelineCommand extends Command
      *     profile: string,
      *     source_language: Language,
      *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider
+     *     text_to_speech: StreamingTextToSpeechProvider,
+     *     public_demo: PublicDemoWebSocketSession|null
      * }>  $sessions
      */
     private function finishSession(
@@ -462,6 +583,16 @@ final class ServeLivePipelineCommand extends Command
 
         $textToSpeech =
             $sessionContext['text_to_speech'];
+
+        $publicDemo =
+            $sessionContext['public_demo'];
+
+        if (
+            $publicDemo
+            instanceof PublicDemoWebSocketSession
+        ) {
+            $publicDemo->finishRecording();
+        }
 
         $targetLanguage =
             $this->targetLanguage(
@@ -587,10 +718,6 @@ final class ServeLivePipelineCommand extends Command
         $ttsCompletedAt =
             hrtime(true);
 
-        unset(
-            $sessions[$key],
-        );
-
         $ttsFirstAudioMs =
             $firstTtsAudioAt !== null
             ? $this->millisecondsBetween(
@@ -684,6 +811,11 @@ final class ServeLivePipelineCommand extends Command
                     2,
                 ),
             ],
+        );
+
+        $this->cleanupSession(
+            connection: $connection,
+            sessions: $sessions,
         );
     }
 
@@ -859,6 +991,51 @@ final class ServeLivePipelineCommand extends Command
             $translation,
             $textToSpeech,
         ];
+    }
+
+    /**
+     * @param  array<int, array{
+     *     session: LiveSpeechRecognitionSession,
+     *     profile: string,
+     *     source_language: Language,
+     *     translation: TranslationProvider,
+     *     text_to_speech: StreamingTextToSpeechProvider,
+     *     public_demo: PublicDemoWebSocketSession|null
+     * }>  $sessions
+     */
+    private function cleanupSession(
+        Connection $connection,
+        array &$sessions,
+    ): bool {
+        $key =
+            spl_object_id(
+                $connection,
+            );
+
+        $sessionContext =
+            $sessions[$key]
+            ?? null;
+
+        if ($sessionContext === null) {
+            return false;
+        }
+
+        $publicDemo =
+            $sessionContext['public_demo'];
+
+        if (
+            $publicDemo
+            instanceof PublicDemoWebSocketSession
+        ) {
+            $publicDemo->release();
+        }
+
+        unset(
+            $sessions[$key],
+        );
+
+        return $publicDemo
+            instanceof PublicDemoWebSocketSession;
     }
 
     private function targetLanguage(
