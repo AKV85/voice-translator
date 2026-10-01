@@ -8,6 +8,12 @@ use App\Exceptions\SpeechRecognitionException;
 use Illuminate\Http\UploadedFile;
 use Tests\Fakes\FakeSpeechToTextProvider;
 
+beforeEach(function (): void {
+    config([
+        'live_pipeline.lab_enabled' => true,
+    ]);
+});
+
 test('it transcribes uploaded audio', function () {
     $fake = new FakeSpeechToTextProvider(
         'I need a truck',
