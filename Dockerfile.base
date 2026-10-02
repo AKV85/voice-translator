@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+
+FROM serversideup/php:8.4-cli
+
+USER root
+
+RUN IPE_PROCESSOR_COUNT=1 install-php-extensions \
+    grpc \
+    protobuf \
+    intl
+
+RUN php -m | grep -Fx grpc \
+    && php -m | grep -Fx protobuf \
+    && php -m | grep -Fx intl
+
+USER www-data
+
+WORKDIR /var/www/html
