@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/akv85/voice-translator-php:8.4-grpc AS php-base
+FROM ghcr.io/akv85/voice-translator-php@sha256:c1d43143742929086a28fd33431d0490d37946f110ee2382998b70f0e24ffe55 AS php-base
 
 WORKDIR /var/www/html
 
