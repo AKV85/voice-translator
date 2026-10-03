@@ -3,9 +3,10 @@ name: PHP Base Image
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - 'Dockerfile.base'
-      - '.github/workflows/php-base-image.yml'
 
 permissions:
   contents: read
