@@ -5,6 +5,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function (): void {
+    config([
+        'live_pipeline.lab_enabled' => true,
+    ]);
+});
+
 it('stores a successful live pipeline run', function (): void {
     $response =
         $this->postJson(

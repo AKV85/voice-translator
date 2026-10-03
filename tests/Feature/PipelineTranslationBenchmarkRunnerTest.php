@@ -8,6 +8,7 @@ use App\Exceptions\SpeechRecognitionException;
 use App\Exceptions\SpeechSynthesisException;
 use App\Exceptions\TranslationException;
 use App\Services\Benchmark\PipelineTranslationBenchmarkRunner;
+use Illuminate\Support\Facades\File;
 use Tests\Fakes\FakeStreamingSpeechToTextProvider;
 use Tests\Fakes\FakeStreamingTextToSpeechProvider;
 use Tests\Fakes\FakeTranslationProvider;
@@ -56,43 +57,112 @@ function runPipelineBenchmark(
         audioDurationProbe: pipelineBenchmarkAudioDurationProbe(),
     );
 
-    return $runner->run(
-        speechToTextProvider: $speechToText,
-
-        translationProvider: $translator,
-
-        textToSpeechProvider: $textToSpeech,
-
-        profileName: 'test-pipeline',
-
-        speechProviderName: 'fake-stt',
-
-        speechModelName: 'fake-stt-model',
-
-        translationProviderName: 'fake-translation',
-
-        translationModelName: 'fake-translation-model',
-
-        textToSpeechProviderName: 'fake-tts',
-
-        textToSpeechModelName: 'fake-tts-model',
-
-        speechDatasetPath: base_path(
-            'docs/benchmarks/speech/phrases.json',
-        ),
-
-        translationDatasetPath: base_path(
-            'docs/benchmarks/translation/phrases.json',
-        ),
-
-        chunkDurationMs: 1,
-
-        runsPerFixture: 1,
-
-        languagePair: 'en-ru',
-
-        phraseId: 'en-001',
+    $sourceDatasetPath = base_path(
+        'docs/benchmarks/speech/phrases.json',
     );
+
+    $sourceDataset = json_decode(
+        File::get($sourceDatasetPath),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+
+    $speechPhrase = collect(
+        $sourceDataset['phrases'] ?? [],
+    )->firstWhere(
+        'id',
+        'en-001',
+    );
+
+    if (! is_array($speechPhrase)) {
+        throw new RuntimeException(
+            'Benchmark test speech phrase en-001 was not found.',
+        );
+    }
+
+    $audioRelativePath =
+        $speechPhrase['audio']
+        ?? null;
+
+    if (
+        ! is_string($audioRelativePath)
+        || $audioRelativePath === ''
+    ) {
+        throw new RuntimeException(
+            'Benchmark test audio path is invalid.',
+        );
+    }
+
+    $temporaryDatasetDirectory =
+        storage_path(
+            'framework/testing/pipeline-benchmark-'
+            .bin2hex(random_bytes(8)),
+        );
+
+    $temporaryAudioPath =
+        $temporaryDatasetDirectory
+        .'/'
+        .$audioRelativePath;
+
+    File::ensureDirectoryExists(
+        dirname($temporaryAudioPath),
+    );
+
+    File::put(
+        $temporaryAudioPath,
+        'fake benchmark audio',
+    );
+
+    $temporaryDatasetPath =
+        $temporaryDatasetDirectory
+        .'/phrases.json';
+
+    File::put(
+        $temporaryDatasetPath,
+        File::get($sourceDatasetPath),
+    );
+
+    try {
+        return $runner->run(
+            speechToTextProvider: $speechToText,
+
+            translationProvider: $translator,
+
+            textToSpeechProvider: $textToSpeech,
+
+            profileName: 'test-pipeline',
+
+            speechProviderName: 'fake-stt',
+
+            speechModelName: 'fake-stt-model',
+
+            translationProviderName: 'fake-translation',
+
+            translationModelName: 'fake-translation-model',
+
+            textToSpeechProviderName: 'fake-tts',
+
+            textToSpeechModelName: 'fake-tts-model',
+
+            speechDatasetPath: $temporaryDatasetPath,
+
+            translationDatasetPath: base_path(
+                'docs/benchmarks/translation/phrases.json',
+            ),
+
+            chunkDurationMs: 1,
+
+            runsPerFixture: 1,
+
+            languagePair: 'en-ru',
+
+            phraseId: 'en-001',
+        );
+    } finally {
+        File::deleteDirectory(
+            $temporaryDatasetDirectory,
+        );
+    }
 }
 
 test('it benchmarks the complete streaming translation pipeline', function () {

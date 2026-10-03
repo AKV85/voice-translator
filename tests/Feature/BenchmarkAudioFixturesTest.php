@@ -7,6 +7,19 @@ it('has a canonical audio fixture for every benchmark phrase', function () {
 
     $this->assertFileExists($datasetPath);
 
+    $rawAudioDirectory = base_path(
+        'docs/benchmarks/speech/audio/raw'
+    );
+
+    if (
+        ! File::isDirectory($rawAudioDirectory)
+        || File::glob($rawAudioDirectory.'/*.webm') === []
+    ) {
+        $this->markTestSkipped(
+            'Benchmark audio fixtures are local-only and are not tracked in Git.',
+        );
+    }
+
     $dataset = json_decode(
         File::get($datasetPath),
         true,

@@ -6,9 +6,11 @@ use App\Contracts\SpeechToTextProvider;
 use App\Services\Speech\DeepgramSpeechToTextProvider;
 use App\Services\Speech\GoogleSpeechToTextProvider;
 use App\Services\Speech\GoogleStreamingSpeechToTextProvider;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 use Google\Cloud\Speech\V2\Client\SpeechClient;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
+use JsonException;
 use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,11 +20,45 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             SpeechClient::class,
             function (): SpeechClient {
+                $credentialsJson = config(
+                    'services.google.speech.credentials_json'
+                );
+
                 $credentialsPath = config(
                     'services.google.speech.credentials_path'
                 );
 
-                if (is_string($credentialsPath) && $credentialsPath !== '') {
+                $clientOptions = [];
+
+                if (is_string($credentialsJson) && $credentialsJson !== '') {
+                    try {
+                        $credentials = json_decode(
+                            $credentialsJson,
+                            true,
+                            flags: JSON_THROW_ON_ERROR,
+                        );
+                    } catch (JsonException $exception) {
+                        throw new RuntimeException(
+                            'Google credentials JSON is invalid.',
+                            previous: $exception,
+                        );
+                    }
+
+                    if (! is_array($credentials)) {
+                        throw new RuntimeException(
+                            'Google credentials JSON must contain an object.',
+                        );
+                    }
+
+                    $clientOptions['credentials'] =
+                        new ServiceAccountCredentials(
+                            SpeechClient::$serviceScopes,
+                            $credentials,
+                        );
+                } elseif (
+                    is_string($credentialsPath)
+                    && $credentialsPath !== ''
+                ) {
                     if (! is_readable($credentialsPath)) {
                         throw new RuntimeException(
                             'Google credentials file is not readable.'
@@ -33,8 +69,6 @@ class AppServiceProvider extends ServiceProvider
                         "GOOGLE_APPLICATION_CREDENTIALS={$credentialsPath}"
                     );
                 }
-
-                $clientOptions = [];
 
                 $apiEndpoint = config(
                     'services.google.speech.api_endpoint'
