@@ -6,6 +6,12 @@ use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function (): void {
+    config([
+        'live_pipeline.lab_enabled' => true,
+    ]);
+});
+
 afterEach(function (): void {
     Carbon::setTestNow();
 });

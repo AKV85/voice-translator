@@ -1,15 +1,16 @@
 <?php
 
-test('voice translator page is accessible', function () {
+test('public voice translator demo page is accessible', function (): void {
     $this->get('/')
         ->assertOk()
         ->assertSee('Voice Translator')
-        ->assertSee('Source language')
-        ->assertSee('English')
-        ->assertSee('Russian')
+        ->assertSee('Public demo')
+        ->assertSee('Russian → English')
+        ->assertSee('English → Russian')
         ->assertSee('Status')
-        ->assertSee('Start recording')
-        ->assertSee('Stop recording')
-        ->assertSee('Recorded audio')
-        ->assertSee('Recognized text');
+        ->assertSee('Start speaking')
+        ->assertSee('Stop')
+        ->assertSee('Maximum recording length:')
+        ->assertSee('Hourly attempts remaining:')
+        ->assertSee('Daily attempts remaining:');
 });
