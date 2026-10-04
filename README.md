@@ -6,6 +6,14 @@ The project explores how speech recognition, machine translation, and speech syn
 
 **Live demo:** https://voice.kotov.lt
 
+<p align="center">
+  <img
+    src="docs/screenshots/public-demo-desktop.png"
+    alt="Voice Translator public demo translating Russian to English"
+    width="760"
+  >
+</p>
+
 ## Why this project exists
 
 The original idea was simple: allow two people who speak different languages to communicate using voice.
@@ -203,6 +211,19 @@ It also provides:
 - manual quality review;
 - diagnostics.
 
+<p align="center">
+  <img
+    src="docs/screenshots/live-lab-run.png"
+    alt="Live Pipeline Lab showing transcript, translation, and latency metrics"
+    width="48%"
+  >
+  <img
+    src="docs/screenshots/live-lab-comparison.png"
+    alt="Live Pipeline Lab comparing the same audio across multiple pipelines"
+    width="48%"
+  >
+</p>
+
 The Live Pipeline Lab is internal engineering tooling and is disabled in the public production environment.
 
 ## Provider-neutral architecture
@@ -268,6 +289,14 @@ Visitors can:
 - see the recognized source text;
 - see the translated text;
 - hear the translated speech.
+
+<p align="center">
+  <img
+    src="docs/screenshots/public-demo-mobile.png"
+    alt="Voice Translator responsive mobile demo translating English to Russian"
+    width="290"
+  >
+</p>
 
 The public interface intentionally does not expose internal benchmark configuration, Compare, History, quality review, or detailed diagnostics.
 
