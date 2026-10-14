@@ -115,3 +115,28 @@ it('requires live audio consumption to run inside a fiber', function () {
         'Live audio stream must be consumed inside a Fiber.',
     );
 });
+
+it('cancels the audio stream and rejects further audio', function () {
+    $stream = new LiveAudioStream;
+    $received = [];
+
+    $fiber = new Fiber(function () use ($stream, &$received): void {
+        foreach ($stream->chunks() as $chunk) {
+            $received[] = $chunk;
+        }
+    });
+
+    $fiber->start();
+
+    expect($fiber->isSuspended())->toBeTrue();
+
+    $stream->cancel();
+
+    expect($fiber->isTerminated())->toBeTrue()
+        ->and($stream->isCancelled())->toBeTrue()
+        ->and($stream->isFinished())->toBeTrue()
+        ->and($received)->toBe([]);
+
+    expect(fn () => $stream->push('late-audio'))
+        ->toThrow(LogicException::class);
+});

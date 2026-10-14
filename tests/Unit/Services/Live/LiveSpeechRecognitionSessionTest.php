@@ -1,7 +1,10 @@
 <?php
 
+use App\Contracts\CancellableStreamingSpeechToTextProvider;
+use App\DTO\StreamingTranscriptionResult;
 use App\Enums\Language;
 use App\Services\Live\LiveSpeechRecognitionSession;
+use App\Services\Live\SpeechCancellationToken;
 use LogicException;
 use RuntimeException;
 use Tests\Fakes\FakeStreamingSpeechToTextProvider;
@@ -144,4 +147,123 @@ it('propagates speech provider failures', function () {
         RuntimeException::class,
         'Provider failed.',
     );
+});
+
+it('prevents further audio after cancellation', function () {
+    $provider = new FakeStreamingSpeechToTextProvider(
+        transcription: 'Ignored result',
+    );
+
+    $events = [];
+
+    $session = new LiveSpeechRecognitionSession(
+        speechToText: $provider,
+        mimeType: 'audio/webm',
+        sourceLanguage: Language::Russian,
+        onTranscript: function (string $text, bool $isFinal) use (&$events): void {
+            $events[] = [$text, $isFinal];
+        },
+    );
+
+    $session->start();
+    $session->cancel();
+    $session->cancel();
+
+    expect($session->isCancelled())->toBeTrue()
+        ->and($session->isRunning())->toBeFalse()
+        ->and($events)->toBe([]);
+
+    expect(fn () => $session->pushAudio('late-audio'))
+        ->toThrow(LogicException::class, 'cancelled');
+
+    expect(fn () => $session->finish())
+        ->toThrow(LogicException::class, 'cancelled');
+});
+
+it('suppresses provider callbacks after cancellation', function () {
+    $provider = new FakeStreamingSpeechToTextProvider(
+        transcription: 'This must not be delivered',
+    );
+
+    $received = [];
+
+    $session = new LiveSpeechRecognitionSession(
+        speechToText: $provider,
+        mimeType: 'audio/webm',
+        sourceLanguage: Language::English,
+        onTranscript: function (
+            string $text,
+            bool $isFinal,
+        ) use (&$received): void {
+            $received[] = $text;
+        },
+    );
+
+    $session->start();
+
+    expect($session->isRunning())->toBeTrue();
+
+    $session->cancel();
+
+    expect($session->isCancelled())->toBeTrue()
+        ->and($session->isRunning())->toBeFalse()
+        ->and($received)->toBeEmpty()
+        ->and($provider->receivedChunks)->toBeEmpty();
+});
+
+it('cancels the provider before releasing the audio fiber', function () {
+    $events = [];
+
+    $provider = new class($events) implements CancellableStreamingSpeechToTextProvider
+    {
+        public function __construct(private array &$events) {}
+
+        public function transcribe(
+            iterable $audioChunks,
+            string $mimeType,
+            Language $sourceLanguage,
+            Closure $onTranscript,
+        ): StreamingTranscriptionResult {
+            throw new LogicException('Cancellable method was not used.');
+        }
+
+        public function transcribeCancellable(
+            iterable $audioChunks,
+            string $mimeType,
+            Language $sourceLanguage,
+            Closure $onTranscript,
+            SpeechCancellationToken $cancellationToken,
+        ): StreamingTranscriptionResult {
+            $cancellationToken->onCancel(function (): void {
+                $this->events[] = 'rpc_cancelled';
+            });
+
+            foreach ($audioChunks as $chunk) {
+                $this->events[] = 'audio_received';
+            }
+
+            $this->events[] = 'fiber_released';
+
+            return new StreamingTranscriptionResult(
+                text: 'Ignored',
+            );
+        }
+    };
+
+    $session = new LiveSpeechRecognitionSession(
+        speechToText: $provider,
+        mimeType: 'audio/webm',
+        sourceLanguage: Language::English,
+        onTranscript: static function (string $text, bool $isFinal): void {
+            //
+        },
+    );
+
+    $session->start();
+    $session->cancel();
+
+    expect($events)->toBe([
+        'rpc_cancelled',
+        'fiber_released',
+    ]);
 });
