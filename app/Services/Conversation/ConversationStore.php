@@ -100,6 +100,51 @@ final class ConversationStore
     }
 
     /**
+     * @return array{code: string, role: string, language: string}|null
+     */
+    public function authenticate(
+        string $code,
+        string $token,
+    ): ?array {
+        $code = strtoupper(trim($code));
+
+        if ($code === '' || $token === '') {
+            return null;
+        }
+
+        $conversation = $this->getActive($code);
+
+        if ($conversation === null) {
+            return null;
+        }
+
+        $tokenHash = hash('sha256', $token);
+
+        foreach (['host', 'guest'] as $role) {
+            $participant = $conversation[$role] ?? null;
+
+            if (! is_array($participant)) {
+                continue;
+            }
+
+            if (
+                hash_equals(
+                    $participant['token_hash'],
+                    $tokenHash,
+                )
+            ) {
+                return [
+                    'code' => $conversation['code'],
+                    'role' => $role,
+                    'language' => $participant['language'],
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function find(string $code): ?array

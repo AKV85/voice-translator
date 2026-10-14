@@ -71,3 +71,51 @@ it('expires a conversation after its TTL', function (): void {
 
     expect($store->find($host['code']))->toBeNull();
 });
+
+it('authenticates the host and guest with their own tokens', function (): void {
+    $store = app(ConversationStore::class);
+
+    $host = $store->create();
+    $guest = $store->join($host['code']);
+
+    expect(
+        $store->authenticate($host['code'], $host['token']),
+    )->toBe([
+        'code' => $host['code'],
+        'role' => 'host',
+        'language' => 'ru',
+    ]);
+
+    expect(
+        $store->authenticate($host['code'], $guest['token']),
+    )->toBe([
+        'code' => $host['code'],
+        'role' => 'guest',
+        'language' => 'en',
+    ]);
+});
+
+it('rejects invalid conversation tokens', function (): void {
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+
+    expect($store->authenticate($host['code'], 'wrong-token'))
+        ->toBeNull()
+        ->and($store->authenticate($host['code'], ''))
+        ->toBeNull()
+        ->and($store->authenticate('UNKNOWN1', $host['token']))
+        ->toBeNull();
+});
+
+it('rejects authentication after conversation expiry', function (): void {
+    config()->set('conversation.ttl_seconds', 60);
+
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+
+    $this->travel(61)->seconds();
+
+    expect(
+        $store->authenticate($host['code'], $host['token']),
+    )->toBeNull();
+});
