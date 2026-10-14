@@ -3,6 +3,7 @@
 use App\Services\Conversation\ConversationStore;
 use Illuminate\Support\Facades\Cache;
 use WebSocket\Client;
+use WebSocket\Message\Binary;
 
 it('connects two participants through the real WebSocket server', function (): void {
     $port = 18081;
@@ -109,6 +110,55 @@ it('connects two participants through the real WebSocket server', function (): v
             );
         };
 
+        $receivePeerAudio = function (
+            Client $client,
+            string $sourceLanguage,
+            string $targetLanguage,
+        ) use ($receive): void {
+            $translation = $receive($client);
+
+            expect($translation['type'])
+                ->toBe('conversation_translation_completed')
+                ->and($translation['source_language'])
+                ->toBe($sourceLanguage)
+                ->and($translation['target_language'])
+                ->toBe($targetLanguage)
+                ->and($translation['translated_text'])
+                ->toBe(
+                    "FAKE-TRANSLATION-{$sourceLanguage}-{$targetLanguage}:Integration test transcript"
+                );
+
+            $tts = $receive($client);
+
+            expect($tts['type'])
+                ->toBe('conversation_tts_started')
+                ->and($tts['format'])
+                ->toBe('pcm16')
+                ->and($tts['sample_rate_hz'])
+                ->toBe(24000);
+
+            $expectedAudio = pack('v*', 0, 1200, 2400, 1200, 0);
+
+            $chunkA = $client->receive();
+            $chunkB = $client->receive();
+
+            expect($chunkA)->toBeInstanceOf(Binary::class)
+                ->and($chunkB)
+                ->toBeInstanceOf(Binary::class)
+                ->and($chunkA->getContent().$chunkB->getContent())
+                ->toBe($expectedAudio);
+
+            $completed = $receive($client);
+
+            expect($completed['type'])
+                ->toBe('conversation_completed')
+                ->and($completed['translated_audio_bytes'])
+                ->toBe(strlen($expectedAudio));
+
+            expect($receive($client)['type'])
+                ->toBe('conversation_peer_stopped');
+        };
+
         $hostClient = $connect();
 
         $hostClient->text(json_encode([
@@ -187,10 +237,7 @@ it('connects two participants through the real WebSocket server', function (): v
         expect($receive($hostClient)['type'])
             ->toBe('conversation_turn_stopped');
 
-        $peerStopped = $receive($guestClient);
-
-        expect($peerStopped['type'])
-            ->toBe('conversation_peer_stopped');
+        $receivePeerAudio($guestClient, 'ru', 'en');
 
         // Guest can acquire the turn after release.
         $guestClient->text(json_encode([
@@ -221,11 +268,150 @@ it('connects two participants through the real WebSocket server', function (): v
         expect($receive($guestClient)['type'])
             ->toBe('conversation_turn_stopped');
 
-        expect($receive($hostClient)['type'])
-            ->toBe('conversation_peer_stopped');
+        $receivePeerAudio($hostClient, 'en', 'ru');
 
         expect(file_get_contents($cachePath.'/received-audio.bin'))
             ->toBe('host-audioguest-audio');
+
+        // Provider failures must release turn ownership.
+        foreach (['translation', 'tts'] as $failureMode) {
+            file_put_contents(
+                $cachePath.'/failure-mode.txt',
+                $failureMode,
+            );
+
+            $hostClient->text(json_encode([
+                'type' => 'conversation_start',
+                'mime_type' => 'audio/webm',
+            ], JSON_THROW_ON_ERROR));
+
+            expect($receive($hostClient)['type'])
+                ->toBe('conversation_turn_started');
+
+            expect($receive($guestClient)['type'])
+                ->toBe('conversation_peer_started');
+
+            $hostClient->binary('failure-audio');
+
+            $hostClient->text(json_encode([
+                'type' => 'conversation_stop',
+            ], JSON_THROW_ON_ERROR));
+
+            expect($receive($hostClient)['type'])
+                ->toBe('conversation_transcript');
+
+            expect($receive($hostClient)['type'])
+                ->toBe('conversation_recognition_completed');
+
+            if ($failureMode === 'tts') {
+                expect($receive($guestClient)['type'])
+                    ->toBe('conversation_translation_completed');
+
+                expect($receive($guestClient)['type'])
+                    ->toBe('conversation_tts_started');
+
+                $firstChunk = $guestClient->receive();
+
+                expect($firstChunk)
+                    ->toBeInstanceOf(Binary::class);
+            }
+
+            $error = $receive($hostClient);
+
+            expect($error['type'])
+                ->toBe('error')
+                ->and($error['message'])
+                ->toBe(
+                    $failureMode === 'translation'
+                        ? 'Simulated conversation translation failure.'
+                        : 'Simulated conversation TTS failure.'
+                );
+
+            expect($receive($guestClient)['type'])
+                ->toBe('conversation_peer_stopped');
+
+            // The other participant must be able to start again.
+            $guestClient->text(json_encode([
+                'type' => 'conversation_start',
+                'mime_type' => 'audio/webm',
+            ], JSON_THROW_ON_ERROR));
+
+            expect($receive($guestClient)['type'])
+                ->toBe('conversation_turn_started');
+
+            expect($receive($hostClient)['type'])
+                ->toBe('conversation_peer_started');
+
+            $guestClient->binary('recovery-audio');
+
+            $guestClient->text(json_encode([
+                'type' => 'conversation_stop',
+            ], JSON_THROW_ON_ERROR));
+
+            expect($receive($guestClient)['type'])
+                ->toBe('conversation_transcript');
+
+            expect($receive($guestClient)['type'])
+                ->toBe('conversation_recognition_completed');
+
+            expect($receive($guestClient)['type'])
+                ->toBe('conversation_turn_stopped');
+
+            $receivePeerAudio($hostClient, 'en', 'ru');
+        }
+
+        // Audio provider failure must cancel STT and release the turn.
+        $hostClient->text(json_encode([
+            'type' => 'conversation_start',
+            'mime_type' => 'audio/webm',
+        ], JSON_THROW_ON_ERROR));
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_turn_started');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_peer_started');
+
+        $hostClient->binary('FAIL_AUDIO_CHUNK');
+
+        $audioError = $receive($hostClient);
+
+        expect($audioError['type'])
+            ->toBe('error')
+            ->and($audioError['message'])
+            ->toBe('Simulated conversation audio failure.');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_peer_stopped');
+
+        // Guest must be able to acquire the turn after the failure.
+        $guestClient->text(json_encode([
+            'type' => 'conversation_start',
+            'mime_type' => 'audio/webm',
+        ], JSON_THROW_ON_ERROR));
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_turn_started');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_peer_started');
+
+        $guestClient->binary('recovered-after-audio-error');
+
+        $guestClient->text(json_encode([
+            'type' => 'conversation_stop',
+        ], JSON_THROW_ON_ERROR));
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_transcript');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_recognition_completed');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_turn_stopped');
+
+        $receivePeerAudio($hostClient, 'en', 'ru');
 
         $invalidClient = $connect();
 

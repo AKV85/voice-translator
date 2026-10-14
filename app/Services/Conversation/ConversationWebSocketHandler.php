@@ -232,6 +232,58 @@ final class ConversationWebSocketHandler
         ];
     }
 
+    /**
+     * Release a failed turn without acknowledging successful completion.
+     *
+     * @param  Closure(Connection, array): void  $send
+     */
+    public function abortTurn(
+        Connection $connection,
+        Closure $send,
+    ): void {
+        $participant = $this->currentParticipant($connection);
+
+        $manager = $this->turnManager
+            ?? throw new LogicException(
+                'Conversation turn manager unavailable.',
+            );
+
+        if (! $manager->release($participant['code'], $connection)) {
+            return;
+        }
+
+        $peer = $this->registry->peer(
+            $participant['code'],
+            $participant['role'],
+        );
+
+        if ($peer !== null && $peer->isConnected()) {
+            try {
+                $send($peer, [
+                    'type' => 'conversation_peer_stopped',
+                ]);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+    }
+
+    public function currentPeer(Connection $connection): ?Connection
+    {
+        $participant = $this->currentParticipant($connection);
+
+        $peer = $this->registry->peer(
+            $participant['code'],
+            $participant['role'],
+        );
+
+        if ($peer === null || ! $peer->isConnected()) {
+            return null;
+        }
+
+        return $peer;
+    }
+
     public function ownsTurn(Connection $connection): bool
     {
         $participant = $this->currentParticipant($connection);

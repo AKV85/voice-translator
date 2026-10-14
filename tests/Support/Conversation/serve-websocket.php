@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Contracts\Console\Kernel;
+use Tests\Fakes\ConversationFakeTextToSpeechProvider;
+use Tests\Fakes\ConversationFakeTranslationProvider;
 use Tests\Fakes\ConversationRecordingSpeechToTextProvider;
 
 require dirname(__DIR__, 3).'/vendor/autoload.php';
@@ -28,6 +30,10 @@ config()->set('cache.stores.vt21_integration', [
 
 config()->set('conversation.audio_enabled', true);
 config()->set(
+    'conversation.integration_failure_file',
+    $cachePath.'/failure-mode.txt',
+);
+config()->set(
     'conversation.integration_audio_log',
     $cachePath.'/received-audio.bin',
 );
@@ -36,6 +42,18 @@ config()->set(
     'benchmarks.translation.pipeline.providers.'
         .'chirp3-streaming-standard-deepl-openai.speech_to_text.contract',
     ConversationRecordingSpeechToTextProvider::class,
+);
+
+config()->set(
+    'benchmarks.translation.pipeline.providers.'
+        .'chirp3-streaming-standard-deepl-openai.translation.contract',
+    ConversationFakeTranslationProvider::class,
+);
+
+config()->set(
+    'benchmarks.translation.pipeline.providers.'
+        .'chirp3-streaming-standard-deepl-openai.text_to_speech.contract',
+    ConversationFakeTextToSpeechProvider::class,
 );
 
 exit($kernel->call('live-pipeline:serve', [

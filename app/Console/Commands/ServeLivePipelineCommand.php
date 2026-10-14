@@ -178,6 +178,21 @@ final class ServeLivePipelineCommand extends Command
                         report($cleanupException);
                     }
 
+                    if ($conversationHandler->isBound($connection)) {
+                        try {
+                            if ($conversationHandler->isCurrent($connection)) {
+                                $conversationHandler->abortTurn(
+                                    $connection,
+                                    function (Connection $to, array $data): void {
+                                        $this->sendJson($to, $data);
+                                    },
+                                );
+                            }
+                        } catch (Throwable $cleanupException) {
+                            report($cleanupException);
+                        }
+                    }
+
                     $this->sendError(
                         connection: $connection,
                         message: (
@@ -373,22 +388,49 @@ final class ServeLivePipelineCommand extends Command
             }
 
             if ($type === 'conversation_stop') {
+                $send = function (
+                    Connection $to,
+                    array $data,
+                ): void {
+                    $this->sendJson($to, $data);
+                };
+
                 if (
                     config('conversation.audio_enabled', false)
-                    && isset($sessions[spl_object_id($connection)])
+                    && ! $conversationHandler->ownsTurn($connection)
                 ) {
-                    $this->finishConversationSession(
-                        $connection,
-                        $sessions,
+                    throw new LogicException(
+                        'Connection does not own the conversation turn.',
                     );
                 }
 
-                $conversationHandler->stopTurn(
-                    $connection,
-                    function (Connection $to, array $data): void {
-                        $this->sendJson($to, $data);
-                    },
-                );
+                try {
+                    if (
+                        config('conversation.audio_enabled', false)
+                    ) {
+                        $this->finishConversationSession(
+                            $connection,
+                            $sessions,
+                            $conversationHandler,
+                        );
+                    }
+
+                    $conversationHandler->stopTurn(
+                        $connection,
+                        $send,
+                    );
+                } catch (Throwable $exception) {
+                    try {
+                        $conversationHandler->abortTurn(
+                            $connection,
+                            $send,
+                        );
+                    } catch (Throwable $cleanupException) {
+                        report($cleanupException);
+                    }
+
+                    throw $exception;
+                }
 
                 return;
             }
@@ -544,6 +586,7 @@ final class ServeLivePipelineCommand extends Command
     private function finishConversationSession(
         Connection $connection,
         array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
     ): void {
         $key = spl_object_id($connection);
         $context = $sessions[$key] ?? null;
@@ -554,14 +597,110 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
-        $result = $context['session']->finish();
+        if (! $conversationHandler->ownsTurn($connection)) {
+            throw new LogicException(
+                'Connection does not own the conversation turn.',
+            );
+        }
 
-        $this->sendJson($connection, [
-            'type' => 'conversation_recognition_completed',
-            'text' => $result->text,
-        ]);
+        $completed = false;
 
-        $this->cleanupSession($connection, $sessions);
+        try {
+            $peer = $conversationHandler->currentPeer($connection);
+
+            if ($peer === null) {
+                throw new LogicException(
+                    'Conversation peer is not connected.',
+                );
+            }
+
+            $assertPeer = function () use (
+                $connection,
+                $peer,
+                $conversationHandler,
+            ): void {
+                if (
+                    ! $conversationHandler->ownsTurn($connection)
+                    || $conversationHandler->currentPeer($connection) !== $peer
+                ) {
+                    throw new LogicException(
+                        'Conversation peer changed during processing.',
+                    );
+                }
+            };
+
+            $speechResult = $context['session']->finish();
+
+            $this->sendJson($connection, [
+                'type' => 'conversation_recognition_completed',
+                'text' => $speechResult->text,
+            ]);
+
+            $sourceLanguage = $context['source_language'];
+            $targetLanguage = $this->targetLanguage(
+                $sourceLanguage,
+            );
+
+            $assertPeer();
+
+            $translationResult = $context['translation']->translate(
+                text: $speechResult->text,
+                sourceLanguage: $sourceLanguage,
+                targetLanguage: $targetLanguage,
+            );
+
+            $assertPeer();
+
+            $this->sendJson($peer, [
+                'type' => 'conversation_translation_completed',
+                'text' => $speechResult->text,
+                'translated_text' => $translationResult->text,
+                'source_language' => $sourceLanguage->value,
+                'target_language' => $targetLanguage->value,
+            ]);
+
+            $assertPeer();
+
+            $this->sendJson($peer, [
+                'type' => 'conversation_tts_started',
+                'format' => 'pcm16',
+                'sample_rate_hz' => self::TTS_SAMPLE_RATE,
+                'channels' => self::TTS_CHANNELS,
+                'bytes_per_sample' => self::TTS_BYTES_PER_SAMPLE,
+            ]);
+
+            $synthesisResult = $context['text_to_speech']->synthesize(
+                text: $translationResult->text,
+                targetLanguage: $targetLanguage,
+                onAudioChunk: function (string $chunk) use (
+                    $peer,
+                    $assertPeer,
+                ): void {
+                    $assertPeer();
+
+                    $peer->binary($chunk);
+                },
+            );
+
+            $assertPeer();
+
+            $this->sendJson($peer, [
+                'type' => 'conversation_completed',
+                'source_language' => $sourceLanguage->value,
+                'target_language' => $targetLanguage->value,
+                'translated_audio_bytes' => strlen(
+                    $synthesisResult->audio,
+                ),
+            ]);
+
+            $completed = true;
+        } finally {
+            if ($completed) {
+                $this->cleanupSession($connection, $sessions);
+            } else {
+                $this->cancelSession($connection, $sessions);
+            }
+        }
     }
 
     private function startSession(

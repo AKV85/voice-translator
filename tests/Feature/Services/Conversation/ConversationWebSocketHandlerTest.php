@@ -529,3 +529,130 @@ it('does not prepare an already occupied turn', function (): void {
         ->and($events)->toBe(['conversation_turn_busy'])
         ->and($turns->isOwner($host['code'], $a))->toBeTrue();
 });
+
+it('resolves only the current connected conversation peer', function (): void {
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+    $guest = $store->join($host['code']);
+
+    $handler = new ConversationWebSocketHandler(
+        $store,
+        new ConversationConnectionRegistry,
+        new ConversationTurnManager,
+    );
+
+    $hostConnection = Mockery::mock(Connection::class);
+    $oldGuest = Mockery::mock(Connection::class);
+    $newGuest = Mockery::mock(Connection::class);
+
+    $hostConnection->shouldReceive('isConnected')->andReturn(true);
+    $oldGuest->shouldReceive('isConnected')->andReturn(true);
+    $oldGuest->shouldReceive('disconnect')->once();
+    $newGuest->shouldReceive('isConnected')->andReturn(true);
+
+    $send = static function (Connection $to, array $payload): void {};
+
+    $handler->join(
+        $hostConnection,
+        $host['code'],
+        $host['token'],
+        $send,
+    );
+
+    expect($handler->currentPeer($hostConnection))->toBeNull();
+
+    $handler->join(
+        $oldGuest,
+        $guest['code'],
+        $guest['token'],
+        $send,
+    );
+
+    expect($handler->currentPeer($hostConnection))
+        ->toBe($oldGuest);
+
+    $handler->join(
+        $newGuest,
+        $guest['code'],
+        $guest['token'],
+        $send,
+    );
+
+    expect($handler->currentPeer($hostConnection))
+        ->toBe($newGuest)
+        ->and($handler->currentPeer($newGuest))
+        ->toBe($hostConnection);
+
+    expect(
+        fn () => $handler->currentPeer($oldGuest),
+    )->toThrow(LogicException::class);
+});
+
+it('releases a failed conversation turn so the peer can speak', function (): void {
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+    $guest = $store->join($host['code']);
+
+    $turns = new ConversationTurnManager;
+
+    $handler = new ConversationWebSocketHandler(
+        $store,
+        new ConversationConnectionRegistry,
+        $turns,
+    );
+
+    $hostConnection = Mockery::mock(Connection::class);
+    $guestConnection = Mockery::mock(Connection::class);
+
+    $hostConnection->shouldReceive('isConnected')->andReturn(true);
+    $guestConnection->shouldReceive('isConnected')->andReturn(true);
+
+    $hostEvents = [];
+    $guestEvents = [];
+
+    $send = function (Connection $to, array $data) use (
+        $hostConnection,
+        &$hostEvents,
+        &$guestEvents,
+    ): void {
+        if ($to === $hostConnection) {
+            $hostEvents[] = $data['type'];
+        } else {
+            $guestEvents[] = $data['type'];
+        }
+    };
+
+    $handler->join(
+        $hostConnection,
+        $host['code'],
+        $host['token'],
+        $send,
+    );
+
+    $handler->join(
+        $guestConnection,
+        $guest['code'],
+        $guest['token'],
+        $send,
+    );
+
+    $handler->startTurn($hostConnection, $send);
+
+    expect($turns->isOwner($host['code'], $hostConnection))
+        ->toBeTrue();
+
+    // Simulate the error handler releasing a failed recording.
+    $handler->abortTurn($hostConnection, $send);
+
+    expect($turns->isOwner($host['code'], $hostConnection))
+        ->toBeFalse()
+        ->and($guestEvents)
+        ->toContain('conversation_peer_stopped');
+
+    $handler->startTurn($guestConnection, $send);
+
+    expect($turns->isOwner($host['code'], $guestConnection))
+        ->toBeTrue()
+        ->and($guestEvents)
+        ->toContain('conversation_turn_started');
+});

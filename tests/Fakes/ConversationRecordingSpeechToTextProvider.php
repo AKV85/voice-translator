@@ -23,6 +23,12 @@ final class ConversationRecordingSpeechToTextProvider implements StreamingSpeech
         }
 
         foreach ($audioChunks as $chunk) {
+            if ($chunk === 'FAIL_AUDIO_CHUNK') {
+                throw new RuntimeException(
+                    'Simulated conversation audio failure.',
+                );
+            }
+
             if ($chunk !== '') {
                 if (file_put_contents($path, $chunk, FILE_APPEND | LOCK_EX) === false) {
                     throw new RuntimeException('Could not record test audio.');
