@@ -267,3 +267,35 @@ it('cancels the provider before releasing the audio fiber', function () {
         'fiber_released',
     ]);
 });
+
+it('does not return a transcript after cancellation', function () {
+    $provider = new FakeStreamingSpeechToTextProvider(
+        transcription: 'This should never be translated',
+    );
+
+    $transcripts = [];
+
+    $session = new LiveSpeechRecognitionSession(
+        speechToText: $provider,
+        mimeType: 'audio/webm',
+        sourceLanguage: Language::English,
+        onTranscript: function (
+            string $text,
+            bool $isFinal,
+        ) use (&$transcripts): void {
+            $transcripts[] = $text;
+        },
+    );
+
+    $session->start();
+    $session->cancel();
+
+    expect(
+        fn () => $session->finish(),
+    )->toThrow(
+        LogicException::class,
+        'Live speech recognition session was cancelled.',
+    );
+
+    expect($transcripts)->toBeEmpty();
+});

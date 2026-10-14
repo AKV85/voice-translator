@@ -101,13 +101,18 @@ final class ServeLivePipelineCommand extends Command
                         conversationHandler: $conversationHandler,
                     );
                 } catch (Throwable $exception) {
-                    $isPublicDemo =
-                        $this->cleanupSession(
+                    report($exception);
+
+                    $isPublicDemo = false;
+
+                    try {
+                        $isPublicDemo = $this->cancelSession(
                             connection: $connection,
                             sessions: $sessions,
                         );
-
-                    report($exception);
+                    } catch (Throwable $cleanupException) {
+                        report($cleanupException);
+                    }
 
                     $this->sendError(
                         connection: $connection,
@@ -147,13 +152,18 @@ final class ServeLivePipelineCommand extends Command
                         sessions: $sessions,
                     );
                 } catch (Throwable $exception) {
-                    $isPublicDemo =
-                        $this->cleanupSession(
+                    report($exception);
+
+                    $isPublicDemo = false;
+
+                    try {
+                        $isPublicDemo = $this->cancelSession(
                             connection: $connection,
                             sessions: $sessions,
                         );
-
-                    report($exception);
+                    } catch (Throwable $cleanupException) {
+                        report($cleanupException);
+                    }
 
                     $this->sendError(
                         connection: $connection,
@@ -173,17 +183,21 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
             ) use (&$sessions, $conversationHandler): void {
-                $this->cleanupSession(
-                    connection: $connection,
-                    sessions: $sessions,
-                );
-
-                $conversationHandler->disconnect(
-                    $connection,
-                    function (Connection $to, array $payload): void {
-                        $this->sendJson($to, $payload);
-                    },
-                );
+                try {
+                    $this->cancelSession(
+                        connection: $connection,
+                        sessions: $sessions,
+                    );
+                } catch (Throwable $exception) {
+                    report($exception);
+                } finally {
+                    $conversationHandler->disconnect(
+                        $connection,
+                        function (Connection $to, array $payload): void {
+                            $this->sendJson($to, $payload);
+                        },
+                    );
+                }
             },
         );
 
@@ -1084,19 +1098,51 @@ final class ServeLivePipelineCommand extends Command
         $publicDemo =
             $sessionContext['public_demo'];
 
-        if (
-            $publicDemo
-            instanceof PublicDemoWebSocketSession
-        ) {
-            $publicDemo->release();
+        try {
+            if (
+                $publicDemo
+                instanceof PublicDemoWebSocketSession
+            ) {
+                $publicDemo->release();
+            }
+        } finally {
+            unset(
+                $sessions[$key],
+            );
         }
-
-        unset(
-            $sessions[$key],
-        );
 
         return $publicDemo
             instanceof PublicDemoWebSocketSession;
+    }
+
+    /**
+     * Cancel an active recording before releasing its resources.
+     */
+    private function cancelSession(
+        Connection $connection,
+        array &$sessions,
+    ): bool {
+        $key = spl_object_id($connection);
+        $context = $sessions[$key] ?? null;
+
+        if ($context === null) {
+            return false;
+        }
+
+        $isPublicDemo =
+            $context['public_demo']
+            instanceof PublicDemoWebSocketSession;
+
+        try {
+            $context['session']->cancel();
+        } finally {
+            $this->cleanupSession(
+                connection: $connection,
+                sessions: $sessions,
+            );
+        }
+
+        return $isPublicDemo;
     }
 
     private function targetLanguage(
