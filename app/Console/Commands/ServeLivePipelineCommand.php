@@ -7,6 +7,9 @@ use App\Contracts\StreamingTextToSpeechProvider;
 use App\Contracts\TranslationProvider;
 use App\Enums\Language;
 use App\Exceptions\PublicDemoException;
+use App\Services\Conversation\ConversationConnectionRegistry;
+use App\Services\Conversation\ConversationStore;
+use App\Services\Conversation\ConversationWebSocketHandler;
 use App\Services\Live\LiveSpeechRecognitionSession;
 use App\Services\PublicDemo\PublicDemoTokenStore;
 use App\Services\PublicDemo\PublicDemoWebSocketSession;
@@ -73,6 +76,11 @@ final class ServeLivePipelineCommand extends Command
          */
         $sessions = [];
 
+        $conversationHandler = new ConversationWebSocketHandler(
+            app(ConversationStore::class),
+            new ConversationConnectionRegistry,
+        );
+
         $server = new Server(
             port: $port,
         );
@@ -82,12 +90,13 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
                 Text $message,
-            ) use (&$sessions): void {
+            ) use (&$sessions, $conversationHandler): void {
                 try {
                     $this->handleTextMessage(
                         connection: $connection,
                         message: $message,
                         sessions: $sessions,
+                        conversationHandler: $conversationHandler,
                     );
                 } catch (Throwable $exception) {
                     $isPublicDemo =
@@ -116,8 +125,20 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
                 Binary $message,
-            ) use (&$sessions): void {
+            ) use (&$sessions, $conversationHandler): void {
                 try {
+                    if ($conversationHandler->isBound($connection)) {
+                        if (! $conversationHandler->isCurrent($connection)) {
+                            throw new LogicException(
+                                'Stale conversation connection.',
+                            );
+                        }
+
+                        throw new LogicException(
+                            'Conversation audio is not enabled yet.',
+                        );
+                    }
+
                     $this->handleBinaryMessage(
                         connection: $connection,
                         message: $message,
@@ -149,10 +170,17 @@ final class ServeLivePipelineCommand extends Command
             function (
                 Server $server,
                 Connection $connection,
-            ) use (&$sessions): void {
+            ) use (&$sessions, $conversationHandler): void {
                 $this->cleanupSession(
                     connection: $connection,
                     sessions: $sessions,
+                );
+
+                $conversationHandler->disconnect(
+                    $connection,
+                    function (Connection $to, array $payload): void {
+                        $this->sendJson($to, $payload);
+                    },
                 );
             },
         );
@@ -219,6 +247,7 @@ final class ServeLivePipelineCommand extends Command
         Connection $connection,
         Text $message,
         array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
     ): void {
         $payload = json_decode(
             $message->getContent(),
@@ -235,6 +264,46 @@ final class ServeLivePipelineCommand extends Command
         $type =
             $payload['type']
             ?? null;
+
+        if ($type === 'conversation_join') {
+            $code = $payload['code'] ?? null;
+            $token = $payload['token'] ?? null;
+
+            if (! is_string($code) || ! is_string($token)) {
+                throw new InvalidArgumentException(
+                    'Conversation code and token are required.',
+                );
+            }
+
+            if (isset($sessions[spl_object_id($connection)])) {
+                throw new LogicException(
+                    'Connection already has an active session.',
+                );
+            }
+
+            $conversationHandler->join(
+                $connection,
+                $code,
+                $token,
+                function (Connection $to, array $data): void {
+                    $this->sendJson($to, $data);
+                },
+            );
+
+            return;
+        }
+
+        if ($conversationHandler->isBound($connection)) {
+            if (! $conversationHandler->isCurrent($connection)) {
+                throw new LogicException(
+                    'Stale conversation connection.',
+                );
+            }
+
+            throw new LogicException(
+                'Unsupported conversation control message.',
+            );
+        }
 
         if ($type === 'start') {
             $this->startSession(
@@ -260,16 +329,6 @@ final class ServeLivePipelineCommand extends Command
         );
     }
 
-    /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
-     */
     private function handleBinaryMessage(
         Connection $connection,
         Binary $message,
