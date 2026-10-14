@@ -16,6 +16,7 @@ final class ConversationWebSocketHandler
     public function __construct(
         private readonly ConversationStore $store,
         private readonly ConversationConnectionRegistry $registry,
+        private readonly ?ConversationTurnManager $turnManager = null,
     ) {}
 
     /**
@@ -68,6 +69,10 @@ final class ConversationWebSocketHandler
         ]);
 
         $this->registry->attach($code, $role, $connection);
+
+        if ($previous !== null && $previous !== $connection) {
+            $this->turnManager?->release($code, $previous);
+        }
 
         $this->participants[$key] = [
             'code' => $code,
@@ -133,6 +138,8 @@ final class ConversationWebSocketHandler
 
         $code = $participant['code'];
         $role = $participant['role'];
+
+        $this->turnManager?->release($code, $connection);
 
         if (! $this->registry->detach($code, $role, $connection)) {
             return;

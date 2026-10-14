@@ -2,6 +2,7 @@
 
 use App\Services\Conversation\ConversationConnectionRegistry;
 use App\Services\Conversation\ConversationStore;
+use App\Services\Conversation\ConversationTurnManager;
 use App\Services\Conversation\ConversationWebSocketHandler;
 use WebSocket\Connection;
 
@@ -169,4 +170,97 @@ it('notifies a peer when the current participant disconnects', function (): void
         ->and($events[array_key_last($events)][0])->toBe($a)
         ->and($events[array_key_last($events)][1]['type'])
         ->toBe('conversation_peer_left');
+});
+
+it('releases the old host turn after successful reconnection', function (): void {
+    $host = app(ConversationStore::class)->create();
+    $turns = new ConversationTurnManager;
+
+    $handler = new ConversationWebSocketHandler(
+        app(ConversationStore::class),
+        new ConversationConnectionRegistry,
+        $turns,
+    );
+
+    $old = Mockery::mock(Connection::class);
+    $new = Mockery::mock(Connection::class);
+
+    $old->shouldReceive('isConnected')->once()->andReturn(true);
+    $old->shouldReceive('disconnect')->once();
+
+    $handler->join($old, $host['code'], $host['token'], fn () => null);
+
+    expect($turns->acquire($host['code'], 'host', $old))->toBeTrue();
+
+    $handler->join($new, $host['code'], $host['token'], fn () => null);
+
+    expect($handler->isCurrent($new))->toBeTrue()
+        ->and($turns->isOwner($host['code'], $old))->toBeFalse()
+        ->and($turns->acquire($host['code'], 'host', $new))->toBeTrue();
+});
+
+it('preserves the active turn when reconnection acknowledgement fails', function (): void {
+    $host = app(ConversationStore::class)->create();
+    $turns = new ConversationTurnManager;
+
+    $handler = new ConversationWebSocketHandler(
+        app(ConversationStore::class),
+        new ConversationConnectionRegistry,
+        $turns,
+    );
+
+    $old = Mockery::mock(Connection::class);
+    $new = Mockery::mock(Connection::class);
+
+    $old->shouldNotReceive('disconnect');
+
+    $handler->join($old, $host['code'], $host['token'], fn () => null);
+
+    expect($turns->acquire($host['code'], 'host', $old))->toBeTrue();
+
+    expect(fn () => $handler->join(
+        $new,
+        $host['code'],
+        $host['token'],
+        function (): void {
+            throw new RuntimeException('Acknowledgement failed.');
+        },
+    ))->toThrow(RuntimeException::class, 'Acknowledgement failed.');
+
+    expect($handler->isCurrent($old))->toBeTrue()
+        ->and($turns->isOwner($host['code'], $old))->toBeTrue()
+        ->and($turns->acquire($host['code'], 'host', $new))->toBeFalse();
+});
+
+it('does not release a replacement turn when the old connection disconnects', function (): void {
+    $host = app(ConversationStore::class)->create();
+    $turns = new ConversationTurnManager;
+
+    $handler = new ConversationWebSocketHandler(
+        app(ConversationStore::class),
+        new ConversationConnectionRegistry,
+        $turns,
+    );
+
+    $old = Mockery::mock(Connection::class);
+    $new = Mockery::mock(Connection::class);
+
+    $old->shouldReceive('isConnected')->once()->andReturn(true);
+    $old->shouldReceive('disconnect')->once();
+
+    $send = fn () => null;
+
+    $handler->join($old, $host['code'], $host['token'], $send);
+
+    expect($turns->acquire($host['code'], 'host', $old))->toBeTrue();
+
+    $handler->join($new, $host['code'], $host['token'], $send);
+
+    expect($turns->acquire($host['code'], 'host', $new))->toBeTrue();
+
+    $handler->disconnect($old, $send);
+
+    expect($handler->isCurrent($new))->toBeTrue()
+        ->and($turns->isOwner($host['code'], $new))->toBeTrue()
+        ->and($turns->release($host['code'], $old))->toBeFalse();
 });

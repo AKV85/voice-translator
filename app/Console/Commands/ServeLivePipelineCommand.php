@@ -9,6 +9,7 @@ use App\Enums\Language;
 use App\Exceptions\PublicDemoException;
 use App\Services\Conversation\ConversationConnectionRegistry;
 use App\Services\Conversation\ConversationStore;
+use App\Services\Conversation\ConversationTurnManager;
 use App\Services\Conversation\ConversationWebSocketHandler;
 use App\Services\Live\LiveSpeechRecognitionSession;
 use App\Services\PublicDemo\PublicDemoTokenStore;
@@ -79,6 +80,7 @@ final class ServeLivePipelineCommand extends Command
         $conversationHandler = new ConversationWebSocketHandler(
             app(ConversationStore::class),
             new ConversationConnectionRegistry,
+            new ConversationTurnManager,
         );
 
         $server = new Server(
