@@ -139,6 +139,94 @@ it('connects two participants through the real WebSocket server', function (): v
             ->and($guestJoined['peer_connected'])->toBeTrue()
             ->and($hostNotification['type'])->toBe('conversation_peer_joined');
 
+        // Host acquires the conversation turn.
+        $hostClient->text(json_encode([
+            'type' => 'conversation_start',
+            'mime_type' => 'audio/webm',
+        ], JSON_THROW_ON_ERROR));
+
+        $hostTurn = $receive($hostClient);
+
+        expect($hostTurn['type'])
+            ->toBe('conversation_turn_started');
+
+        $peerStarted = $receive($guestClient);
+
+        expect($peerStarted['type'])
+            ->toBe('conversation_peer_started');
+
+        $hostClient->binary('host-audio');
+
+        // Guest cannot acquire the same turn.
+        $guestClient->text(json_encode([
+            'type' => 'conversation_start',
+        ], JSON_THROW_ON_ERROR));
+
+        $guestError = $receive($guestClient);
+
+        expect($guestError['type'])
+            ->toBe('conversation_turn_busy');
+
+        // Host releases the turn.
+        $hostClient->text(json_encode([
+            'type' => 'conversation_stop',
+        ], JSON_THROW_ON_ERROR));
+
+        $hostRecognized = $receive($hostClient);
+        $hostStopped = $receive($hostClient);
+
+        expect($hostRecognized['type'])
+            ->toBe('conversation_transcript')
+            ->and($hostRecognized['text'])
+            ->toBe('Integration test transcript')
+            ->and($hostStopped['type'])
+            ->toBe('conversation_recognition_completed')
+            ->and($hostStopped['text'])
+            ->toBe('Integration test transcript');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_turn_stopped');
+
+        $peerStopped = $receive($guestClient);
+
+        expect($peerStopped['type'])
+            ->toBe('conversation_peer_stopped');
+
+        // Guest can acquire the turn after release.
+        $guestClient->text(json_encode([
+            'type' => 'conversation_start',
+            'mime_type' => 'audio/webm',
+        ], JSON_THROW_ON_ERROR));
+
+        $guestTurn = $receive($guestClient);
+        $hostPeerStarted = $receive($hostClient);
+
+        expect($guestTurn['type'])
+            ->toBe('conversation_turn_started')
+            ->and($hostPeerStarted['type'])
+            ->toBe('conversation_peer_started');
+
+        $guestClient->binary('guest-audio');
+
+        $guestClient->text(json_encode([
+            'type' => 'conversation_stop',
+        ], JSON_THROW_ON_ERROR));
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_transcript');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_recognition_completed');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_turn_stopped');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_peer_stopped');
+
+        expect(file_get_contents($cachePath.'/received-audio.bin'))
+            ->toBe('host-audioguest-audio');
+
         $invalidClient = $connect();
 
         $invalidClient->text(json_encode([

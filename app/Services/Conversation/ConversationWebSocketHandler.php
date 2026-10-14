@@ -10,7 +10,7 @@ use WebSocket\Connection;
 
 final class ConversationWebSocketHandler
 {
-    /** @var array<int, array{code: string, role: string}> */
+    /** @var array<int, array{code: string, role: string, language: string}> */
     private array $participants = [];
 
     public function __construct(
@@ -77,6 +77,7 @@ final class ConversationWebSocketHandler
         $this->participants[$key] = [
             'code' => $code,
             'role' => $role,
+            'language' => $participant['language'],
         ];
 
         if (
@@ -100,6 +101,145 @@ final class ConversationWebSocketHandler
                 report($exception);
             }
         }
+    }
+
+    /**
+     * @param  Closure(Connection, array): void  $send
+     */
+    public function startTurn(
+        Connection $connection,
+        Closure $send,
+        ?Closure $prepare = null,
+    ): void {
+        $participant = $this->currentParticipant($connection);
+        $code = $participant['code'];
+        $role = $participant['role'];
+
+        $manager = $this->turnManager
+            ?? throw new LogicException(
+                'Conversation turn manager unavailable.',
+            );
+
+        if (! $manager->acquire($code, $role, $connection)) {
+            $send($connection, [
+                'type' => 'conversation_turn_busy',
+            ]);
+
+            return;
+        }
+
+        try {
+            $prepare?->__invoke();
+
+            $send($connection, [
+                'type' => 'conversation_turn_started',
+            ]);
+        } catch (Throwable $exception) {
+            $manager->release($code, $connection);
+
+            throw $exception;
+        }
+
+        $peer = $this->registry->peer($code, $role);
+
+        if ($peer !== null && $peer->isConnected()) {
+            try {
+                $send($peer, [
+                    'type' => 'conversation_peer_started',
+                ]);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+    }
+
+    /**
+     * @param  Closure(Connection, array): void  $send
+     */
+    public function stopTurn(
+        Connection $connection,
+        Closure $send,
+    ): void {
+        $participant = $this->currentParticipant($connection);
+        $code = $participant['code'];
+        $role = $participant['role'];
+
+        $manager = $this->turnManager
+            ?? throw new LogicException(
+                'Conversation turn manager unavailable.',
+            );
+
+        if (! $manager->isOwner($code, $connection)) {
+            throw new LogicException(
+                'Connection does not own the conversation turn.',
+            );
+        }
+
+        $send($connection, [
+            'type' => 'conversation_turn_stopped',
+        ]);
+
+        $manager->release($code, $connection);
+
+        $peer = $this->registry->peer($code, $role);
+
+        if ($peer !== null && $peer->isConnected()) {
+            try {
+                $send($peer, [
+                    'type' => 'conversation_peer_stopped',
+                ]);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+    }
+
+    /**
+     * @return array{code: string, role: string, language: string}
+     */
+    private function currentParticipant(Connection $connection): array
+    {
+        $participant = $this->participants[spl_object_id($connection)]
+            ?? null;
+
+        if (
+            $participant === null
+            || ! $this->registry->isCurrent(
+                $participant['code'],
+                $participant['role'],
+                $connection,
+            )
+        ) {
+            throw new LogicException(
+                'Stale or unauthenticated conversation connection.',
+            );
+        }
+
+        return $participant;
+    }
+
+    /**
+     * @return array{code: string, role: string, language: string}
+     */
+    public function currentContext(Connection $connection): array
+    {
+        $participant = $this->currentParticipant($connection);
+
+        return [
+            'code' => $participant['code'],
+            'role' => $participant['role'],
+            'language' => $participant['language'],
+        ];
+    }
+
+    public function ownsTurn(Connection $connection): bool
+    {
+        $participant = $this->currentParticipant($connection);
+
+        return $this->turnManager?->isOwner(
+            $participant['code'],
+            $connection,
+        ) ?? false;
     }
 
     public function isBound(Connection $connection): bool

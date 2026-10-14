@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Contracts\Console\Kernel;
+use Tests\Fakes\ConversationRecordingSpeechToTextProvider;
 
 require dirname(__DIR__, 3).'/vendor/autoload.php';
 
@@ -24,6 +25,18 @@ config()->set('cache.stores.vt21_integration', [
     'path' => $cachePath,
     'lock_path' => $cachePath,
 ]);
+
+config()->set('conversation.audio_enabled', true);
+config()->set(
+    'conversation.integration_audio_log',
+    $cachePath.'/received-audio.bin',
+);
+
+config()->set(
+    'benchmarks.translation.pipeline.providers.'
+        .'chirp3-streaming-standard-deepl-openai.speech_to_text.contract',
+    ConversationRecordingSpeechToTextProvider::class,
+);
 
 exit($kernel->call('live-pipeline:serve', [
     '--port' => $port,

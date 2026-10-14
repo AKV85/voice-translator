@@ -141,9 +141,22 @@ final class ServeLivePipelineCommand extends Command
                             );
                         }
 
-                        throw new LogicException(
-                            'Conversation audio is not enabled yet.',
+                        if (
+                            ! config('conversation.audio_enabled', false)
+                            || ! $conversationHandler->ownsTurn($connection)
+                        ) {
+                            throw new LogicException(
+                                'Conversation audio is not allowed.',
+                            );
+                        }
+
+                        $this->handleBinaryMessage(
+                            connection: $connection,
+                            message: $message,
+                            sessions: $sessions,
                         );
+
+                        return;
                     }
 
                     $this->handleBinaryMessage(
@@ -316,6 +329,70 @@ final class ServeLivePipelineCommand extends Command
                 );
             }
 
+            if ($type === 'conversation_start') {
+                $audioEnabled = config(
+                    'conversation.audio_enabled',
+                    false,
+                );
+
+                try {
+                    $conversationHandler->startTurn(
+                        $connection,
+                        function (Connection $to, array $data): void {
+                            $this->sendJson($to, $data);
+                        },
+                        $audioEnabled
+                            ? function () use (
+                                $connection,
+                                $payload,
+                                &$sessions,
+                                $conversationHandler,
+                            ): void {
+                                $this->startConversationSession(
+                                    $connection,
+                                    $payload,
+                                    $sessions,
+                                    $conversationHandler,
+                                );
+                            }
+                        : null,
+                    );
+                } catch (Throwable $exception) {
+                    if ($audioEnabled) {
+                        try {
+                            $this->cancelSession($connection, $sessions);
+                        } catch (Throwable $cleanupException) {
+                            report($cleanupException);
+                        }
+                    }
+
+                    throw $exception;
+                }
+
+                return;
+            }
+
+            if ($type === 'conversation_stop') {
+                if (
+                    config('conversation.audio_enabled', false)
+                    && isset($sessions[spl_object_id($connection)])
+                ) {
+                    $this->finishConversationSession(
+                        $connection,
+                        $sessions,
+                    );
+                }
+
+                $conversationHandler->stopTurn(
+                    $connection,
+                    function (Connection $to, array $data): void {
+                        $this->sendJson($to, $data);
+                    },
+                );
+
+                return;
+            }
+
             throw new LogicException(
                 'Unsupported conversation control message.',
             );
@@ -396,6 +473,97 @@ final class ServeLivePipelineCommand extends Command
      *     public_demo: PublicDemoWebSocketSession|null
      * }>  $sessions
      */
+    private function startConversationSession(
+        Connection $connection,
+        array $payload,
+        array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
+    ): void {
+        $key = spl_object_id($connection);
+
+        if (isset($sessions[$key])) {
+            throw new LogicException(
+                'Connection already has an active session.',
+            );
+        }
+
+        $mimeType = $payload['mime_type'] ?? null;
+
+        if (! is_string($mimeType) || trim($mimeType) === '') {
+            throw new InvalidArgumentException(
+                'Audio MIME type is required.',
+            );
+        }
+
+        $context = $conversationHandler->currentContext($connection);
+
+        $language = Language::tryFrom($context['language']);
+
+        if ($language === null) {
+            throw new InvalidArgumentException(
+                'Unsupported conversation language.',
+            );
+        }
+
+        [
+            $speechToText,
+            $translation,
+            $textToSpeech,
+        ] = $this->resolvePipelineProviders(
+            self::DEFAULT_PROFILE,
+        );
+
+        $session = new LiveSpeechRecognitionSession(
+            speechToText: $speechToText,
+            mimeType: $mimeType,
+            sourceLanguage: $language,
+            onTranscript: function (
+                string $text,
+                bool $isFinal,
+            ) use ($connection): void {
+                $this->sendJson($connection, [
+                    'type' => 'conversation_transcript',
+                    'text' => $text,
+                    'is_final' => $isFinal,
+                ]);
+            },
+        );
+
+        $session->start();
+
+        $sessions[$key] = [
+            'session' => $session,
+            'profile' => self::DEFAULT_PROFILE,
+            'source_language' => $language,
+            'translation' => $translation,
+            'text_to_speech' => $textToSpeech,
+            'public_demo' => null,
+        ];
+    }
+
+    private function finishConversationSession(
+        Connection $connection,
+        array &$sessions,
+    ): void {
+        $key = spl_object_id($connection);
+        $context = $sessions[$key] ?? null;
+
+        if ($context === null) {
+            throw new LogicException(
+                'No active conversation recording.',
+            );
+        }
+
+        $result = $context['session']->finish();
+
+        $this->sendJson($connection, [
+            'type' => 'conversation_recognition_completed',
+            'text' => $result->text,
+        ]);
+
+        $this->cleanupSession($connection, $sessions);
+    }
+
     private function startSession(
         Connection $connection,
         array $payload,
