@@ -56,6 +56,15 @@ config()->set(
     ConversationFakeTextToSpeechProvider::class,
 );
 
+if (($argv[3] ?? null) === 'async') {
+    config()->set('conversation.async_worker_enabled', true);
+    config()->set('conversation.async_worker_timeout_seconds', 10);
+    config()->set('conversation.async_worker_command', [
+        PHP_BINARY,
+        base_path('tests/Support/Conversation/async-pipeline-worker.php'),
+    ]);
+}
+
 exit($kernel->call('live-pipeline:serve', [
     '--port' => $port,
 ]));

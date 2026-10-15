@@ -155,6 +155,58 @@ final class ConversationWorkerManager
         return $result;
     }
 
+    /**
+     * @return array{
+     *     turn_id: string,
+     *     status: string,
+     *     translated_text: string,
+     *     audio: string,
+     *     mime_type: string
+     * }|null
+     */
+    public function pollAudio(string $turnId): ?array
+    {
+        $result = $this->poll($turnId);
+
+        if ($result === null) {
+            return null;
+        }
+
+        $encodedAudio = $result['audio_base64'] ?? null;
+
+        if (
+            ! is_string($encodedAudio)
+            || $encodedAudio === ''
+            || strlen($encodedAudio) > 2796204
+            || ($result['mime_type'] ?? null) !== 'audio/pcm'
+        ) {
+            throw new RuntimeException(
+                'Invalid conversation worker audio response.',
+            );
+        }
+
+        $audio = base64_decode($encodedAudio, true);
+
+        if (
+            $audio === false
+            || $audio === ''
+            || strlen($audio) > 2097152
+            || strlen($audio) % 2 !== 0
+        ) {
+            throw new RuntimeException(
+                'Invalid conversation worker audio response.',
+            );
+        }
+
+        return [
+            'turn_id' => $result['turn_id'],
+            'status' => $result['status'],
+            'translated_text' => $result['translated_text'],
+            'audio' => $audio,
+            'mime_type' => $result['mime_type'],
+        ];
+    }
+
     public function cancel(string $turnId): void
     {
         $process = $this->processes[$turnId] ?? null;

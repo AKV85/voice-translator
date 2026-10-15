@@ -8,9 +8,11 @@ use App\Contracts\TranslationProvider;
 use App\Enums\Language;
 use App\Exceptions\PublicDemoException;
 use App\Services\Conversation\ConversationConnectionRegistry;
+use App\Services\Conversation\ConversationPendingWorkerRegistry;
 use App\Services\Conversation\ConversationStore;
 use App\Services\Conversation\ConversationTurnManager;
 use App\Services\Conversation\ConversationWebSocketHandler;
+use App\Services\Conversation\ConversationWorkerManager;
 use App\Services\Live\LiveSpeechRecognitionSession;
 use App\Services\PublicDemo\PublicDemoTokenStore;
 use App\Services\PublicDemo\PublicDemoWebSocketSession;
@@ -83,6 +85,25 @@ final class ServeLivePipelineCommand extends Command
             new ConversationTurnManager,
         );
 
+        $pendingWorkers = new ConversationPendingWorkerRegistry;
+
+        $workers = config('conversation.async_worker_enabled', false)
+            ? new ConversationWorkerManager(
+                workerCommand: config(
+                    'conversation.async_worker_command',
+                    [
+                        PHP_BINARY,
+                        base_path('artisan'),
+                        'conversation:run-worker',
+                    ],
+                ),
+                timeoutSeconds: (float) config(
+                    'conversation.async_worker_timeout_seconds',
+                    60,
+                ),
+            )
+            : null;
+
         $server = new Server(
             port: $port,
         );
@@ -92,13 +113,20 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
                 Text $message,
-            ) use (&$sessions, $conversationHandler): void {
+            ) use (
+                &$sessions,
+                $conversationHandler,
+                $workers,
+                $pendingWorkers,
+            ): void {
                 try {
                     $this->handleTextMessage(
                         connection: $connection,
                         message: $message,
                         sessions: $sessions,
                         conversationHandler: $conversationHandler,
+                        workers: $workers,
+                        pendingWorkers: $pendingWorkers,
                     );
                 } catch (Throwable $exception) {
                     report($exception);
@@ -210,8 +238,17 @@ final class ServeLivePipelineCommand extends Command
             function (
                 Server $server,
                 Connection $connection,
-            ) use (&$sessions, $conversationHandler): void {
+            ) use (
+                &$sessions,
+                $conversationHandler,
+                $pendingWorkers,
+                $workers,
+            ): void {
                 try {
+                    foreach ($pendingWorkers->removeFor($connection) as $turnId) {
+                        $workers?->cancel($turnId);
+                    }
+
                     $this->cancelSession(
                         connection: $connection,
                         sessions: $sessions,
@@ -228,6 +265,118 @@ final class ServeLivePipelineCommand extends Command
                 }
             },
         );
+
+        if ($workers !== null) {
+            $server->onTick(
+                function (Server $server) use (
+                    $workers,
+                    $pendingWorkers,
+                    $conversationHandler,
+                ): void {
+                    foreach ($pendingWorkers->all() as $turnId => $job) {
+                        $owner = $job['owner'];
+                        $peer = $job['peer'];
+
+                        if (
+                            ! $owner->isConnected()
+                            || ! $peer->isConnected()
+                            || ! $conversationHandler->isCurrent($owner)
+                            || ! $conversationHandler->isCurrent($peer)
+                            || ! $conversationHandler->ownsTurn($owner)
+                            || $conversationHandler->currentPeer($owner) !== $peer
+                        ) {
+                            $workers->cancel($turnId);
+                            $pendingWorkers->remove($turnId);
+
+                            try {
+                                if (
+                                    $conversationHandler->isCurrent($owner)
+                                    && $conversationHandler->ownsTurn($owner)
+                                ) {
+                                    $conversationHandler->abortTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                }
+                            } catch (Throwable $cleanupException) {
+                                report($cleanupException);
+                            }
+
+                            continue;
+                        }
+
+                        try {
+                            $result = $workers->pollAudio($turnId);
+
+                            if ($result === null) {
+                                continue;
+                            }
+
+                            $this->sendJson($peer, [
+                                'type' => 'conversation_translation_completed',
+                                'text' => $job['source_text'],
+                                'translated_text' => $result['translated_text'],
+                                'source_language' => $job['source_language']->value,
+                                'target_language' => $job['target_language']->value,
+                            ]);
+
+                            $this->sendJson($peer, [
+                                'type' => 'conversation_tts_started',
+                                'format' => 'pcm16',
+                                'sample_rate_hz' => self::TTS_SAMPLE_RATE,
+                                'channels' => self::TTS_CHANNELS,
+                                'bytes_per_sample' => self::TTS_BYTES_PER_SAMPLE,
+                            ]);
+
+                            $peer->binary($result['audio']);
+
+                            $this->sendJson($peer, [
+                                'type' => 'conversation_completed',
+                                'source_language' => $job['source_language']->value,
+                                'target_language' => $job['target_language']->value,
+                                'translated_audio_bytes' => strlen($result['audio']),
+                            ]);
+
+                            $pendingWorkers->remove($turnId);
+
+                            $conversationHandler->stopTurn(
+                                $owner,
+                                function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                },
+                            );
+                        } catch (Throwable $exception) {
+                            report($exception);
+
+                            $workers->cancel($turnId);
+                            $pendingWorkers->remove($turnId);
+
+                            try {
+                                if ($conversationHandler->ownsTurn($owner)) {
+                                    $conversationHandler->abortTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                }
+                            } catch (Throwable $cleanupException) {
+                                report($cleanupException);
+                            }
+
+                            if ($owner->isConnected()) {
+                                $this->sendError(
+                                    connection: $owner,
+                                    message: 'Conversation translation failed.',
+                                );
+                            }
+                        }
+                    }
+                },
+            );
+        }
 
         $server->onError(
             function (
@@ -292,6 +441,8 @@ final class ServeLivePipelineCommand extends Command
         Text $message,
         array &$sessions,
         ConversationWebSocketHandler $conversationHandler,
+        ?ConversationWorkerManager $workers,
+        ConversationPendingWorkerRegistry $pendingWorkers,
     ): void {
         $payload = json_decode(
             $message->getContent(),
@@ -395,8 +546,25 @@ final class ServeLivePipelineCommand extends Command
                     $this->sendJson($to, $data);
                 };
 
+                $audioEnabled = config(
+                    'conversation.audio_enabled',
+                    false,
+                );
+
                 if (
-                    config('conversation.audio_enabled', false)
+                    $workers !== null
+                    && $pendingWorkers->hasOwner($connection)
+                ) {
+                    $this->sendError(
+                        connection: $connection,
+                        message: 'Conversation translation is already processing.',
+                    );
+
+                    return;
+                }
+
+                if (
+                    $audioEnabled
                     && ! $conversationHandler->ownsTurn($connection)
                 ) {
                     throw new LogicException(
@@ -405,9 +573,20 @@ final class ServeLivePipelineCommand extends Command
                 }
 
                 try {
-                    if (
-                        config('conversation.audio_enabled', false)
-                    ) {
+                    if ($audioEnabled) {
+                        if ($workers !== null) {
+                            $this->startAsyncConversationWorker(
+                                connection: $connection,
+                                sessions: $sessions,
+                                conversationHandler: $conversationHandler,
+                                workers: $workers,
+                                pendingWorkers: $pendingWorkers,
+                            );
+
+                            // Keep turn ownership until worker completion.
+                            return;
+                        }
+
                         $this->finishConversationSession(
                             $connection,
                             $sessions,
@@ -421,6 +600,19 @@ final class ServeLivePipelineCommand extends Command
                     );
                 } catch (Throwable $exception) {
                     try {
+                        if ($workers !== null) {
+                            foreach (
+                                $pendingWorkers->removeFor($connection) as $turnId
+                            ) {
+                                $workers->cancel($turnId);
+                            }
+
+                            $this->cancelSession(
+                                connection: $connection,
+                                sessions: $sessions,
+                            );
+                        }
+
                         $conversationHandler->abortTurn(
                             $connection,
                             $send,
@@ -581,6 +773,87 @@ final class ServeLivePipelineCommand extends Command
             'text_to_speech' => $textToSpeech,
             'public_demo' => null,
         ];
+    }
+
+    private function startAsyncConversationWorker(
+        Connection $connection,
+        array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
+        ConversationWorkerManager $workers,
+        ConversationPendingWorkerRegistry $pendingWorkers,
+    ): void {
+        if ($pendingWorkers->hasOwner($connection)) {
+            throw new LogicException(
+                'Conversation translation is already processing.',
+            );
+        }
+
+        $key = spl_object_id($connection);
+        $context = $sessions[$key] ?? null;
+
+        if ($context === null) {
+            throw new LogicException(
+                'No active conversation recording.',
+            );
+        }
+
+        if (! $conversationHandler->ownsTurn($connection)) {
+            throw new LogicException(
+                'Connection does not own the conversation turn.',
+            );
+        }
+
+        $peer = $conversationHandler->currentPeer($connection);
+
+        if ($peer === null) {
+            throw new LogicException(
+                'Conversation peer is not connected.',
+            );
+        }
+
+        $speechResult = $context['session']->finish();
+
+        $this->sendJson($connection, [
+            'type' => 'conversation_recognition_completed',
+            'text' => $speechResult->text,
+        ]);
+
+        if (
+            ! $conversationHandler->ownsTurn($connection)
+            || $conversationHandler->currentPeer($connection) !== $peer
+        ) {
+            throw new LogicException(
+                'Conversation peer changed during processing.',
+            );
+        }
+
+        $sourceLanguage = $context['source_language'];
+        $targetLanguage = $this->targetLanguage($sourceLanguage);
+        $turnId = bin2hex(random_bytes(16));
+
+        $pendingWorkers->add(
+            turnId: $turnId,
+            owner: $connection,
+            peer: $peer,
+            sourceText: $speechResult->text,
+            sourceLanguage: $sourceLanguage,
+            targetLanguage: $targetLanguage,
+        );
+
+        try {
+            $workers->startJob($turnId, [
+                'turn_id' => $turnId,
+                'source_text' => $speechResult->text,
+                'source_language' => $sourceLanguage->value,
+                'target_language' => $targetLanguage->value,
+            ]);
+        } catch (Throwable $exception) {
+            $pendingWorkers->remove($turnId);
+
+            throw $exception;
+        }
+
+        $this->cleanupSession($connection, $sessions);
     }
 
     private function finishConversationSession(
