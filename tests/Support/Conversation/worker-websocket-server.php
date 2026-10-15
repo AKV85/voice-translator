@@ -21,7 +21,10 @@ if ($port < 1 || $port > 65535) {
 }
 
 $workers = new ConversationWorkerManager(
-    workerPath: base_path('tests/Support/Conversation/pipeline-worker.php'),
+    workerCommand: [
+        PHP_BINARY,
+        base_path('tests/Support/Conversation/pipeline-worker.php'),
+    ],
 );
 
 /** @var array<string, array{sender: Connection, receiver: Connection}> $jobs */

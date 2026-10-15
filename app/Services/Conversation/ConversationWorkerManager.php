@@ -16,12 +16,20 @@ final class ConversationWorkerManager
     private array $processes = [];
 
     public function __construct(
-        private readonly string $workerPath,
+        private readonly array $workerCommand,
         private readonly float $timeoutSeconds = 10.0,
     ) {
-        if (! is_file($workerPath) || ! is_readable($workerPath)) {
+        if (
+            $workerCommand === []
+            || array_values($workerCommand) !== $workerCommand
+            || count(array_filter(
+                $workerCommand,
+                static fn ($argument): bool => is_string($argument)
+                    && $argument !== '',
+            )) !== count($workerCommand)
+        ) {
             throw new LogicException(
-                'Conversation worker script is unavailable.',
+                'Invalid conversation worker command.',
             );
         }
 
@@ -36,6 +44,35 @@ final class ConversationWorkerManager
         string $turnId,
         int $delayMs = 0,
     ): void {
+        $this->launch($turnId, [
+            'turn_id' => $turnId,
+            'delay_ms' => $delayMs,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $job
+     */
+    public function startJob(string $turnId, array $job): void
+    {
+        if (
+            ($job['turn_id'] ?? null) !== $turnId
+            || ! is_string($job['source_text'] ?? null)
+            || $job['source_text'] === ''
+        ) {
+            throw new LogicException(
+                'Invalid conversation worker job.',
+            );
+        }
+
+        $this->launch($turnId, $job);
+    }
+
+    /**
+     * @param  array<string, mixed>  $job
+     */
+    private function launch(string $turnId, array $job): void
+    {
         if ($turnId === '' || isset($this->processes[$turnId])) {
             throw new LogicException(
                 'Invalid or duplicate conversation worker turn.',
@@ -48,16 +85,10 @@ final class ConversationWorkerManager
             );
         }
 
-        $process = new Process([
-            PHP_BINARY,
-            $this->workerPath,
-        ]);
+        $process = new Process($this->workerCommand);
 
         $process->setTimeout($this->timeoutSeconds);
-        $process->setInput(json_encode([
-            'turn_id' => $turnId,
-            'delay_ms' => $delayMs,
-        ], JSON_THROW_ON_ERROR));
+        $process->setInput(json_encode($job, JSON_THROW_ON_ERROR));
 
         $process->start();
 

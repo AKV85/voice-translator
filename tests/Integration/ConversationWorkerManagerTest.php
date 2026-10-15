@@ -4,7 +4,10 @@ use App\Services\Conversation\ConversationWorkerManager;
 
 it('polls a conversation worker without blocking', function (): void {
     $manager = new ConversationWorkerManager(
-        workerPath: base_path('tests/Support/Conversation/pipeline-worker.php'),
+        workerCommand: [
+            PHP_BINARY,
+            base_path('tests/Support/Conversation/pipeline-worker.php'),
+        ],
     );
     $turnId = bin2hex(random_bytes(8));
 
@@ -38,7 +41,10 @@ it('polls a conversation worker without blocking', function (): void {
 
 it('cancels a running conversation worker', function (): void {
     $manager = new ConversationWorkerManager(
-        workerPath: base_path('tests/Support/Conversation/pipeline-worker.php'),
+        workerCommand: [
+            PHP_BINARY,
+            base_path('tests/Support/Conversation/pipeline-worker.php'),
+        ],
     );
     $turnId = bin2hex(random_bytes(8));
 
@@ -54,7 +60,10 @@ it('cancels a running conversation worker', function (): void {
 
 it('rejects duplicate conversation worker turns', function (): void {
     $manager = new ConversationWorkerManager(
-        workerPath: base_path('tests/Support/Conversation/pipeline-worker.php'),
+        workerCommand: [
+            PHP_BINARY,
+            base_path('tests/Support/Conversation/pipeline-worker.php'),
+        ],
     );
     $turnId = bin2hex(random_bytes(8));
 
@@ -71,7 +80,10 @@ it('rejects duplicate conversation worker turns', function (): void {
 
 it('limits concurrent conversation workers', function (): void {
     $manager = new ConversationWorkerManager(
-        workerPath: base_path('tests/Support/Conversation/pipeline-worker.php'),
+        workerCommand: [
+            PHP_BINARY,
+            base_path('tests/Support/Conversation/pipeline-worker.php'),
+        ],
     );
     $turnIds = [];
 
@@ -109,7 +121,10 @@ it('limits concurrent conversation workers', function (): void {
 
 it('terminates timed out conversation workers', function (): void {
     $manager = new ConversationWorkerManager(
-        workerPath: base_path('tests/Support/Conversation/pipeline-worker.php'),
+        workerCommand: [
+            PHP_BINARY,
+            base_path('tests/Support/Conversation/pipeline-worker.php'),
+        ],
         timeoutSeconds: 0.2,
     );
 
@@ -142,13 +157,13 @@ it('terminates timed out conversation workers', function (): void {
     }
 });
 
-it('rejects an unavailable conversation worker script', function (): void {
+it('rejects an invalid conversation worker command', function (): void {
     expect(
         fn () => new ConversationWorkerManager(
-            workerPath: base_path('missing-conversation-worker.php'),
+            workerCommand: [],
         ),
     )->toThrow(
         LogicException::class,
-        'Conversation worker script is unavailable.',
+        'Invalid conversation worker command.',
     );
 });
