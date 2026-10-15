@@ -245,8 +245,38 @@ final class ServeLivePipelineCommand extends Command
                 $workers,
             ): void {
                 try {
-                    foreach ($pendingWorkers->removeFor($connection) as $turnId) {
-                        $workers?->cancel($turnId);
+                    foreach ($pendingWorkers->all() as $turnId => $job) {
+                        if (
+                            $job['owner'] !== $connection
+                            && $job['peer'] !== $connection
+                        ) {
+                            continue;
+                        }
+
+                        try {
+                            $workers?->cancel($turnId);
+                        } finally {
+                            $pendingWorkers->remove($turnId);
+
+                            $owner = $job['owner'];
+
+                            if (
+                                $owner !== $connection
+                                && $conversationHandler->isCurrent($owner)
+                                && $conversationHandler->ownsTurn($owner)
+                            ) {
+                                try {
+                                    $conversationHandler->abortTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                } catch (Throwable $cleanupException) {
+                                    report($cleanupException);
+                                }
+                            }
+                        }
                     }
 
                     $this->cancelSession(

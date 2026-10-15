@@ -213,6 +213,99 @@ it('delivers translated PCM16 through the real async conversation server', funct
 
         expect($receive($hostClient)['type'])
             ->toBe('conversation_peer_started');
+
+        // Finish the Guest turn that was started above.
+        $guestClient->binary('guest-audio');
+
+        $send($guestClient, [
+            'type' => 'conversation_stop',
+        ]);
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_transcript');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_recognition_completed');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_translation_completed');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_tts_started');
+
+        expect($hostClient->receive())
+            ->toBeInstanceOf(Binary::class);
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_completed');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_peer_stopped');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_turn_stopped');
+
+        // Guest disconnects while the async worker is running.
+        $send($hostClient, [
+            'type' => 'conversation_start',
+            'mime_type' => 'audio/webm',
+        ]);
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_turn_started');
+
+        expect($receive($guestClient)['type'])
+            ->toBe('conversation_peer_started');
+
+        $hostClient->binary('audio-before-disconnect');
+
+        $send($hostClient, [
+            'type' => 'conversation_stop',
+        ]);
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_transcript');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_recognition_completed');
+
+        // The fake worker takes 1500 ms, so disconnect before completion.
+        $guestClient->disconnect();
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_peer_left');
+
+        // Reconnect with the same guest token using a different socket.
+        $replacementGuest = $connect();
+
+        $send($replacementGuest, [
+            'type' => 'conversation_join',
+            'code' => $guest['code'],
+            'token' => $guest['token'],
+        ]);
+
+        $joined = $receive($replacementGuest);
+
+        expect($joined['type'])->toBe('conversation_joined')
+            ->and($joined['role'])->toBe('guest');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_peer_joined');
+
+        // Wait beyond the fake worker duration.
+        usleep(1900000);
+
+        // A new turn must work; no cancelled translation may arrive first.
+        $send($replacementGuest, [
+            'type' => 'conversation_start',
+            'mime_type' => 'audio/webm',
+        ]);
+
+        expect($receive($replacementGuest)['type'])
+            ->toBe('conversation_turn_started');
+
+        expect($receive($hostClient)['type'])
+            ->toBe('conversation_peer_started');
     } finally {
         foreach ($clients as $client) {
             try {
