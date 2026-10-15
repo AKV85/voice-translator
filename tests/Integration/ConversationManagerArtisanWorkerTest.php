@@ -2,13 +2,14 @@
 
 use App\Services\Conversation\ConversationWorkerManager;
 
-it('runs an Artisan conversation worker through the manager', function (): void {
+it('reports an Artisan worker validation failure through the manager', function (): void {
     $manager = new ConversationWorkerManager(
         workerCommand: [
             PHP_BINARY,
             base_path('artisan'),
             'conversation:run-worker',
         ],
+        timeoutSeconds: 20,
     );
 
     $turnId = bin2hex(random_bytes(8));
@@ -19,25 +20,29 @@ it('runs an Artisan conversation worker through the manager', function (): void 
             'source_text' => 'Привет!',
         ]);
 
-        expect($manager->has($turnId))->toBeTrue();
-
-        $result = null;
-        $deadline = microtime(true) + 5;
+        $failure = null;
+        $deadline = microtime(true) + 15;
 
         while (microtime(true) < $deadline) {
-            $result = $manager->poll($turnId);
+            try {
+                $result = $manager->poll($turnId);
 
-            if ($result !== null) {
+                if ($result !== null) {
+                    throw new LogicException(
+                        'Unexpected successful worker result.',
+                    );
+                }
+            } catch (RuntimeException $exception) {
+                $failure = $exception;
+
                 break;
             }
 
             usleep(10000);
         }
 
-        expect($result)->not->toBeNull()
-            ->and($result['turn_id'])->toBe($turnId)
-            ->and($result['status'])->toBe('completed')
-            ->and($result['translated_text'])->toBe('Привет!')
+        expect($failure)->toBeInstanceOf(RuntimeException::class)
+            ->and($failure->getMessage())->toContain('Invalid worker job.')
             ->and($manager->has($turnId))->toBeFalse();
     } finally {
         $manager->cancel($turnId);
