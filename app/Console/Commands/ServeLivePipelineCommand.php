@@ -7,6 +7,7 @@ use App\Contracts\StreamingTextToSpeechProvider;
 use App\Contracts\TranslationProvider;
 use App\Enums\Language;
 use App\Exceptions\PublicDemoException;
+use App\Services\Conversation\AsyncSttBridgeClient;
 use App\Services\Conversation\ConversationConnectionRegistry;
 use App\Services\Conversation\ConversationPendingWorkerRegistry;
 use App\Services\Conversation\ConversationStore;
@@ -84,6 +85,9 @@ final class ServeLivePipelineCommand extends Command
          * }> $sessions
          */
         $sessions = [];
+        // One serial translation/TTS worker per incremental STT turn.
+        // Keep the queue alive after STT itself is closed at Stop.
+        $incrementalTurns = [];
 
         $conversationHandler = new ConversationWebSocketHandler(
             app(ConversationStore::class),
@@ -111,6 +115,10 @@ final class ServeLivePipelineCommand extends Command
             )
             : null;
 
+        // Incremental STT runs only with the existing periodic worker tick.
+        $incrementalStt = (bool) config('conversation.incremental_stt_enabled', false)
+            && $workers !== null;
+
         $server = new Server(
             port: $port,
         );
@@ -125,6 +133,7 @@ final class ServeLivePipelineCommand extends Command
                 $conversationHandler,
                 $workers,
                 $pendingWorkers,
+                $incrementalStt,
             ): void {
                 try {
                     $this->handleTextMessage(
@@ -134,6 +143,7 @@ final class ServeLivePipelineCommand extends Command
                         conversationHandler: $conversationHandler,
                         workers: $workers,
                         pendingWorkers: $pendingWorkers,
+                        incrementalStt: $incrementalStt,
                     );
                 } catch (Throwable $exception) {
                     report($exception);
@@ -253,8 +263,14 @@ final class ServeLivePipelineCommand extends Command
                 $conversationHandler,
                 $pendingWorkers,
                 $workers,
+                &$incrementalTurns,
             ): void {
                 try {
+                    foreach ($incrementalTurns as $key => $turn) {
+                        if ($turn['owner'] === $connection || $turn['peer'] === $connection) {
+                            unset($incrementalTurns[$key]);
+                        }
+                    }
                     foreach ($pendingWorkers->all() as $turnId => $job) {
                         if (
                             $job['owner'] !== $connection
@@ -312,7 +328,163 @@ final class ServeLivePipelineCommand extends Command
                     $workers,
                     $pendingWorkers,
                     $conversationHandler,
+                    &$sessions,
+                    &$incrementalTurns,
                 ): void {
+                    // Poll each bridge even if no WebSocket audio arrives this tick.
+                    foreach ($sessions as $key => $context) {
+                        if (! ($context['session'] instanceof AsyncSttBridgeClient)) {
+                            continue;
+                        }
+                        $client = $context['session'];
+                        $owner = $context['connection'];
+                        if (! isset($incrementalTurns[$key])) {
+                            $incrementalTurns[$key] = [
+                                'owner' => $owner,
+                                'peer' => $conversationHandler->currentPeer($owner),
+                                'source_language' => $context['source_language'],
+                                'queue' => [],
+                                'active' => null,
+                                'done' => false,
+                            ];
+                        }
+                        try {
+                            if (! $owner->isConnected()
+                                || ! $conversationHandler->isCurrent($owner)
+                                || ! $conversationHandler->ownsTurn($owner)
+                                || $conversationHandler->currentPeer($owner) === null
+                            ) {
+                                $client->cancel();
+                                unset($sessions[$key], $incrementalTurns[$key]);
+
+                                continue;
+                            }
+                            foreach ($client->poll() as $event) {
+                                if ($event['type'] === 'final') {
+                                    $sessions[$key]['final_texts'][] = $event['text'];
+                                    $incrementalTurns[$key]['queue'][] = $event['text'];
+                                    $this->sendJson($owner, [
+                                        'type' => 'conversation_transcript',
+                                        'text' => implode(' ', $sessions[$key]['final_texts']),
+                                        'is_final' => true,
+                                        'segment' => $event['segment'],
+                                    ]);
+                                } elseif ($event['type'] === 'interim') {
+                                    $this->sendJson($owner, [
+                                        'type' => 'conversation_transcript',
+                                        'text' => trim(implode(' ', $sessions[$key]['final_texts']).' '.$event['text']),
+                                        'is_final' => false,
+                                    ]);
+                                } elseif ($event['type'] === 'done') {
+                                    if (! $context['stopping']) {
+                                        throw new LogicException('STT bridge ended before stop.');
+                                    }
+                                    $this->sendJson($owner, [
+                                        'type' => 'conversation_recognition_completed',
+                                        'text' => implode(' ', $sessions[$key]['final_texts']),
+                                    ]);
+                                    $client->close();
+                                    unset($sessions[$key]);
+                                    $incrementalTurns[$key]['done'] = true;
+                                    // Release only after all queued segment audio has been sent.
+                                }
+                            }
+                        } catch (Throwable $exception) {
+                            report($exception);
+                            $client->cancel();
+                            unset($sessions[$key], $incrementalTurns[$key]);
+                            try {
+                                if ($conversationHandler->ownsTurn($owner)) {
+                                    $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
+                                        $this->sendJson($to, $data);
+                                    });
+                                }
+                            } catch (Throwable $cleanupException) {
+                                report($cleanupException);
+                            }
+                            if ($owner->isConnected()) {
+                                $this->sendError($owner, 'Incremental STT failed.');
+                            }
+                        }
+                    }
+
+                    // Start the next segment only after the previous TTS stream ends.
+                    foreach ($incrementalTurns as $key => $turn) {
+                        $owner = $turn['owner'];
+                        $peer = $turn['peer'];
+                        if (! $owner->isConnected()
+                            || $peer === null || ! $peer->isConnected()
+                            || ! $conversationHandler->isCurrent($owner)
+                            || ! $conversationHandler->isCurrent($peer)
+                            || ! $conversationHandler->ownsTurn($owner)
+                            || $conversationHandler->currentPeer($owner) !== $peer
+                        ) {
+                            if ($turn['active'] !== null) {
+                                $workers->cancel($turn['active']);
+                                $pendingWorkers->remove($turn['active']);
+                            }
+                            unset($incrementalTurns[$key]);
+                            if ($conversationHandler->isCurrent($owner)
+                                && $conversationHandler->ownsTurn($owner)) {
+                                $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                });
+                            }
+
+                            continue;
+                        }
+
+                        if ($turn['active'] !== null) {
+                            continue;
+                        }
+                        if ($turn['queue'] === []) {
+                            if ($turn['done']) {
+                                unset($incrementalTurns[$key]);
+                                $conversationHandler->stopTurn($owner, function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                });
+                            }
+
+                            continue;
+                        }
+
+                        $text = array_shift($incrementalTurns[$key]['queue']);
+                        $turnId = bin2hex(random_bytes(16));
+                        $sourceLanguage = $turn['source_language'];
+                        $targetLanguage = $this->targetLanguage($sourceLanguage);
+                        try {
+                            $pendingWorkers->add(
+                                turnId: $turnId,
+                                owner: $owner,
+                                peer: $peer,
+                                sourceText: $text,
+                                sourceLanguage: $sourceLanguage,
+                                targetLanguage: $targetLanguage,
+                            );
+                            $incrementalTurns[$key]['active'] = $turnId;
+                            $workers->startJob($turnId, [
+                                'turn_id' => $turnId,
+                                'source_text' => $text,
+                                'source_language' => $sourceLanguage->value,
+                                'target_language' => $targetLanguage->value,
+                                'stream' => true,
+                                'server_worker_requested_at' => microtime(true),
+                            ]);
+                        } catch (Throwable $exception) {
+                            report($exception);
+                            $pendingWorkers->remove($turnId);
+                            unset($incrementalTurns[$key]);
+                            if ($conversationHandler->ownsTurn($owner)) {
+                                $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                });
+                            }
+                            if ($owner->isConnected()) {
+                                $this->sendError($owner, 'Incremental translation failed.');
+                            }
+                        }
+                    }
+
                     foreach ($pendingWorkers->all() as $turnId => $job) {
                         $owner = $job['owner'];
                         $peer = $job['peer'];
@@ -327,6 +499,10 @@ final class ServeLivePipelineCommand extends Command
                         ) {
                             $workers->cancel($turnId);
                             $pendingWorkers->remove($turnId);
+                            $ownerKey = spl_object_id($owner);
+                            if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
+                                unset($incrementalTurns[$ownerKey]);
+                            }
 
                             try {
                                 if (
@@ -436,6 +612,15 @@ final class ServeLivePipelineCommand extends Command
                                         $this->conversationFirstPcmLogged[$turnId],
                                     );
 
+                                    $ownerKey = spl_object_id($owner);
+                                    if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
+                                        $incrementalTurns[$ownerKey]['active'] = null;
+
+                                        // Keep the microphone turn owned until STT is done
+                                        // AND there are no queued translated segments.
+                                        continue;
+                                    }
+
                                     $conversationHandler->stopTurn(
                                         $owner,
                                         function (Connection $to, array $data): void {
@@ -449,6 +634,14 @@ final class ServeLivePipelineCommand extends Command
 
                             $workers->cancel($turnId);
                             $pendingWorkers->remove($turnId);
+                            $ownerKey = spl_object_id($owner);
+                            if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
+                                unset($incrementalTurns[$ownerKey]);
+                                if (($sessions[$ownerKey]['session'] ?? null) instanceof AsyncSttBridgeClient) {
+                                    $sessions[$ownerKey]['session']->cancel();
+                                    unset($sessions[$ownerKey]);
+                                }
+                            }
 
                             try {
                                 if ($conversationHandler->ownsTurn($owner)) {
@@ -540,6 +733,7 @@ final class ServeLivePipelineCommand extends Command
         ConversationWebSocketHandler $conversationHandler,
         ?ConversationWorkerManager $workers,
         ConversationPendingWorkerRegistry $pendingWorkers,
+        bool $incrementalStt = false,
     ): void {
         $payload = json_decode(
             $message->getContent(),
@@ -577,7 +771,10 @@ final class ServeLivePipelineCommand extends Command
                 $connection,
                 $code,
                 $token,
-                function (Connection $to, array $data): void {
+                function (Connection $to, array $data) use ($incrementalStt): void {
+                    if ($data['type'] === 'conversation_joined') {
+                        $data['incremental_stt_enabled'] = $incrementalStt;
+                    }
                     $this->sendJson($to, $data);
                 },
             );
@@ -610,12 +807,14 @@ final class ServeLivePipelineCommand extends Command
                                 $payload,
                                 &$sessions,
                                 $conversationHandler,
+                                $incrementalStt,
                             ): void {
                                 $this->startConversationSession(
                                     $connection,
                                     $payload,
                                     $sessions,
                                     $conversationHandler,
+                                    $incrementalStt,
                                 );
                             }
                         : null,
@@ -651,6 +850,8 @@ final class ServeLivePipelineCommand extends Command
                 if (
                     $workers !== null
                     && $pendingWorkers->hasOwner($connection)
+                    && ! (($sessions[spl_object_id($connection)]['session'] ?? null)
+                        instanceof AsyncSttBridgeClient)
                 ) {
                     $this->sendError(
                         connection: $connection,
@@ -671,6 +872,17 @@ final class ServeLivePipelineCommand extends Command
 
                 try {
                     if ($audioEnabled) {
+                        $active = $sessions[spl_object_id($connection)] ?? null;
+                        if (($active['session'] ?? null) instanceof AsyncSttBridgeClient) {
+                            if ($active['stopping']) {
+                                throw new LogicException('STT stop already requested.');
+                            }
+                            $active['session']->finish();
+                            $sessions[spl_object_id($connection)]['stopping'] = true;
+
+                            // onTick emits recognition_completed and releases turn at done.
+                            return;
+                        }
                         if ($workers !== null) {
                             $this->startAsyncConversationWorker(
                                 connection: $connection,
@@ -788,6 +1000,12 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
+        if (($sessionContext['session'] ?? null) instanceof AsyncSttBridgeClient
+            && ($sessionContext['stopping'] ?? false)
+        ) {
+            throw new LogicException('Audio received after incremental STT stop.');
+        }
+
         $sessionContext['session']->pushAudio(
             $audio,
         );
@@ -809,6 +1027,7 @@ final class ServeLivePipelineCommand extends Command
         array $payload,
         array &$sessions,
         ConversationWebSocketHandler $conversationHandler,
+        bool $incrementalStt = false,
     ): void {
         $key = spl_object_id($connection);
 
@@ -834,6 +1053,28 @@ final class ServeLivePipelineCommand extends Command
             throw new InvalidArgumentException(
                 'Unsupported conversation language.',
             );
+        }
+
+        if ($incrementalStt) {
+            if ($mimeType !== 'audio/pcm;rate=24000') {
+                throw new InvalidArgumentException('Incremental STT requires 24kHz PCM16.');
+            }
+            $bridge = new AsyncSttBridgeClient(
+                host: (string) config('conversation.stt_bridge_host', 'host.docker.internal'),
+                port: (int) config('conversation.stt_bridge_port', 8767),
+            );
+            $bridge->start($language === Language::Russian ? 'ru-RU' : 'en-US', 24000);
+            $sessions[$key] = [
+                'session' => $bridge,
+                'profile' => self::DEFAULT_PROFILE,
+                'source_language' => $language,
+                'public_demo' => null,
+                'connection' => $connection,
+                'final_texts' => [],
+                'stopping' => false,
+            ];
+
+            return;
         }
 
         [

@@ -24,6 +24,12 @@ export default (config = {}) => ({
     isStopping: false,
     recordingCancelled: false,
     mediaRecorder: null,
+    incrementalSttEnabled: false,
+    pcmContext: null,
+    pcmSource: null,
+    pcmWorklet: null,
+    pcmSink: null,
+    pcmStopResolve: null,
     mediaStream: null,
     sendQueue: null,
     transcription: "",
@@ -128,6 +134,7 @@ export default (config = {}) => ({
                     case "conversation_joined":
                         this.connected = true;
                         this.role = message.role;
+                        this.incrementalSttEnabled = !!message.incremental_stt_enabled;
                         this.peerConnected = !!message.peer_connected;
                         this.status = this.peerConnected
                             ? "Connected to peer"
@@ -172,12 +179,17 @@ export default (config = {}) => ({
                     case "conversation_transcript":
                     case "conversation_recognition_completed":
                         this.transcription = message.text || "";
-                        this.status = "Processing translation";
+                        this.status = this.isRecording ? "Recording" : "Processing translation";
                         break;
 
                     case "conversation_translation_completed":
-                        this.transcription = message.text || "";
-                        this.translatedText = message.translated_text || "";
+                        if (!this.incrementalSttEnabled) {
+                            this.transcription = message.text || "";
+                            this.translatedText = message.translated_text || "";
+                        } else {
+                            this.translatedText = [this.translatedText, message.translated_text]
+                                .filter(Boolean).join(" ");
+                        }
                         this.status = "Translation received";
                         break;
 
@@ -195,7 +207,10 @@ export default (config = {}) => ({
 
                         this.audioChunks = [];
                         this.lastAudioBytes = 0;
-                        this.playbackNextTime = 0;
+                        // Consecutive segment streams must share one playback timeline.
+                        if (!this.incrementalSttEnabled) {
+                            this.playbackNextTime = 0;
+                        }
                         this.receivingAudio = true;
                         this.audioStatus = "Receiving translated audio";
                         break;
@@ -265,14 +280,14 @@ export default (config = {}) => ({
 
         try {
             if (!navigator.mediaDevices?.getUserMedia
-                || typeof MediaRecorder === "undefined") {
+                || (!this.incrementalSttEnabled && typeof MediaRecorder === "undefined")) {
                 throw new Error("Microphone recording is unavailable.");
             }
 
-            const mimeType = [
-                "audio/webm;codecs=opus",
-                "audio/webm",
-            ].find((type) => MediaRecorder.isTypeSupported(type));
+            const mimeType = this.incrementalSttEnabled
+                ? "audio/pcm;rate=24000"
+                : ["audio/webm;codecs=opus", "audio/webm"]
+                    .find((type) => MediaRecorder.isTypeSupported(type));
 
             if (!mimeType) {
                 throw new Error("WebM/Opus recording is unsupported.");
@@ -288,7 +303,9 @@ export default (config = {}) => ({
             }
 
             this.mediaStream = stream;
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+            if (!this.incrementalSttEnabled) {
+                this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+            }
             this.turnBusy = true;
             this.status = "Waiting for recording confirmation";
 
@@ -305,7 +322,16 @@ export default (config = {}) => ({
         }
     },
 
-    beginRecording() {
+    async beginRecording() {
+        if (this.incrementalSttEnabled) {
+            try {
+                await this.beginPcmRecording();
+            } catch (error) {
+                this.error = error.message;
+                this.socket?.close();
+            }
+            return;
+        }
         const recorder = this.mediaRecorder;
 
         if (!recorder) {
@@ -359,6 +385,26 @@ export default (config = {}) => ({
 
     async stopSpeaking() {
         if (!this.isRecording || this.isStopping) return;
+        if (this.incrementalSttEnabled) {
+            this.isStopping = true;
+            this.status = "Finishing recording";
+            try {
+                await this.stopPcmRecording();
+                if (this.socket?.readyState !== WebSocket.OPEN) {
+                    throw new Error("WebSocket disconnected before stop.");
+                }
+                this.stopSentAt = performance.now();
+                this.firstAudioLogged = false;
+                this.socket.send(JSON.stringify({ type: "conversation_stop" }));
+                this.status = "Finishing recognition";
+            } catch (error) {
+                this.error = error.message;
+                this.socket?.close();
+            } finally {
+                this.releaseMicrophone();
+            }
+            return;
+        }
 
         this.isStopping = true;
         this.status = "Finishing recording";
@@ -404,6 +450,64 @@ export default (config = {}) => ({
         } finally {
             this.releaseMicrophone();
         }
+    },
+
+    async beginPcmRecording() {
+        if (!window.AudioWorkletNode) {
+            throw new Error("AudioWorklet is unavailable (HTTPS or localhost required).");
+        }
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) throw new Error("Web Audio API unavailable.");
+        const context = new AudioContextClass();
+        this.pcmContext = context;
+        await context.audioWorklet.addModule(
+            new URL("./conversation-pcm-worklet.js", import.meta.url),
+        );
+        if (this.recordingCancelled || !this.turnBusy || !this.mediaStream) return;
+        const source = context.createMediaStreamSource(this.mediaStream);
+        const node = new AudioWorkletNode(context, "conversation-pcm-processor");
+        const sink = context.createGain();
+        sink.gain.value = 0;
+        source.connect(node);
+        node.connect(sink);
+        sink.connect(context.destination);
+        this.pcmSource = source;
+        this.pcmWorklet = node;
+        this.pcmSink = sink;
+        node.port.onmessage = (event) => {
+            if (event.data?.type === "stopped") {
+                this.pcmStopResolve?.();
+                this.pcmStopResolve = null;
+                return;
+            }
+            if (event.data?.type !== "audio" || this.recordingCancelled) return;
+            if (this.socket?.readyState !== WebSocket.OPEN
+                || this.socket.bufferedAmount > 1024 * 1024) {
+                this.recordingCancelled = true;
+                this.error = "Microphone stream is blocked or disconnected.";
+                this.socket?.close();
+                return;
+            }
+            this.socket.send(event.data.pcm);
+        };
+        await context.resume();
+        this.isRecording = true;
+        this.status = "Recording";
+    },
+
+    async stopPcmRecording() {
+        const node = this.pcmWorklet;
+        if (!node) throw new Error("PCM recorder was not started.");
+        // Let the worklet flush its last partial PCM chunk before WS stop.
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                this.pcmStopResolve = null;
+                reject(new Error("AudioWorklet stop timeout."));
+            }, 2000);
+            this.pcmStopResolve = () => { clearTimeout(timeout); resolve(); };
+            node.port.postMessage({ type: "stop" });
+        });
+        if (this.recordingCancelled) throw new Error("PCM upload was cancelled.");
     },
 
     async enablePlayback() {
@@ -522,6 +626,18 @@ export default (config = {}) => ({
     },
 
     releaseMicrophone() {
+        this.pcmStopResolve?.();
+        this.pcmStopResolve = null;
+        this.pcmSource?.disconnect();
+        this.pcmWorklet?.disconnect();
+        this.pcmSink?.disconnect();
+        this.pcmWorklet = null;
+        this.pcmSource = null;
+        this.pcmSink = null;
+        if (this.pcmContext) {
+            void this.pcmContext.close().catch(() => {});
+            this.pcmContext = null;
+        }
         const recorder = this.mediaRecorder;
 
         if (recorder) {
