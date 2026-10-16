@@ -185,10 +185,29 @@ it('delivers translated PCM16 through the real async conversation server', funct
             ->and($tts['sample_rate_hz'])
             ->toBe(24000);
 
-        $audio = $guestClient->receive();
+        $startedAt = microtime(true);
 
-        expect($audio)->toBeInstanceOf(Binary::class)
-            ->and($audio->getContent())
+        $firstChunk = $guestClient->receive();
+
+        expect($firstChunk)->toBeInstanceOf(Binary::class)
+            ->and($firstChunk->getContent())
+            ->toBe(pack('v*', 0, 1200));
+
+        // The fake worker waits 700 ms before emitting chunk #2.
+        $firstChunkAt = microtime(true);
+
+        $secondChunk = $guestClient->receive();
+
+        expect($secondChunk)->toBeInstanceOf(Binary::class)
+            ->and($secondChunk->getContent())
+            ->toBe(pack('v*', 2400, 1200, 0))
+            ->and(microtime(true) - $firstChunkAt)
+            ->toBeGreaterThan(0.3);
+
+        $combinedAudio = $firstChunk->getContent()
+            .$secondChunk->getContent();
+
+        expect($combinedAudio)
             ->toBe(pack('v*', 0, 1200, 2400, 1200, 0));
 
         $completed = $receive($guestClient);
@@ -198,6 +217,15 @@ it('delivers translated PCM16 through the real async conversation server', funct
 
         expect($receive($guestClient)['type'])
             ->toBe('conversation_peer_stopped');
+
+        $hostTranslation = $receive($hostClient);
+
+        expect($hostTranslation['type'])
+            ->toBe('conversation_translation_completed');
+
+        expect($hostTranslation['translated_text'])
+            ->toBeString()
+            ->not->toBeEmpty();
 
         expect($receive($hostClient)['type'])
             ->toBe('conversation_turn_stopped');
@@ -233,14 +261,39 @@ it('delivers translated PCM16 through the real async conversation server', funct
         expect($receive($hostClient)['type'])
             ->toBe('conversation_tts_started');
 
-        expect($hostClient->receive())
-            ->toBeInstanceOf(Binary::class);
+        $guestFirstChunk = $hostClient->receive();
+
+        expect($guestFirstChunk)
+            ->toBeInstanceOf(Binary::class)
+            ->and($guestFirstChunk->getContent())
+            ->toBe(pack('v*', 0, 1200));
+
+        $guestSecondChunk = $hostClient->receive();
+
+        expect($guestSecondChunk)
+            ->toBeInstanceOf(Binary::class)
+            ->and($guestSecondChunk->getContent())
+            ->toBe(pack('v*', 2400, 1200, 0));
+
+        expect(
+            $guestFirstChunk->getContent()
+            .$guestSecondChunk->getContent()
+        )->toBe(pack('v*', 0, 1200, 2400, 1200, 0));
 
         expect($receive($hostClient)['type'])
             ->toBe('conversation_completed');
 
         expect($receive($hostClient)['type'])
             ->toBe('conversation_peer_stopped');
+
+        $guestTranslation = $receive($guestClient);
+
+        expect($guestTranslation['type'])
+            ->toBe('conversation_translation_completed');
+
+        expect($guestTranslation['translated_text'])
+            ->toBeString()
+            ->not->toBeEmpty();
 
         expect($receive($guestClient)['type'])
             ->toBe('conversation_turn_stopped');

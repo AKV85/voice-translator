@@ -32,6 +32,12 @@ use WebSocket\Server;
 
 final class ServeLivePipelineCommand extends Command
 {
+    /** @var array<string, float> */
+    private array $conversationStopTimes = [];
+
+    /** @var array<string, true> */
+    private array $conversationFirstPcmLogged = [];
+
     private const DEFAULT_PROFILE =
         'chirp3-streaming-standard-deepl-openai';
 
@@ -101,6 +107,7 @@ final class ServeLivePipelineCommand extends Command
                     'conversation.async_worker_timeout_seconds',
                     60,
                 ),
+                persistentMode: ! app()->environment('testing'),
             )
             : null;
 
@@ -169,12 +176,15 @@ final class ServeLivePipelineCommand extends Command
                             );
                         }
 
-                        if (
-                            ! config('conversation.audio_enabled', false)
-                            || ! $conversationHandler->ownsTurn($connection)
-                        ) {
+                        if (! config('conversation.audio_enabled', false)) {
                             throw new LogicException(
-                                'Conversation audio is not allowed.',
+                                'Conversation audio is disabled.',
+                            );
+                        }
+
+                        if (! $conversationHandler->ownsTurn($connection)) {
+                            throw new LogicException(
+                                'Conversation audio rejected: connection does not own the turn.',
                             );
                         }
 
@@ -338,45 +348,102 @@ final class ServeLivePipelineCommand extends Command
                         }
 
                         try {
-                            $result = $workers->pollAudio($turnId);
+                            $events = $workers->pollStream($turnId);
 
-                            if ($result === null) {
-                                continue;
+                            foreach ($events as $event) {
+                                if ($event['type'] === 'translation') {
+                                    logger()->info('CONVERSATION_LATENCY translation', [
+                                        'turn_id' => $turnId,
+                                        'stop_to_translation_ms' => isset(
+                                            $this->conversationStopTimes[$turnId]
+                                        ) ? round(
+                                            (microtime(true)
+                                                - $this->conversationStopTimes[$turnId]) * 1000,
+                                        ) : null,
+                                        'startup_ms' => $event['startup_ms'] ?? null,
+                                        'worker_elapsed_ms' => $event['worker_elapsed_ms'] ?? null,
+                                    ]);
+
+                                    $payload = [
+                                        'type' => 'conversation_translation_completed',
+                                        'text' => $job['source_text'],
+                                        'translated_text' => $event['translated_text'],
+                                        'source_language' => $job['source_language']->value,
+                                        'target_language' => $job['target_language']->value,
+                                    ];
+
+                                    $this->sendJson($owner, $payload);
+                                    $this->sendJson($peer, $payload);
+
+                                    continue;
+                                }
+
+                                if ($event['type'] === 'tts_started') {
+                                    $this->sendJson($peer, [
+                                        'type' => 'conversation_tts_started',
+                                        'format' => 'pcm16',
+                                        'sample_rate_hz' => self::TTS_SAMPLE_RATE,
+                                        'channels' => self::TTS_CHANNELS,
+                                        'bytes_per_sample' => self::TTS_BYTES_PER_SAMPLE,
+                                    ]);
+
+                                    continue;
+                                }
+
+                                if ($event['type'] === 'audio_chunk') {
+                                    if (
+                                        ! isset($this->conversationFirstPcmLogged[$turnId])
+                                        && isset($this->conversationStopTimes[$turnId])
+                                    ) {
+                                        logger()->info(
+                                            'CONVERSATION_LATENCY stop_to_first_pcm',
+                                            [
+                                                'turn_id' => $turnId,
+                                                'duration_ms' => round(
+                                                    (microtime(true)
+                                                        - $this->conversationStopTimes[$turnId])
+                                                        * 1000,
+                                                ),
+                                            ],
+                                        );
+
+                                        $this->conversationFirstPcmLogged[$turnId] = true;
+                                    }
+
+                                    $peer->binary($event['audio']);
+
+                                    continue;
+                                }
+
+                                if ($event['type'] === 'completed') {
+                                    if (isset($event['worker_latency'])) {
+                                        logger()->info(
+                                            'CONVERSATION_LATENCY worker',
+                                            $event['worker_latency'],
+                                        );
+                                    }
+
+                                    $this->sendJson($peer, [
+                                        'type' => 'conversation_completed',
+                                        'source_language' => $job['source_language']->value,
+                                        'target_language' => $job['target_language']->value,
+                                        'translated_audio_bytes' => $event['audio_bytes'],
+                                    ]);
+
+                                    $pendingWorkers->remove($turnId);
+                                    unset(
+                                        $this->conversationStopTimes[$turnId],
+                                        $this->conversationFirstPcmLogged[$turnId],
+                                    );
+
+                                    $conversationHandler->stopTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                }
                             }
-
-                            $this->sendJson($peer, [
-                                'type' => 'conversation_translation_completed',
-                                'text' => $job['source_text'],
-                                'translated_text' => $result['translated_text'],
-                                'source_language' => $job['source_language']->value,
-                                'target_language' => $job['target_language']->value,
-                            ]);
-
-                            $this->sendJson($peer, [
-                                'type' => 'conversation_tts_started',
-                                'format' => 'pcm16',
-                                'sample_rate_hz' => self::TTS_SAMPLE_RATE,
-                                'channels' => self::TTS_CHANNELS,
-                                'bytes_per_sample' => self::TTS_BYTES_PER_SAMPLE,
-                            ]);
-
-                            $peer->binary($result['audio']);
-
-                            $this->sendJson($peer, [
-                                'type' => 'conversation_completed',
-                                'source_language' => $job['source_language']->value,
-                                'target_language' => $job['target_language']->value,
-                                'translated_audio_bytes' => strlen($result['audio']),
-                            ]);
-
-                            $pendingWorkers->remove($turnId);
-
-                            $conversationHandler->stopTurn(
-                                $owner,
-                                function (Connection $to, array $data): void {
-                                    $this->sendJson($to, $data);
-                                },
-                            );
                         } catch (Throwable $exception) {
                             report($exception);
 
@@ -841,7 +908,13 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
+        $stopReceivedAt = microtime(true);
+        $sttStarted = $stopReceivedAt;
         $speechResult = $context['session']->finish();
+
+        logger()->info('CONVERSATION_LATENCY stt_finish', [
+            'duration_ms' => round((microtime(true) - $sttStarted) * 1000),
+        ]);
 
         $this->sendJson($connection, [
             'type' => 'conversation_recognition_completed',
@@ -870,12 +943,23 @@ final class ServeLivePipelineCommand extends Command
             targetLanguage: $targetLanguage,
         );
 
+        $this->conversationStopTimes[$turnId] = $stopReceivedAt;
+
+        logger()->info('CONVERSATION_LATENCY turn_started', [
+            'turn_id' => $turnId,
+            'stt_finish_ms' => round(
+                (microtime(true) - $stopReceivedAt) * 1000,
+            ),
+        ]);
+
         try {
             $workers->startJob($turnId, [
                 'turn_id' => $turnId,
                 'source_text' => $speechResult->text,
                 'source_language' => $sourceLanguage->value,
                 'target_language' => $targetLanguage->value,
+                'stream' => true,
+                'server_worker_requested_at' => microtime(true),
             ]);
         } catch (Throwable $exception) {
             $pendingWorkers->remove($turnId);

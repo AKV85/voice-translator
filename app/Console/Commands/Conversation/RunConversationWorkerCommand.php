@@ -12,7 +12,7 @@ use Throwable;
 
 final class RunConversationWorkerCommand extends Command
 {
-    protected $signature = 'conversation:run-worker';
+    protected $signature = 'conversation:run-worker {--persistent}';
 
     protected $description = 'Process a conversation pipeline job';
 
@@ -24,8 +24,35 @@ final class RunConversationWorkerCommand extends Command
 
     public function handle(): int
     {
+        if (! $this->option('persistent')) {
+            return $this->runOneJob(stream_get_contents(STDIN));
+        }
+
+        while (($line = fgets(STDIN)) !== false) {
+            if (trim($line) === '') {
+                continue;
+            }
+
+            if ($this->runOneJob($line) !== self::SUCCESS) {
+                $job = json_decode($line, true);
+                $turnId = is_array($job) && is_string($job['turn_id'] ?? null)
+                    ? $job['turn_id']
+                    : '';
+
+                fwrite(STDOUT, json_encode([
+                    'type' => 'error',
+                    'turn_id' => $turnId,
+                ], JSON_THROW_ON_ERROR)."\n");
+                fflush(STDOUT);
+            }
+        }
+
+        return self::SUCCESS;
+    }
+
+    private function runOneJob(string|false $input): int
+    {
         try {
-            $input = stream_get_contents(STDIN);
 
             if ($input === false) {
                 throw new RuntimeException('Unable to read worker input.');
@@ -108,6 +135,132 @@ final class RunConversationWorkerCommand extends Command
                 translation: $translationProvider,
                 textToSpeech: $ttsProvider,
             );
+
+            if (($job['stream'] ?? false) === true) {
+                $workerStarted = microtime(true);
+
+                $requestedAt = $job['server_worker_requested_at'] ?? null;
+
+                $startupMs = is_numeric($requestedAt)
+                    ? (int) round(
+                        ($workerStarted - (float) $requestedAt) * 1000,
+                    )
+                    : null;
+
+                $translationAt = null;
+                $firstAudioAt = null;
+
+                $emit = static function (array $event) use ($job): void {
+                    $event['turn_id'] = $job['turn_id'];
+
+                    $json = json_encode($event, JSON_THROW_ON_ERROR);
+                    $written = fwrite(STDOUT, $json."\n");
+
+                    if ($written === false || $written !== strlen($json) + 1) {
+                        throw new RuntimeException('Worker stdout write failed.');
+                    }
+
+                    fflush(STDOUT);
+                };
+
+                $buffer = '';
+                $audioBytes = 0;
+
+                $processed = $processor->processStreaming(
+                    sourceText: $job['source_text'],
+                    sourceLanguage: $sourceLanguage,
+                    targetLanguage: $targetLanguage,
+                    onTranslation: static function (string $text) use (
+                        $emit,
+                        $workerStarted,
+                        $startupMs,
+                        &$translationAt,
+                    ): void {
+                        $translationAt = microtime(true);
+
+                        $emit([
+                            'type' => 'translation',
+                            'translated_text' => $text,
+                            'startup_ms' => $startupMs,
+                            'worker_elapsed_ms' => (int) round(
+                                ($translationAt - $workerStarted) * 1000,
+                            ),
+                        ]);
+
+                        $emit([
+                            'type' => 'tts_started',
+                            'mime_type' => 'audio/pcm',
+                        ]);
+                    },
+                    onAudioChunk: static function (string $chunk) use (
+                        $emit,
+                        &$buffer,
+                        &$audioBytes,
+                        &$firstAudioAt,
+                    ): void {
+                        if ($firstAudioAt === null) {
+                            $firstAudioAt = microtime(true);
+                        }
+
+                        $audioBytes += strlen($chunk);
+
+                        if ($audioBytes > self::MAX_AUDIO_BYTES) {
+                            throw new RuntimeException(
+                                'Conversation audio size limit exceeded.',
+                            );
+                        }
+
+                        $buffer .= $chunk;
+
+                        // 80 ms PCM16 mono at 24 kHz.
+                        while (strlen($buffer) >= 3840) {
+                            $part = substr($buffer, 0, 3840);
+                            $buffer = substr($buffer, 3840);
+
+                            $emit([
+                                'type' => 'audio_chunk',
+                                'audio_base64' => base64_encode($part),
+                            ]);
+                        }
+                    },
+                );
+
+                if (
+                    $processed['mime_type'] !== 'audio/pcm'
+                    || $audioBytes === 0
+                    || $audioBytes % 2 !== 0
+                    || $processed['audio_bytes'] !== $audioBytes
+                ) {
+                    throw new RuntimeException(
+                        'Invalid streamed conversation audio.',
+                    );
+                }
+
+                if ($buffer !== '') {
+                    $emit([
+                        'type' => 'audio_chunk',
+                        'audio_base64' => base64_encode($buffer),
+                    ]);
+                }
+
+                $emit([
+                    'type' => 'completed',
+                    'audio_bytes' => $audioBytes,
+                    'worker_latency' => [
+                        'translation_ms' => (int) round(
+                            (($translationAt ?? microtime(true)) - $workerStarted) * 1000,
+                        ),
+                        'translation_to_first_pcm_ms' => $firstAudioAt === null
+                            ? null
+                            : (int) round(($firstAudioAt - $translationAt) * 1000),
+                        'total_ms' => (int) round(
+                            (microtime(true) - $workerStarted) * 1000,
+                        ),
+                    ],
+                ]);
+
+                return self::SUCCESS;
+            }
 
             $processed = $processor->process(
                 sourceText: $job['source_text'],

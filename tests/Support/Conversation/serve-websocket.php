@@ -29,6 +29,8 @@ config()->set('cache.stores.vt21_integration', [
 ]);
 
 config()->set('conversation.audio_enabled', true);
+config()->set('conversation.async_worker_enabled', false);
+
 config()->set(
     'conversation.integration_failure_file',
     $cachePath.'/failure-mode.txt',

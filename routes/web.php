@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BenchmarkRecorderController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\LivePipelineHistoryController;
 use App\Http\Controllers\LivePipelineRunController;
 use App\Http\Controllers\PublicDemoSessionController;
@@ -21,6 +22,23 @@ Route::middleware(
     EnsureLivePipelineLabEnabled::class,
 )
     ->group(function (): void {
+        Route::view('/conversation', 'conversation')
+            ->name('conversation.index');
+
+        Route::post(
+            '/conversation/create',
+            [ConversationController::class, 'create'],
+        )
+            ->middleware('throttle:10,1')
+            ->name('conversation.create');
+
+        Route::post(
+            '/conversation/join',
+            [ConversationController::class, 'join'],
+        )
+            ->middleware('throttle:20,1')
+            ->name('conversation.join');
+
         Route::view('/live', 'live')
             ->name('live');
 
