@@ -1,6 +1,10 @@
 function defaultWebSocketUrl() {
     const scheme = window.location.protocol === "https:" ? "wss" : "ws";
 
+    if (window.location.hostname.endsWith(".ts.net")) {
+        return `wss://${window.location.hostname}:8443`;
+    }
+
     return `${scheme}://${window.location.hostname}:8081`;
 }
 
