@@ -4,6 +4,7 @@ use App\Services\Conversation\ConversationStore;
 
 beforeEach(function (): void {
     config()->set('conversation.enabled', true);
+    config()->set('live_pipeline.lab_enabled', true);
     config()->set('cache.default', 'array');
 });
 
