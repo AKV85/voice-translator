@@ -2,10 +2,11 @@
 
 namespace App\Services\Speech;
 
-use App\Contracts\StreamingSpeechToTextProvider;
+use App\Contracts\CancellableStreamingSpeechToTextProvider;
 use App\DTO\StreamingTranscriptionResult;
 use App\Enums\Language;
 use App\Exceptions\SpeechRecognitionException;
+use App\Services\Live\SpeechCancellationToken;
 use Closure;
 use Google\Cloud\Speech\V2\AutoDetectDecodingConfig;
 use Google\Cloud\Speech\V2\Client\SpeechClient;
@@ -18,7 +19,7 @@ use Google\Cloud\Speech\V2\StreamingRecognizeResponse;
 use InvalidArgumentException;
 use Throwable;
 
-final readonly class GoogleStreamingSpeechToTextProvider implements StreamingSpeechToTextProvider
+final readonly class GoogleStreamingSpeechToTextProvider implements CancellableStreamingSpeechToTextProvider
 {
     private const MAX_AUDIO_BYTES_PER_REQUEST = 15 * 1024;
 
@@ -35,6 +36,38 @@ final readonly class GoogleStreamingSpeechToTextProvider implements StreamingSpe
         string $mimeType,
         Language $sourceLanguage,
         Closure $onTranscript,
+    ): StreamingTranscriptionResult {
+        return $this->transcribeInternal(
+            $audioChunks,
+            $mimeType,
+            $sourceLanguage,
+            $onTranscript,
+            null,
+        );
+    }
+
+    public function transcribeCancellable(
+        iterable $audioChunks,
+        string $mimeType,
+        Language $sourceLanguage,
+        Closure $onTranscript,
+        SpeechCancellationToken $cancellationToken,
+    ): StreamingTranscriptionResult {
+        return $this->transcribeInternal(
+            $audioChunks,
+            $mimeType,
+            $sourceLanguage,
+            $onTranscript,
+            $cancellationToken,
+        );
+    }
+
+    private function transcribeInternal(
+        iterable $audioChunks,
+        string $mimeType,
+        Language $sourceLanguage,
+        Closure $onTranscript,
+        ?SpeechCancellationToken $cancellationToken,
     ): StreamingTranscriptionResult {
         $config = (new RecognitionConfig)
             ->setAutoDecodingConfig(
@@ -60,6 +93,18 @@ final readonly class GoogleStreamingSpeechToTextProvider implements StreamingSpe
 
         try {
             $stream = $this->client->streamingRecognize();
+
+            $cancellationToken?->onCancel(
+                static function () use ($stream): void {
+                    $stream->getBidiStreamingCall()->cancel();
+                },
+            );
+
+            if ($cancellationToken?->isCancelled()) {
+                throw new SpeechRecognitionException(
+                    'Speech recognition was cancelled.',
+                );
+            }
 
             $stream->write(
                 (new StreamingRecognizeRequest)
@@ -100,6 +145,12 @@ final readonly class GoogleStreamingSpeechToTextProvider implements StreamingSpe
             if (! $audioWritten) {
                 throw new SpeechRecognitionException(
                     'No audio was provided for speech recognition.',
+                );
+            }
+
+            if ($cancellationToken?->isCancelled()) {
+                throw new SpeechRecognitionException(
+                    'Speech recognition was cancelled.',
                 );
             }
 
@@ -160,6 +211,8 @@ final readonly class GoogleStreamingSpeechToTextProvider implements StreamingSpe
                 'Streaming speech recognition provider failed.',
                 previous: $exception,
             );
+        } finally {
+            $cancellationToken?->clear();
         }
     }
 

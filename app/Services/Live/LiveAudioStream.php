@@ -15,6 +15,8 @@ final class LiveAudioStream
 
     private bool $finished = false;
 
+    private bool $cancelled = false;
+
     private ?Fiber $waitingFiber = null;
 
     public function push(string $chunk): void
@@ -43,6 +45,24 @@ final class LiveAudioStream
         $this->finished = true;
 
         $this->resumeWaitingFiber();
+    }
+
+    public function cancel(): void
+    {
+        if ($this->cancelled) {
+            return;
+        }
+
+        $this->cancelled = true;
+        $this->finished = true;
+        $this->chunks = [];
+
+        $this->resumeWaitingFiber();
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->cancelled;
     }
 
     public function isFinished(): bool

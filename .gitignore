@@ -28,3 +28,5 @@ Thumbs.db
 
 # Local benchmark audio
 docs/benchmarks/speech/audio/raw/*.webm
+
+/.venv-stt/

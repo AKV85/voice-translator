@@ -6,6 +6,7 @@ import liveRecorder from "./components/live-recorder.js";
 import compareRecorder from "./components/compare-recorder.js";
 import liveHistory from "./components/live-history.js";
 import publicDemoRecorder from "./components/public-demo-recorder.js";
+import conversationRecorder from "./components/conversation-recorder.js";
 
 window.Alpine = Alpine;
 
@@ -15,5 +16,6 @@ Alpine.data("liveRecorder", liveRecorder);
 Alpine.data("compareRecorder", compareRecorder);
 Alpine.data("liveHistory", liveHistory);
 Alpine.data("publicDemoRecorder", publicDemoRecorder);
+Alpine.data("conversationRecorder", conversationRecorder);
 
 Alpine.start();

@@ -7,6 +7,13 @@ use App\Contracts\StreamingTextToSpeechProvider;
 use App\Contracts\TranslationProvider;
 use App\Enums\Language;
 use App\Exceptions\PublicDemoException;
+use App\Services\Conversation\AsyncSttBridgeClient;
+use App\Services\Conversation\ConversationConnectionRegistry;
+use App\Services\Conversation\ConversationPendingWorkerRegistry;
+use App\Services\Conversation\ConversationStore;
+use App\Services\Conversation\ConversationTurnManager;
+use App\Services\Conversation\ConversationWebSocketHandler;
+use App\Services\Conversation\ConversationWorkerManager;
 use App\Services\Live\LiveSpeechRecognitionSession;
 use App\Services\PublicDemo\PublicDemoTokenStore;
 use App\Services\PublicDemo\PublicDemoWebSocketSession;
@@ -24,8 +31,35 @@ use WebSocket\Message\Binary;
 use WebSocket\Message\Text;
 use WebSocket\Server;
 
+/**
+ * @phpstan-type LiveSession array{
+ *     session: LiveSpeechRecognitionSession,
+ *     profile: string,
+ *     source_language: Language,
+ *     translation: TranslationProvider,
+ *     text_to_speech: StreamingTextToSpeechProvider,
+ *     public_demo: PublicDemoWebSocketSession|null,
+ *     stopping?: bool
+ * }
+ * @phpstan-type IncrementalSession array{
+ *     session: AsyncSttBridgeClient,
+ *     profile: string,
+ *     source_language: Language,
+ *     public_demo: null,
+ *     connection: Connection,
+ *     final_texts: list<string>,
+ *     stopping: bool
+ * }
+ * @phpstan-type ConversationSession LiveSession|IncrementalSession
+ */
 final class ServeLivePipelineCommand extends Command
 {
+    /** @var array<string, float> */
+    private array $conversationStopTimes = [];
+
+    /** @var array<string, true> */
+    private array $conversationFirstPcmLogged = [];
+
     private const DEFAULT_PROFILE =
         'chirp3-streaming-standard-deepl-openai';
 
@@ -62,16 +96,43 @@ final class ServeLivePipelineCommand extends Command
         }
 
         /**
-         * @var array<int, array{
-         *     session: LiveSpeechRecognitionSession,
-         *     profile: string,
-         *     source_language: Language,
-         *     translation: TranslationProvider,
-         *     text_to_speech: StreamingTextToSpeechProvider,
-         *     public_demo: PublicDemoWebSocketSession|null
-         * }> $sessions
+         * @var array<int, ConversationSession> $sessions
          */
         $sessions = [];
+        // One serial translation/TTS worker per incremental STT turn.
+        // Keep the queue alive after STT itself is closed at Stop.
+        /** @var array<string, array{owner: Connection, peer: Connection}> $incrementalTurns */
+        $incrementalTurns = [];
+
+        $conversationHandler = new ConversationWebSocketHandler(
+            app(ConversationStore::class),
+            new ConversationConnectionRegistry,
+            new ConversationTurnManager,
+        );
+
+        $pendingWorkers = new ConversationPendingWorkerRegistry;
+
+        $workers = config('conversation.async_worker_enabled', false)
+            ? new ConversationWorkerManager(
+                workerCommand: config(
+                    'conversation.async_worker_command',
+                    [
+                        PHP_BINARY,
+                        base_path('artisan'),
+                        'conversation:run-worker',
+                    ],
+                ),
+                timeoutSeconds: (float) config(
+                    'conversation.async_worker_timeout_seconds',
+                    60,
+                ),
+                persistentMode: ! app()->environment('testing'),
+            )
+            : null;
+
+        // Incremental STT runs only with the existing periodic worker tick.
+        $incrementalStt = (bool) config('conversation.incremental_stt_enabled', false)
+            && $workers !== null;
 
         $server = new Server(
             port: $port,
@@ -82,21 +143,36 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
                 Text $message,
-            ) use (&$sessions): void {
+            ) use (
+                &$sessions,
+                $conversationHandler,
+                $workers,
+                $pendingWorkers,
+                $incrementalStt,
+            ): void {
                 try {
                     $this->handleTextMessage(
                         connection: $connection,
                         message: $message,
                         sessions: $sessions,
+                        conversationHandler: $conversationHandler,
+                        workers: $workers,
+                        pendingWorkers: $pendingWorkers,
+                        incrementalStt: $incrementalStt,
                     );
                 } catch (Throwable $exception) {
-                    $isPublicDemo =
-                        $this->cleanupSession(
+                    report($exception);
+
+                    $isPublicDemo = false;
+
+                    try {
+                        $isPublicDemo = $this->cancelSession(
                             connection: $connection,
                             sessions: $sessions,
                         );
-
-                    report($exception);
+                    } catch (Throwable $cleanupException) {
+                        report($cleanupException);
+                    }
 
                     $this->sendError(
                         connection: $connection,
@@ -116,21 +192,69 @@ final class ServeLivePipelineCommand extends Command
                 Server $server,
                 Connection $connection,
                 Binary $message,
-            ) use (&$sessions): void {
+            ) use (&$sessions, $conversationHandler): void {
                 try {
+                    if ($conversationHandler->isBound($connection)) {
+                        if (! $conversationHandler->isCurrent($connection)) {
+                            throw new LogicException(
+                                'Stale conversation connection.',
+                            );
+                        }
+
+                        if (! config('conversation.audio_enabled', false)) {
+                            throw new LogicException(
+                                'Conversation audio is disabled.',
+                            );
+                        }
+
+                        if (! $conversationHandler->ownsTurn($connection)) {
+                            throw new LogicException(
+                                'Conversation audio rejected: connection does not own the turn.',
+                            );
+                        }
+
+                        $this->handleBinaryMessage(
+                            connection: $connection,
+                            message: $message,
+                            sessions: $sessions,
+                        );
+
+                        return;
+                    }
+
                     $this->handleBinaryMessage(
                         connection: $connection,
                         message: $message,
                         sessions: $sessions,
                     );
                 } catch (Throwable $exception) {
-                    $isPublicDemo =
-                        $this->cleanupSession(
+                    report($exception);
+
+                    $isPublicDemo = false;
+
+                    try {
+                        $isPublicDemo = $this->cancelSession(
                             connection: $connection,
                             sessions: $sessions,
                         );
+                    } catch (Throwable $cleanupException) {
+                        report($cleanupException);
+                    }
 
-                    report($exception);
+                    if ($conversationHandler->isBound($connection)) {
+                        try {
+                            if ($conversationHandler->isCurrent($connection)) {
+                                $conversationHandler->abortTurn(
+                                    $connection,
+                                    function (Connection $to, array $data): void {
+                                        $this->sendJson($to, $data);
+                                    },
+                                );
+                            }
+                        } catch (Throwable $cleanupException) {
+                            report($cleanupException);
+                        }
+                    }
 
                     $this->sendError(
                         connection: $connection,
@@ -149,13 +273,415 @@ final class ServeLivePipelineCommand extends Command
             function (
                 Server $server,
                 Connection $connection,
-            ) use (&$sessions): void {
-                $this->cleanupSession(
-                    connection: $connection,
-                    sessions: $sessions,
-                );
+            ) use (
+                &$sessions,
+                $conversationHandler,
+                $pendingWorkers,
+                $workers,
+                &$incrementalTurns,
+            ): void {
+                try {
+                    foreach ($incrementalTurns as $key => $turn) {
+                        if ($turn['owner'] === $connection || $turn['peer'] === $connection) {
+                            unset($incrementalTurns[$key]);
+                        }
+                    }
+                    foreach ($pendingWorkers->all() as $turnId => $job) {
+                        if (
+                            $job['owner'] !== $connection
+                            && $job['peer'] !== $connection
+                        ) {
+                            continue;
+                        }
+
+                        try {
+                            $workers?->cancel($turnId);
+                        } finally {
+                            $pendingWorkers->remove($turnId);
+
+                            $owner = $job['owner'];
+
+                            if (
+                                $owner !== $connection
+                                && $conversationHandler->isCurrent($owner)
+                                && $conversationHandler->ownsTurn($owner)
+                            ) {
+                                try {
+                                    $conversationHandler->abortTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                } catch (Throwable $cleanupException) {
+                                    report($cleanupException);
+                                }
+                            }
+                        }
+                    }
+
+                    $this->cancelSession(
+                        connection: $connection,
+                        sessions: $sessions,
+                    );
+                } catch (Throwable $exception) {
+                    report($exception);
+                } finally {
+                    $conversationHandler->disconnect(
+                        $connection,
+                        function (Connection $to, array $payload): void {
+                            $this->sendJson($to, $payload);
+                        },
+                    );
+                }
             },
         );
+
+        if ($workers !== null) {
+            $server->onTick(
+                function (Server $server) use (
+                    $workers,
+                    $pendingWorkers,
+                    $conversationHandler,
+                    &$sessions,
+                    &$incrementalTurns,
+                ): void {
+                    // Poll each bridge even if no WebSocket audio arrives this tick.
+                    foreach ($sessions as $key => $context) {
+                        if (! ($context['session'] instanceof AsyncSttBridgeClient)) {
+                            continue;
+                        }
+                        $client = $context['session'];
+                        $owner = $context['connection'];
+                        if (! isset($incrementalTurns[$key])) {
+                            $incrementalTurns[$key] = [
+                                'owner' => $owner,
+                                'peer' => $conversationHandler->currentPeer($owner),
+                                'source_language' => $context['source_language'],
+                                'queue' => [],
+                                'active' => null,
+                                'done' => false,
+                            ];
+                        }
+                        try {
+                            if (! $owner->isConnected()
+                                || ! $conversationHandler->isCurrent($owner)
+                                || ! $conversationHandler->ownsTurn($owner)
+                                || $conversationHandler->currentPeer($owner) === null
+                            ) {
+                                $client->cancel();
+                                unset($sessions[$key], $incrementalTurns[$key]);
+
+                                continue;
+                            }
+                            foreach ($client->poll() as $event) {
+                                if ($event['type'] === 'final') {
+                                    $sessions[$key]['final_texts'][] = $event['text'];
+                                    $incrementalTurns[$key]['queue'][] = $event['text'];
+                                    $this->sendJson($owner, [
+                                        'type' => 'conversation_transcript',
+                                        'text' => implode(' ', $sessions[$key]['final_texts']),
+                                        'is_final' => true,
+                                        'segment' => $event['segment'],
+                                    ]);
+                                } elseif ($event['type'] === 'interim') {
+                                    $this->sendJson($owner, [
+                                        'type' => 'conversation_transcript',
+                                        'text' => trim(implode(' ', $sessions[$key]['final_texts']).' '.$event['text']),
+                                        'is_final' => false,
+                                    ]);
+                                } elseif ($event['type'] === 'done') {
+                                    if (! $context['stopping']) {
+                                        throw new LogicException('STT bridge ended before stop.');
+                                    }
+                                    $this->sendJson($owner, [
+                                        'type' => 'conversation_recognition_completed',
+                                        'text' => implode(' ', $sessions[$key]['final_texts']),
+                                    ]);
+                                    $client->close();
+                                    unset($sessions[$key]);
+                                    $incrementalTurns[$key]['done'] = true;
+                                    // Release only after all queued segment audio has been sent.
+                                }
+                            }
+                        } catch (Throwable $exception) {
+                            report($exception);
+                            $client->cancel();
+                            unset($sessions[$key], $incrementalTurns[$key]);
+                            try {
+                                if ($conversationHandler->ownsTurn($owner)) {
+                                    $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
+                                        $this->sendJson($to, $data);
+                                    });
+                                }
+                            } catch (Throwable $cleanupException) {
+                                report($cleanupException);
+                            }
+                            if ($owner->isConnected()) {
+                                $this->sendError($owner, 'Incremental STT failed.');
+                            }
+                        }
+                    }
+
+                    // Start the next segment only after the previous TTS stream ends.
+                    foreach ($incrementalTurns as $key => $turn) {
+                        $owner = $turn['owner'];
+                        $peer = $turn['peer'];
+                        if (! $owner->isConnected()
+                            || $peer === null || ! $peer->isConnected()
+                            || ! $conversationHandler->isCurrent($owner)
+                            || ! $conversationHandler->isCurrent($peer)
+                            || ! $conversationHandler->ownsTurn($owner)
+                            || $conversationHandler->currentPeer($owner) !== $peer
+                        ) {
+                            if ($turn['active'] !== null) {
+                                $workers->cancel($turn['active']);
+                                $pendingWorkers->remove($turn['active']);
+                            }
+                            unset($incrementalTurns[$key]);
+                            if ($conversationHandler->isCurrent($owner)
+                                && $conversationHandler->ownsTurn($owner)) {
+                                $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                });
+                            }
+
+                            continue;
+                        }
+
+                        if ($turn['active'] !== null) {
+                            continue;
+                        }
+                        if ($turn['queue'] === []) {
+                            if ($turn['done']) {
+                                unset($incrementalTurns[$key]);
+                                $conversationHandler->stopTurn($owner, function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                });
+                            }
+
+                            continue;
+                        }
+
+                        $text = array_shift($incrementalTurns[$key]['queue']);
+                        $turnId = bin2hex(random_bytes(16));
+                        $sourceLanguage = $turn['source_language'];
+                        $targetLanguage = $this->targetLanguage($sourceLanguage);
+                        try {
+                            $pendingWorkers->add(
+                                turnId: $turnId,
+                                owner: $owner,
+                                peer: $peer,
+                                sourceText: $text,
+                                sourceLanguage: $sourceLanguage,
+                                targetLanguage: $targetLanguage,
+                            );
+                            $incrementalTurns[$key]['active'] = $turnId;
+                            $workers->startJob($turnId, [
+                                'turn_id' => $turnId,
+                                'source_text' => $text,
+                                'source_language' => $sourceLanguage->value,
+                                'target_language' => $targetLanguage->value,
+                                'stream' => true,
+                                'server_worker_requested_at' => microtime(true),
+                            ]);
+                        } catch (Throwable $exception) {
+                            report($exception);
+                            $pendingWorkers->remove($turnId);
+                            unset($incrementalTurns[$key]);
+                            if ($conversationHandler->ownsTurn($owner)) {
+                                $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
+                                    $this->sendJson($to, $data);
+                                });
+                            }
+                            if ($owner->isConnected()) {
+                                $this->sendError($owner, 'Incremental translation failed.');
+                            }
+                        }
+                    }
+
+                    foreach ($pendingWorkers->all() as $turnId => $job) {
+                        $owner = $job['owner'];
+                        $peer = $job['peer'];
+
+                        if (
+                            ! $owner->isConnected()
+                            || ! $peer->isConnected()
+                            || ! $conversationHandler->isCurrent($owner)
+                            || ! $conversationHandler->isCurrent($peer)
+                            || ! $conversationHandler->ownsTurn($owner)
+                            || $conversationHandler->currentPeer($owner) !== $peer
+                        ) {
+                            $workers->cancel($turnId);
+                            $pendingWorkers->remove($turnId);
+                            $ownerKey = spl_object_id($owner);
+                            if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
+                                unset($incrementalTurns[$ownerKey]);
+                            }
+
+                            try {
+                                if (
+                                    $conversationHandler->isCurrent($owner)
+                                    && $conversationHandler->ownsTurn($owner)
+                                ) {
+                                    $conversationHandler->abortTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                }
+                            } catch (Throwable $cleanupException) {
+                                report($cleanupException);
+                            }
+
+                            continue;
+                        }
+
+                        try {
+                            $events = $workers->pollStream($turnId);
+
+                            foreach ($events as $event) {
+                                if ($event['type'] === 'translation') {
+                                    logger()->info('CONVERSATION_LATENCY translation', [
+                                        'turn_id' => $turnId,
+                                        'stop_to_translation_ms' => isset(
+                                            $this->conversationStopTimes[$turnId]
+                                        ) ? round(
+                                            (microtime(true)
+                                                - $this->conversationStopTimes[$turnId]) * 1000,
+                                        ) : null,
+                                        'startup_ms' => $event['startup_ms'] ?? null,
+                                        'worker_elapsed_ms' => $event['worker_elapsed_ms'] ?? null,
+                                    ]);
+
+                                    $payload = [
+                                        'type' => 'conversation_translation_completed',
+                                        'text' => $job['source_text'],
+                                        'translated_text' => $event['translated_text'],
+                                        'source_language' => $job['source_language']->value,
+                                        'target_language' => $job['target_language']->value,
+                                    ];
+
+                                    $this->sendJson($owner, $payload);
+                                    $this->sendJson($peer, $payload);
+
+                                    continue;
+                                }
+
+                                if ($event['type'] === 'tts_started') {
+                                    $this->sendJson($peer, [
+                                        'type' => 'conversation_tts_started',
+                                        'format' => 'pcm16',
+                                        'sample_rate_hz' => self::TTS_SAMPLE_RATE,
+                                        'channels' => self::TTS_CHANNELS,
+                                        'bytes_per_sample' => self::TTS_BYTES_PER_SAMPLE,
+                                    ]);
+
+                                    continue;
+                                }
+
+                                if ($event['type'] === 'audio_chunk') {
+                                    if (
+                                        ! isset($this->conversationFirstPcmLogged[$turnId])
+                                        && isset($this->conversationStopTimes[$turnId])
+                                    ) {
+                                        logger()->info(
+                                            'CONVERSATION_LATENCY stop_to_first_pcm',
+                                            [
+                                                'turn_id' => $turnId,
+                                                'duration_ms' => round(
+                                                    (microtime(true)
+                                                        - $this->conversationStopTimes[$turnId])
+                                                        * 1000,
+                                                ),
+                                            ],
+                                        );
+
+                                        $this->conversationFirstPcmLogged[$turnId] = true;
+                                    }
+
+                                    $peer->binary($event['audio']);
+
+                                    continue;
+                                }
+
+                                if ($event['type'] === 'completed') {
+                                    if (isset($event['worker_latency'])) {
+                                        logger()->info(
+                                            'CONVERSATION_LATENCY worker',
+                                            $event['worker_latency'],
+                                        );
+                                    }
+
+                                    $this->sendJson($peer, [
+                                        'type' => 'conversation_completed',
+                                        'source_language' => $job['source_language']->value,
+                                        'target_language' => $job['target_language']->value,
+                                        'translated_audio_bytes' => $event['audio_bytes'],
+                                    ]);
+
+                                    $pendingWorkers->remove($turnId);
+                                    unset(
+                                        $this->conversationStopTimes[$turnId],
+                                        $this->conversationFirstPcmLogged[$turnId],
+                                    );
+
+                                    $ownerKey = spl_object_id($owner);
+                                    if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
+                                        $incrementalTurns[$ownerKey]['active'] = null;
+
+                                        // Keep the microphone turn owned until STT is done
+                                        // AND there are no queued translated segments.
+                                        continue;
+                                    }
+
+                                    $conversationHandler->stopTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                }
+                            }
+                        } catch (Throwable $exception) {
+                            report($exception);
+
+                            $workers->cancel($turnId);
+                            $pendingWorkers->remove($turnId);
+                            $ownerKey = spl_object_id($owner);
+                            if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
+                                unset($incrementalTurns[$ownerKey]);
+                                if (($sessions[$ownerKey]['session'] ?? null) instanceof AsyncSttBridgeClient) {
+                                    $sessions[$ownerKey]['session']->cancel();
+                                    unset($sessions[$ownerKey]);
+                                }
+                            }
+
+                            try {
+                                if ($conversationHandler->ownsTurn($owner)) {
+                                    $conversationHandler->abortTurn(
+                                        $owner,
+                                        function (Connection $to, array $data): void {
+                                            $this->sendJson($to, $data);
+                                        },
+                                    );
+                                }
+                            } catch (Throwable $cleanupException) {
+                                report($cleanupException);
+                            }
+
+                            if ($owner->isConnected()) {
+                                $this->sendError(
+                                    connection: $owner,
+                                    message: 'Conversation translation failed.',
+                                );
+                            }
+                        }
+                    }
+                },
+            );
+        }
 
         $server->onError(
             function (
@@ -204,14 +730,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      *
      * @throws JsonException
      */
@@ -219,6 +738,10 @@ final class ServeLivePipelineCommand extends Command
         Connection $connection,
         Text $message,
         array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
+        ?ConversationWorkerManager $workers,
+        ConversationPendingWorkerRegistry $pendingWorkers,
+        bool $incrementalStt = false,
     ): void {
         $payload = json_decode(
             $message->getContent(),
@@ -235,6 +758,199 @@ final class ServeLivePipelineCommand extends Command
         $type =
             $payload['type']
             ?? null;
+
+        if ($type === 'conversation_join') {
+            $code = $payload['code'] ?? null;
+            $token = $payload['token'] ?? null;
+
+            if (! is_string($code) || ! is_string($token)) {
+                throw new InvalidArgumentException(
+                    'Conversation code and token are required.',
+                );
+            }
+
+            if (isset($sessions[spl_object_id($connection)])) {
+                throw new LogicException(
+                    'Connection already has an active session.',
+                );
+            }
+
+            $conversationHandler->join(
+                $connection,
+                $code,
+                $token,
+                function (Connection $to, array $data) use ($incrementalStt): void {
+                    if ($data['type'] === 'conversation_joined') {
+                        $data['incremental_stt_enabled'] = $incrementalStt;
+                    }
+                    $this->sendJson($to, $data);
+                },
+            );
+
+            return;
+        }
+
+        if ($conversationHandler->isBound($connection)) {
+            if (! $conversationHandler->isCurrent($connection)) {
+                throw new LogicException(
+                    'Stale conversation connection.',
+                );
+            }
+
+            if ($type === 'conversation_start') {
+                $audioEnabled = config(
+                    'conversation.audio_enabled',
+                    false,
+                );
+
+                try {
+                    $conversationHandler->startTurn(
+                        $connection,
+                        function (Connection $to, array $data): void {
+                            $this->sendJson($to, $data);
+                        },
+                        $audioEnabled
+                            ? function () use (
+                                $connection,
+                                $payload,
+                                &$sessions,
+                                $conversationHandler,
+                                $incrementalStt,
+                            ): void {
+                                $this->startConversationSession(
+                                    $connection,
+                                    $payload,
+                                    $sessions,
+                                    $conversationHandler,
+                                    $incrementalStt,
+                                );
+                            }
+                        : null,
+                    );
+                } catch (Throwable $exception) {
+                    if ($audioEnabled) {
+                        try {
+                            $this->cancelSession($connection, $sessions);
+                        } catch (Throwable $cleanupException) {
+                            report($cleanupException);
+                        }
+                    }
+
+                    throw $exception;
+                }
+
+                return;
+            }
+
+            if ($type === 'conversation_stop') {
+                $send = function (
+                    Connection $to,
+                    array $data,
+                ): void {
+                    $this->sendJson($to, $data);
+                };
+
+                $audioEnabled = config(
+                    'conversation.audio_enabled',
+                    false,
+                );
+
+                if (
+                    $workers !== null
+                    && $pendingWorkers->hasOwner($connection)
+                    && ! (($sessions[spl_object_id($connection)]['session'] ?? null)
+                        instanceof AsyncSttBridgeClient)
+                ) {
+                    $this->sendError(
+                        connection: $connection,
+                        message: 'Conversation translation is already processing.',
+                    );
+
+                    return;
+                }
+
+                if (
+                    $audioEnabled
+                    && ! $conversationHandler->ownsTurn($connection)
+                ) {
+                    throw new LogicException(
+                        'Connection does not own the conversation turn.',
+                    );
+                }
+
+                try {
+                    if ($audioEnabled) {
+                        $active = $sessions[spl_object_id($connection)] ?? null;
+                        if (($active['session'] ?? null) instanceof AsyncSttBridgeClient) {
+                            if ($active['stopping']) {
+                                throw new LogicException('STT stop already requested.');
+                            }
+                            $active['session']->finish();
+                            $active['stopping'] = true;
+                            $sessions[spl_object_id($connection)] = $active;
+
+                            /** @var array<int, ConversationSession> $sessions */
+
+                            // onTick emits recognition_completed and releases turn at done.
+                            return;
+                        }
+                        if ($workers !== null) {
+                            $this->startAsyncConversationWorker(
+                                connection: $connection,
+                                sessions: $sessions,
+                                conversationHandler: $conversationHandler,
+                                workers: $workers,
+                                pendingWorkers: $pendingWorkers,
+                            );
+
+                            // Keep turn ownership until worker completion.
+                            return;
+                        }
+
+                        $this->finishConversationSession(
+                            $connection,
+                            $sessions,
+                            $conversationHandler,
+                        );
+                    }
+
+                    $conversationHandler->stopTurn(
+                        $connection,
+                        $send,
+                    );
+                } catch (Throwable $exception) {
+                    try {
+                        if ($workers !== null) {
+                            foreach (
+                                $pendingWorkers->removeFor($connection) as $turnId
+                            ) {
+                                $workers->cancel($turnId);
+                            }
+
+                            $this->cancelSession(
+                                connection: $connection,
+                                sessions: $sessions,
+                            );
+                        }
+
+                        $conversationHandler->abortTurn(
+                            $connection,
+                            $send,
+                        );
+                    } catch (Throwable $cleanupException) {
+                        report($cleanupException);
+                    }
+
+                    throw $exception;
+                }
+
+                return;
+            }
+
+            throw new LogicException(
+                'Unsupported conversation control message.',
+            );
+        }
 
         if ($type === 'start') {
             $this->startSession(
@@ -261,14 +977,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function handleBinaryMessage(
         Connection $connection,
@@ -305,6 +1014,13 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
+        if (
+            $sessionContext['session'] instanceof AsyncSttBridgeClient
+            && $sessionContext['stopping']
+        ) {
+            throw new LogicException('Audio received after incremental STT stop.');
+        }
+
         $sessionContext['session']->pushAudio(
             $audio,
         );
@@ -312,14 +1028,325 @@ final class ServeLivePipelineCommand extends Command
 
     /**
      * @param  array<string, mixed>  $payload
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
+     */
+    private function startConversationSession(
+        Connection $connection,
+        array $payload,
+        array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
+        bool $incrementalStt = false,
+    ): void {
+        $key = spl_object_id($connection);
+
+        if (isset($sessions[$key])) {
+            throw new LogicException(
+                'Connection already has an active session.',
+            );
+        }
+
+        $mimeType = $payload['mime_type'] ?? null;
+
+        if (! is_string($mimeType) || trim($mimeType) === '') {
+            throw new InvalidArgumentException(
+                'Audio MIME type is required.',
+            );
+        }
+
+        $context = $conversationHandler->currentContext($connection);
+
+        $language = Language::tryFrom($context['language']);
+
+        if ($language === null) {
+            throw new InvalidArgumentException(
+                'Unsupported conversation language.',
+            );
+        }
+
+        if ($incrementalStt) {
+            if ($mimeType !== 'audio/pcm;rate=24000') {
+                throw new InvalidArgumentException('Incremental STT requires 24kHz PCM16.');
+            }
+            $bridge = new AsyncSttBridgeClient(
+                host: (string) config('conversation.stt_bridge_host', 'host.docker.internal'),
+                port: (int) config('conversation.stt_bridge_port', 8767),
+            );
+            $bridge->start($language === Language::Russian ? 'ru-RU' : 'en-US', 24000);
+            $sessions[$key] = [
+                'session' => $bridge,
+                'profile' => self::DEFAULT_PROFILE,
+                'source_language' => $language,
+                'public_demo' => null,
+                'connection' => $connection,
+                'final_texts' => [],
+                'stopping' => false,
+            ];
+
+            return;
+        }
+
+        [
+            $speechToText,
+            $translation,
+            $textToSpeech,
+        ] = $this->resolvePipelineProviders(
+            self::DEFAULT_PROFILE,
+        );
+
+        $session = new LiveSpeechRecognitionSession(
+            speechToText: $speechToText,
+            mimeType: $mimeType,
+            sourceLanguage: $language,
+            onTranscript: function (
+                string $text,
+                bool $isFinal,
+            ) use ($connection): void {
+                $this->sendJson($connection, [
+                    'type' => 'conversation_transcript',
+                    'text' => $text,
+                    'is_final' => $isFinal,
+                ]);
+            },
+        );
+
+        $session->start();
+
+        $sessions[$key] = [
+            'session' => $session,
+            'profile' => self::DEFAULT_PROFILE,
+            'source_language' => $language,
+            'translation' => $translation,
+            'text_to_speech' => $textToSpeech,
+            'public_demo' => null,
+        ];
+    }
+
+    /**
+     * @param  array<int, ConversationSession>  $sessions
+     */
+    private function startAsyncConversationWorker(
+        Connection $connection,
+        array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
+        ConversationWorkerManager $workers,
+        ConversationPendingWorkerRegistry $pendingWorkers,
+    ): void {
+        if ($pendingWorkers->hasOwner($connection)) {
+            throw new LogicException(
+                'Conversation translation is already processing.',
+            );
+        }
+
+        $key = spl_object_id($connection);
+        $context = $sessions[$key] ?? null;
+
+        if ($context === null) {
+            throw new LogicException(
+                'No active conversation recording.',
+            );
+        }
+
+        if (! $conversationHandler->ownsTurn($connection)) {
+            throw new LogicException(
+                'Connection does not own the conversation turn.',
+            );
+        }
+
+        $peer = $conversationHandler->currentPeer($connection);
+
+        if ($peer === null) {
+            throw new LogicException(
+                'Conversation peer is not connected.',
+            );
+        }
+
+        $stopReceivedAt = microtime(true);
+        $sttStarted = $stopReceivedAt;
+        $speechResult = $context['session']->finish();
+
+        logger()->info('CONVERSATION_LATENCY stt_finish', [
+            'duration_ms' => round((microtime(true) - $sttStarted) * 1000),
+        ]);
+
+        $this->sendJson($connection, [
+            'type' => 'conversation_recognition_completed',
+            'text' => $speechResult->text,
+        ]);
+
+        if (
+            ! $conversationHandler->ownsTurn($connection)
+            || $conversationHandler->currentPeer($connection) !== $peer
+        ) {
+            throw new LogicException(
+                'Conversation peer changed during processing.',
+            );
+        }
+
+        $sourceLanguage = $context['source_language'];
+        $targetLanguage = $this->targetLanguage($sourceLanguage);
+        $turnId = bin2hex(random_bytes(16));
+
+        $pendingWorkers->add(
+            turnId: $turnId,
+            owner: $connection,
+            peer: $peer,
+            sourceText: $speechResult->text,
+            sourceLanguage: $sourceLanguage,
+            targetLanguage: $targetLanguage,
+        );
+
+        $this->conversationStopTimes[$turnId] = $stopReceivedAt;
+
+        logger()->info('CONVERSATION_LATENCY turn_started', [
+            'turn_id' => $turnId,
+            'stt_finish_ms' => round(
+                (microtime(true) - $stopReceivedAt) * 1000,
+            ),
+        ]);
+
+        try {
+            $workers->startJob($turnId, [
+                'turn_id' => $turnId,
+                'source_text' => $speechResult->text,
+                'source_language' => $sourceLanguage->value,
+                'target_language' => $targetLanguage->value,
+                'stream' => true,
+                'server_worker_requested_at' => microtime(true),
+            ]);
+        } catch (Throwable $exception) {
+            $pendingWorkers->remove($turnId);
+
+            throw $exception;
+        }
+
+        $this->cleanupSession($connection, $sessions);
+    }
+
+    /**
+     * @param  array<int, ConversationSession>  $sessions
+     */
+    private function finishConversationSession(
+        Connection $connection,
+        array &$sessions,
+        ConversationWebSocketHandler $conversationHandler,
+    ): void {
+        $key = spl_object_id($connection);
+        $context = $sessions[$key] ?? null;
+
+        if ($context === null) {
+            throw new LogicException(
+                'No active conversation recording.',
+            );
+        }
+
+        if (! $conversationHandler->ownsTurn($connection)) {
+            throw new LogicException(
+                'Connection does not own the conversation turn.',
+            );
+        }
+
+        $completed = false;
+
+        try {
+            $peer = $conversationHandler->currentPeer($connection);
+
+            if ($peer === null) {
+                throw new LogicException(
+                    'Conversation peer is not connected.',
+                );
+            }
+
+            $assertPeer = function () use (
+                $connection,
+                $peer,
+                $conversationHandler,
+            ): void {
+                if (
+                    ! $conversationHandler->ownsTurn($connection)
+                    || $conversationHandler->currentPeer($connection) !== $peer
+                ) {
+                    throw new LogicException(
+                        'Conversation peer changed during processing.',
+                    );
+                }
+            };
+
+            $speechResult = $context['session']->finish();
+
+            $this->sendJson($connection, [
+                'type' => 'conversation_recognition_completed',
+                'text' => $speechResult->text,
+            ]);
+
+            $sourceLanguage = $context['source_language'];
+            $targetLanguage = $this->targetLanguage(
+                $sourceLanguage,
+            );
+
+            $assertPeer();
+
+            $translationResult = $context['translation']->translate(
+                text: $speechResult->text,
+                sourceLanguage: $sourceLanguage,
+                targetLanguage: $targetLanguage,
+            );
+
+            $assertPeer();
+
+            $this->sendJson($peer, [
+                'type' => 'conversation_translation_completed',
+                'text' => $speechResult->text,
+                'translated_text' => $translationResult->text,
+                'source_language' => $sourceLanguage->value,
+                'target_language' => $targetLanguage->value,
+            ]);
+
+            $assertPeer();
+
+            $this->sendJson($peer, [
+                'type' => 'conversation_tts_started',
+                'format' => 'pcm16',
+                'sample_rate_hz' => self::TTS_SAMPLE_RATE,
+                'channels' => self::TTS_CHANNELS,
+                'bytes_per_sample' => self::TTS_BYTES_PER_SAMPLE,
+            ]);
+
+            $synthesisResult = $context['text_to_speech']->synthesize(
+                text: $translationResult->text,
+                targetLanguage: $targetLanguage,
+                onAudioChunk: function (string $chunk) use (
+                    $peer,
+                    $assertPeer,
+                ): void {
+                    $assertPeer();
+
+                    $peer->binary($chunk);
+                },
+            );
+
+            $assertPeer();
+
+            $this->sendJson($peer, [
+                'type' => 'conversation_completed',
+                'source_language' => $sourceLanguage->value,
+                'target_language' => $targetLanguage->value,
+                'translated_audio_bytes' => strlen(
+                    $synthesisResult->audio,
+                ),
+            ]);
+
+            $completed = true;
+        } finally {
+            if ($completed) {
+                $this->cleanupSession($connection, $sessions);
+            } else {
+                $this->cancelSession($connection, $sessions);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function startSession(
         Connection $connection,
@@ -541,14 +1568,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function finishSession(
         Connection $connection,
@@ -994,14 +2014,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function cleanupSession(
         Connection $connection,
@@ -1023,19 +2036,53 @@ final class ServeLivePipelineCommand extends Command
         $publicDemo =
             $sessionContext['public_demo'];
 
-        if (
-            $publicDemo
-            instanceof PublicDemoWebSocketSession
-        ) {
-            $publicDemo->release();
+        try {
+            if (
+                $publicDemo
+                instanceof PublicDemoWebSocketSession
+            ) {
+                $publicDemo->release();
+            }
+        } finally {
+            unset(
+                $sessions[$key],
+            );
         }
-
-        unset(
-            $sessions[$key],
-        );
 
         return $publicDemo
             instanceof PublicDemoWebSocketSession;
+    }
+
+    /**
+     * Cancel an active recording before releasing its resources.
+     *
+     * @param  array<int, ConversationSession>  $sessions
+     */
+    private function cancelSession(
+        Connection $connection,
+        array &$sessions,
+    ): bool {
+        $key = spl_object_id($connection);
+        $context = $sessions[$key] ?? null;
+
+        if ($context === null) {
+            return false;
+        }
+
+        $isPublicDemo =
+            $context['public_demo']
+            instanceof PublicDemoWebSocketSession;
+
+        try {
+            $context['session']->cancel();
+        } finally {
+            $this->cleanupSession(
+                connection: $connection,
+                sessions: $sessions,
+            );
+        }
+
+        return $isPublicDemo;
     }
 
     private function targetLanguage(
