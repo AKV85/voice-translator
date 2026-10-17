@@ -284,6 +284,11 @@ final class ConversationWebSocketHandler
         return $peer;
     }
 
+    /**
+     * Turn ownership can change during conversation processing.
+     *
+     * @phpstan-impure
+     */
     public function ownsTurn(Connection $connection): bool
     {
         $participant = $this->currentParticipant($connection);

@@ -31,6 +31,27 @@ use WebSocket\Message\Binary;
 use WebSocket\Message\Text;
 use WebSocket\Server;
 
+/**
+ * @phpstan-type LiveSession array{
+ *     session: LiveSpeechRecognitionSession,
+ *     profile: string,
+ *     source_language: Language,
+ *     translation: TranslationProvider,
+ *     text_to_speech: StreamingTextToSpeechProvider,
+ *     public_demo: PublicDemoWebSocketSession|null,
+ *     stopping?: bool
+ * }
+ * @phpstan-type IncrementalSession array{
+ *     session: AsyncSttBridgeClient,
+ *     profile: string,
+ *     source_language: Language,
+ *     public_demo: null,
+ *     connection: Connection,
+ *     final_texts: list<string>,
+ *     stopping: bool
+ * }
+ * @phpstan-type ConversationSession LiveSession|IncrementalSession
+ */
 final class ServeLivePipelineCommand extends Command
 {
     /** @var array<string, float> */
@@ -75,18 +96,12 @@ final class ServeLivePipelineCommand extends Command
         }
 
         /**
-         * @var array<int, array{
-         *     session: LiveSpeechRecognitionSession,
-         *     profile: string,
-         *     source_language: Language,
-         *     translation: TranslationProvider,
-         *     text_to_speech: StreamingTextToSpeechProvider,
-         *     public_demo: PublicDemoWebSocketSession|null
-         * }> $sessions
+         * @var array<int, ConversationSession> $sessions
          */
         $sessions = [];
         // One serial translation/TTS worker per incremental STT turn.
         // Keep the queue alive after STT itself is closed at Stop.
+        /** @var array<string, array{owner: Connection, peer: Connection}> $incrementalTurns */
         $incrementalTurns = [];
 
         $conversationHandler = new ConversationWebSocketHandler(
@@ -715,14 +730,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      *
      * @throws JsonException
      */
@@ -878,7 +886,10 @@ final class ServeLivePipelineCommand extends Command
                                 throw new LogicException('STT stop already requested.');
                             }
                             $active['session']->finish();
-                            $sessions[spl_object_id($connection)]['stopping'] = true;
+                            $active['stopping'] = true;
+                            $sessions[spl_object_id($connection)] = $active;
+
+                            /** @var array<int, ConversationSession> $sessions */
 
                             // onTick emits recognition_completed and releases turn at done.
                             return;
@@ -965,6 +976,9 @@ final class ServeLivePipelineCommand extends Command
         );
     }
 
+    /**
+     * @param  array<int, ConversationSession>  $sessions
+     */
     private function handleBinaryMessage(
         Connection $connection,
         Binary $message,
@@ -1000,8 +1014,9 @@ final class ServeLivePipelineCommand extends Command
             );
         }
 
-        if (($sessionContext['session'] ?? null) instanceof AsyncSttBridgeClient
-            && ($sessionContext['stopping'] ?? false)
+        if (
+            $sessionContext['session'] instanceof AsyncSttBridgeClient
+            && $sessionContext['stopping']
         ) {
             throw new LogicException('Audio received after incremental STT stop.');
         }
@@ -1013,14 +1028,7 @@ final class ServeLivePipelineCommand extends Command
 
     /**
      * @param  array<string, mixed>  $payload
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function startConversationSession(
         Connection $connection,
@@ -1113,6 +1121,9 @@ final class ServeLivePipelineCommand extends Command
         ];
     }
 
+    /**
+     * @param  array<int, ConversationSession>  $sessions
+     */
     private function startAsyncConversationWorker(
         Connection $connection,
         array &$sessions,
@@ -1211,6 +1222,9 @@ final class ServeLivePipelineCommand extends Command
         $this->cleanupSession($connection, $sessions);
     }
 
+    /**
+     * @param  array<int, ConversationSession>  $sessions
+     */
     private function finishConversationSession(
         Connection $connection,
         array &$sessions,
@@ -1331,6 +1345,9 @@ final class ServeLivePipelineCommand extends Command
         }
     }
 
+    /**
+     * @param  array<int, ConversationSession>  $sessions
+     */
     private function startSession(
         Connection $connection,
         array $payload,
@@ -1551,14 +1568,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function finishSession(
         Connection $connection,
@@ -2004,14 +2014,7 @@ final class ServeLivePipelineCommand extends Command
     }
 
     /**
-     * @param  array<int, array{
-     *     session: LiveSpeechRecognitionSession,
-     *     profile: string,
-     *     source_language: Language,
-     *     translation: TranslationProvider,
-     *     text_to_speech: StreamingTextToSpeechProvider,
-     *     public_demo: PublicDemoWebSocketSession|null
-     * }>  $sessions
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function cleanupSession(
         Connection $connection,
@@ -2052,6 +2055,8 @@ final class ServeLivePipelineCommand extends Command
 
     /**
      * Cancel an active recording before releasing its resources.
+     *
+     * @param  array<int, ConversationSession>  $sessions
      */
     private function cancelSession(
         Connection $connection,

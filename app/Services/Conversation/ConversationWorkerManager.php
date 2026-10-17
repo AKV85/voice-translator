@@ -124,7 +124,13 @@ final class ConversationWorkerManager
     }
 
     /**
-     * @return array{turn_id: string, status: string, translated_text: string}|null
+     * @return array{
+     *     turn_id: string,
+     *     status: string,
+     *     translated_text: string,
+     *     audio_base64?: string,
+     *     mime_type?: string
+     * }|null
      *
      * @throws JsonException
      */
