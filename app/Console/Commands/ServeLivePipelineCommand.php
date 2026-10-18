@@ -610,7 +610,10 @@ final class ServeLivePipelineCommand extends Command
                                     if (isset($event['worker_latency'])) {
                                         logger()->info(
                                             'CONVERSATION_LATENCY worker',
-                                            $event['worker_latency'],
+                                            [
+                                                'turn_id' => $turnId,
+                                                ...$event['worker_latency'],
+                                            ],
                                         );
                                     }
 

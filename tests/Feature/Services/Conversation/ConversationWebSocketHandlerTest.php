@@ -656,3 +656,40 @@ it('releases a failed conversation turn so the peer can speak', function (): voi
         ->and($guestEvents)
         ->toContain('conversation_turn_started');
 });
+
+it('releases a failed turn even when peer notification fails and ignores repeated aborts', function (): void {
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+    $guest = $store->join($host['code']);
+    $turns = new ConversationTurnManager;
+    $handler = new ConversationWebSocketHandler(
+        $store,
+        new ConversationConnectionRegistry,
+        $turns,
+    );
+    $owner = Mockery::mock(Connection::class);
+    $peer = Mockery::mock(Connection::class);
+    $owner->shouldReceive('isConnected')->andReturn(true);
+    $peer->shouldReceive('isConnected')->andReturn(true);
+    $send = fn () => null;
+
+    $handler->join($owner, $host['code'], $host['token'], $send);
+    $handler->join($peer, $guest['code'], $guest['token'], $send);
+    $handler->startTurn($owner, $send);
+
+    $handler->abortTurn($owner, function (): void {
+        throw new RuntimeException('Peer delivery failed.');
+    });
+
+    expect($turns->isOwner($host['code'], $owner))->toBeFalse();
+
+    $handler->startTurn($peer, $send);
+    $handler->abortTurn($owner, $send);
+
+    expect($turns->isOwner($host['code'], $peer))->toBeTrue();
+
+    $handler->abortTurn($peer, $send);
+    $handler->startTurn($owner, $send);
+
+    expect($turns->isOwner($host['code'], $owner))->toBeTrue();
+});
