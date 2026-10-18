@@ -30,3 +30,4 @@ Thumbs.db
 docs/benchmarks/speech/audio/raw/*.webm
 
 /.venv-stt/
+/AGENTS.md
