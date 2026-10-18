@@ -46,6 +46,7 @@
 
         <section
             x-data="conversationRecorder({
+                latencyDebug: @js((bool) config('conversation.latency_debug_enabled', false)),
                 createUrl: @js(route('conversation.create')),
                 joinUrl: @js(route('conversation.join')),
             })"

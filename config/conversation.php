@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'latency_debug_enabled' => env('CONVERSATION_LATENCY_DEBUG_ENABLED', false),
     'audio_enabled' => env('CONVERSATION_AUDIO_ENABLED', false),
     'enabled' => env('CONVERSATION_ENABLED', false),
     'async_worker_enabled' => env('CONVERSATION_ASYNC_WORKER_ENABLED', false),

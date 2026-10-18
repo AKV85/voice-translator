@@ -137,13 +137,14 @@ final class RunConversationWorkerCommand extends Command
             );
 
             if (($job['stream'] ?? false) === true) {
-                $workerStarted = microtime(true);
+                $workerStarted = hrtime(true);
+                $workerStartedAt = microtime(true);
 
                 $requestedAt = $job['server_worker_requested_at'] ?? null;
 
                 $startupMs = is_numeric($requestedAt)
                     ? (int) round(
-                        ($workerStarted - (float) $requestedAt) * 1000,
+                        ($workerStartedAt - (float) $requestedAt) * 1000,
                     )
                     : null;
 
@@ -176,14 +177,14 @@ final class RunConversationWorkerCommand extends Command
                         $startupMs,
                         &$translationAt,
                     ): void {
-                        $translationAt = microtime(true);
+                        $translationAt = hrtime(true);
 
                         $emit([
                             'type' => 'translation',
                             'translated_text' => $text,
                             'startup_ms' => $startupMs,
                             'worker_elapsed_ms' => (int) round(
-                                ($translationAt - $workerStarted) * 1000,
+                                ($translationAt - $workerStarted) / 1_000_000,
                             ),
                         ]);
 
@@ -198,8 +199,12 @@ final class RunConversationWorkerCommand extends Command
                         &$audioBytes,
                         &$firstAudioAt,
                     ): void {
+                        if ($chunk === '') {
+                            return;
+                        }
+
                         if ($firstAudioAt === null) {
-                            $firstAudioAt = microtime(true);
+                            $firstAudioAt = hrtime(true);
                         }
 
                         $audioBytes += strlen($chunk);
@@ -247,14 +252,15 @@ final class RunConversationWorkerCommand extends Command
                     'type' => 'completed',
                     'audio_bytes' => $audioBytes,
                     'worker_latency' => [
+                        'startup_ms' => $startupMs,
                         'translation_ms' => (int) round(
-                            (($translationAt ?? microtime(true)) - $workerStarted) * 1000,
+                            (($translationAt ?? hrtime(true)) - $workerStarted) / 1_000_000,
                         ),
                         'translation_to_first_pcm_ms' => $firstAudioAt === null
                             ? null
-                            : (int) round(($firstAudioAt - $translationAt) * 1000),
+                            : (int) round(($firstAudioAt - $translationAt) / 1_000_000),
                         'total_ms' => (int) round(
-                            (microtime(true) - $workerStarted) * 1000,
+                            (hrtime(true) - $workerStarted) / 1_000_000,
                         ),
                     ],
                 ]);

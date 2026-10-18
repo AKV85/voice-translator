@@ -29,6 +29,9 @@ final class ConversationWorkerManager
     /** @var array<string, string> */
     private array $streamPhase = [];
 
+    /** @var array<string, array<string, int|null>> */
+    private array $streamLatency = [];
+
     public function __construct(
         private readonly array $workerCommand,
         private readonly float $timeoutSeconds = 10.0,
@@ -359,6 +362,16 @@ final class ConversationWorkerManager
                     );
                 }
 
+                if ($type === 'completed' && is_array($event['worker_latency'] ?? null)) {
+                    // Keep only duration fields, never arbitrary worker diagnostics.
+                    foreach (['startup_ms', 'translation_ms', 'translation_to_first_pcm_ms', 'total_ms'] as $metric) {
+                        $value = $event['worker_latency'][$metric] ?? null;
+                        if ($value === null || (is_int($value) && $value >= 0)) {
+                            $this->streamLatency[$turnId][$metric] = $value;
+                        }
+                    }
+                }
+
                 $this->streamPhase[$turnId] = match ($type) {
                     'translation' => 'translated',
                     'tts_started', 'audio_chunk' => 'audio',
@@ -404,6 +417,7 @@ final class ConversationWorkerManager
                     'type' => 'completed',
                     'turn_id' => $turnId,
                     'audio_bytes' => $this->streamBytes[$turnId] ?? 0,
+                    'worker_latency' => $this->streamLatency[$turnId] ?? [],
                 ];
 
                 unset(
@@ -412,6 +426,7 @@ final class ConversationWorkerManager
                     $this->streamBytes[$turnId],
                     $this->streamCompleted[$turnId],
                     $this->streamPhase[$turnId],
+                    $this->streamLatency[$turnId],
                 );
             }
 
@@ -442,6 +457,7 @@ final class ConversationWorkerManager
             $this->streamBytes[$turnId],
             $this->streamCompleted[$turnId],
             $this->streamPhase[$turnId],
+            $this->streamLatency[$turnId],
         );
 
         if ($process->isRunning()) {
