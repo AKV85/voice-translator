@@ -13,6 +13,9 @@ final class ConversationWebSocketHandler
     /** @var array<int, array{code: string, role: string, language: string}> */
     private array $participants = [];
 
+    /** @var array<int, ConversationSegmentSequence> */
+    private array $segmentSequences = [];
+
     public function __construct(
         private readonly ConversationStore $store,
         private readonly ConversationConnectionRegistry $registry,
@@ -72,6 +75,7 @@ final class ConversationWebSocketHandler
 
         if ($previous !== null && $previous !== $connection) {
             $this->turnManager?->release($code, $previous);
+            unset($this->segmentSequences[spl_object_id($previous)]);
         }
 
         $this->participants[$key] = [
@@ -128,14 +132,19 @@ final class ConversationWebSocketHandler
             return;
         }
 
+        $sequence = new ConversationSegmentSequence;
+        $this->segmentSequences[spl_object_id($connection)] = $sequence;
+
         try {
             $prepare?->__invoke();
 
             $send($connection, [
                 'type' => 'conversation_turn_started',
+                'conversation_turn_id' => $sequence->turnId(),
             ]);
         } catch (Throwable $exception) {
             $manager->release($code, $connection);
+            unset($this->segmentSequences[spl_object_id($connection)]);
 
             throw $exception;
         }
@@ -146,6 +155,7 @@ final class ConversationWebSocketHandler
             try {
                 $send($peer, [
                     'type' => 'conversation_peer_started',
+                    'conversation_turn_id' => $sequence->turnId(),
                 ]);
             } catch (Throwable $exception) {
                 report($exception);
@@ -180,6 +190,7 @@ final class ConversationWebSocketHandler
         ]);
 
         $manager->release($code, $connection);
+        unset($this->segmentSequences[spl_object_id($connection)]);
 
         $peer = $this->registry->peer($code, $role);
 
@@ -252,6 +263,8 @@ final class ConversationWebSocketHandler
             return;
         }
 
+        unset($this->segmentSequences[spl_object_id($connection)]);
+
         $peer = $this->registry->peer(
             $participant['code'],
             $participant['role'],
@@ -261,11 +274,25 @@ final class ConversationWebSocketHandler
             try {
                 $send($peer, [
                     'type' => 'conversation_peer_stopped',
+                    'aborted' => true,
                 ]);
             } catch (Throwable $exception) {
                 report($exception);
             }
         }
+    }
+
+    /** @return array{conversation_turn_id: string, segment_id: string, segment_index: int} */
+    public function nextSegment(Connection $connection): array
+    {
+        if (! $this->ownsTurn($connection)) {
+            throw new LogicException('Connection does not own the conversation turn.');
+        }
+
+        $sequence = $this->segmentSequences[spl_object_id($connection)]
+            ?? throw new LogicException('Conversation segment sequence unavailable.');
+
+        return $sequence->next();
     }
 
     public function currentPeer(Connection $connection): ?Connection
@@ -327,7 +354,7 @@ final class ConversationWebSocketHandler
         $key = spl_object_id($connection);
         $participant = $this->participants[$key] ?? null;
 
-        unset($this->participants[$key]);
+        unset($this->participants[$key], $this->segmentSequences[$key]);
 
         if ($participant === null) {
             return;

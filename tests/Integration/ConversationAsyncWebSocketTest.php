@@ -178,6 +178,10 @@ it('delivers translated PCM16 through the real async conversation server', funct
 
         $tts = $receive($guestClient);
 
+        expect($tts['segment_id'])->toBe($translation['segment_id'])
+            ->and($tts['conversation_turn_id'])->toBe($translation['conversation_turn_id'])
+            ->and($tts['segment_index'])->toBe(1);
+
         expect($tts['type'])
             ->toBe('conversation_tts_started')
             ->and($tts['format'])
@@ -211,6 +215,10 @@ it('delivers translated PCM16 through the real async conversation server', funct
             ->toBe(pack('v*', 0, 1200, 2400, 1200, 0));
 
         $completed = $receive($guestClient);
+
+        expect($completed['segment_id'])->toBe($translation['segment_id'])
+            ->and($completed['conversation_turn_id'])->toBe($translation['conversation_turn_id'])
+            ->and($completed)->not->toHaveKey('server_latency');
 
         expect($completed['type'])->toBe('conversation_completed')
             ->and($completed['translated_audio_bytes'])->toBe(10);
