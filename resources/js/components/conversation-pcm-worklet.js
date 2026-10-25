@@ -15,10 +15,10 @@ class ConversationPcmProcessor extends AudioWorkletProcessor {
         this.bufferLength = 0;
         this.stopped = false;
         this.port.onmessage = (event) => {
-            if (event.data?.type === 'stop') {
+            if (event.data?.type === "stop") {
                 this.stopped = true;
                 this.emit();
-                this.port.postMessage({ type: 'stopped' });
+                this.port.postMessage({ type: "stopped" });
             }
         };
     }
@@ -27,16 +27,15 @@ class ConversationPcmProcessor extends AudioWorkletProcessor {
         if (this.bufferLength === 0) return;
         const pcm = new Int16Array(this.bufferLength);
         pcm.set(this.buffer.subarray(0, this.bufferLength));
-        this.port.postMessage({ type: 'audio', pcm: pcm.buffer }, [pcm.buffer]);
+        this.port.postMessage({ type: "audio", pcm: pcm.buffer }, [pcm.buffer]);
         this.bufferLength = 0;
     }
 
     append(value) {
         // WebAudio samples are normally [-1, 1], but explicitly clamp.
         const v = Math.max(-1, Math.min(1, value));
-        this.buffer[this.bufferLength++] = v < 0
-            ? Math.round(v * 32768)
-            : Math.round(v * 32767);
+        this.buffer[this.bufferLength++] =
+            v < 0 ? Math.round(v * 32768) : Math.round(v * 32767);
         if (this.bufferLength === this.buffer.length) this.emit();
     }
 
@@ -54,9 +53,11 @@ class ConversationPcmProcessor extends AudioWorkletProcessor {
             const currentIndex = this.sourceSamplesSeen++;
             while (this.sourcePosition <= currentIndex) {
                 const fraction = this.sourcePosition - (currentIndex - 1);
-                const output = currentIndex === 0
-                    ? mono
-                    : this.previousSample + (mono - this.previousSample) * fraction;
+                const output =
+                    currentIndex === 0
+                        ? mono
+                        : this.previousSample +
+                          (mono - this.previousSample) * fraction;
                 this.append(output);
                 this.sourcePosition += this.sourceSamplesPerOutput;
             }
@@ -66,4 +67,4 @@ class ConversationPcmProcessor extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor('conversation-pcm-processor', ConversationPcmProcessor);
+registerProcessor("conversation-pcm-processor", ConversationPcmProcessor);

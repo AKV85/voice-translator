@@ -9,8 +9,10 @@ use App\Enums\Language;
 use App\Exceptions\PublicDemoException;
 use App\Services\Conversation\AsyncSttBridgeClient;
 use App\Services\Conversation\ConversationConnectionRegistry;
+use App\Services\Conversation\ConversationLatencyRelay;
 use App\Services\Conversation\ConversationPendingWorkerRegistry;
 use App\Services\Conversation\ConversationStore;
+use App\Services\Conversation\ConversationTiming;
 use App\Services\Conversation\ConversationTurnManager;
 use App\Services\Conversation\ConversationWebSocketHandler;
 use App\Services\Conversation\ConversationWorkerManager;
@@ -60,6 +62,8 @@ final class ServeLivePipelineCommand extends Command
     /** @var array<string, true> */
     private array $conversationFirstPcmLogged = [];
 
+    private ?ConversationLatencyRelay $latencyRelay = null;
+
     private const DEFAULT_PROFILE =
         'chirp3-streaming-standard-deepl-openai';
 
@@ -85,6 +89,7 @@ final class ServeLivePipelineCommand extends Command
 
     public function handle(): int
     {
+        $this->latencyRelay = ConversationTiming::enabled() ? new ConversationLatencyRelay : null;
         $port = (int) $this->option('port');
 
         if ($port < 1 || $port > 65535) {
@@ -281,6 +286,7 @@ final class ServeLivePipelineCommand extends Command
                 &$incrementalTurns,
             ): void {
                 try {
+                    $this->latencyRelay?->forget($connection);
                     foreach ($incrementalTurns as $key => $turn) {
                         if ($turn['owner'] === $connection || $turn['peer'] === $connection) {
                             unset($incrementalTurns[$key]);
@@ -299,6 +305,7 @@ final class ServeLivePipelineCommand extends Command
                         } finally {
                             $pendingWorkers->remove($turnId);
                             unset($this->conversationStopTimes[$turnId], $this->conversationFirstPcmLogged[$turnId]);
+                            $this->latencyRelay?->cancel($turnId);
 
                             $owner = $job['owner'];
 
@@ -401,6 +408,7 @@ final class ServeLivePipelineCommand extends Command
                                     if (! $context['stopping']) {
                                         throw new LogicException('STT bridge ended before stop.');
                                     }
+                                    $this->latencyRelay?->sttFinished($owner);
                                     $this->sendJson($owner, [
                                         'type' => 'conversation_recognition_completed',
                                         'text' => implode(' ', $sessions[$key]['final_texts']),
@@ -445,6 +453,7 @@ final class ServeLivePipelineCommand extends Command
                                 $workers->cancel($turn['active']);
                                 $pendingWorkers->remove($turn['active']);
                                 unset($this->conversationStopTimes[$turn['active']], $this->conversationFirstPcmLogged[$turn['active']]);
+                                $this->latencyRelay?->cancel($turn['active']);
                             }
                             unset($incrementalTurns[$key]);
                             if ($conversationHandler->isCurrent($owner)
@@ -488,6 +497,7 @@ final class ServeLivePipelineCommand extends Command
                                 targetLanguage: $targetLanguage,
                                 correlation: $correlation,
                             );
+                            $this->latencyRelay?->register($correlation, $owner, $peer, $segment['final_received_at']);
                             $incrementalTurns[$key]['active'] = $turnId;
                             $workers->startJob($turnId, [
                                 'turn_id' => $turnId,
@@ -495,12 +505,14 @@ final class ServeLivePipelineCommand extends Command
                                 'source_language' => $sourceLanguage->value,
                                 'target_language' => $targetLanguage->value,
                                 'stream' => true,
-                                'server_worker_requested_at' => microtime(true),
+                                'server_worker_requested_ns' => hrtime(true),
+                                'server_latency' => $this->latencyRelay?->metrics($turnId) ?? [],
                             ]);
                         } catch (Throwable $exception) {
                             report($exception);
                             $pendingWorkers->remove($turnId);
                             unset($this->conversationStopTimes[$turnId], $this->conversationFirstPcmLogged[$turnId]);
+                            $this->latencyRelay?->cancel($turnId);
                             unset($incrementalTurns[$key]);
                             if ($conversationHandler->ownsTurn($owner)) {
                                 $conversationHandler->abortTurn($owner, function (Connection $to, array $data): void {
@@ -528,6 +540,7 @@ final class ServeLivePipelineCommand extends Command
                             $workers->cancel($turnId);
                             $pendingWorkers->remove($turnId);
                             unset($this->conversationStopTimes[$turnId], $this->conversationFirstPcmLogged[$turnId]);
+                            $this->latencyRelay?->cancel($turnId);
                             $ownerKey = spl_object_id($owner);
                             if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
                                 unset($incrementalTurns[$ownerKey]);
@@ -617,13 +630,15 @@ final class ServeLivePipelineCommand extends Command
                                         $this->conversationFirstPcmLogged[$turnId] = true;
                                     }
 
+                                    $writeBegin = hrtime(true);
                                     $peer->binary($event['audio']);
+                                    $this->latencyRelay?->sent($turnId, $writeBegin, hrtime(true));
 
                                     continue;
                                 }
 
                                 if ($event['type'] === 'completed') {
-                                    $workerLatency = $this->workerLatency($event);
+                                    $workerLatency = [...$this->workerLatency($event), ...($this->latencyRelay?->metrics($turnId) ?? [])];
                                     if ($workerLatency !== []) {
                                         $this->logConversationLatency(
                                             'worker',
@@ -637,7 +652,7 @@ final class ServeLivePipelineCommand extends Command
                                     $this->sendJson($peer, [
                                         'type' => 'conversation_completed',
                                         ...$job['correlation'],
-                                        ...(config('conversation.latency_debug_enabled', false)
+                                        ...(ConversationTiming::enabled()
                                             ? ['server_latency' => $workerLatency]
                                             : []),
                                         'source_language' => $job['source_language']->value,
@@ -674,6 +689,7 @@ final class ServeLivePipelineCommand extends Command
                             $workers->cancel($turnId);
                             $pendingWorkers->remove($turnId);
                             unset($this->conversationStopTimes[$turnId], $this->conversationFirstPcmLogged[$turnId]);
+                            $this->latencyRelay?->cancel($turnId);
                             $ownerKey = spl_object_id($owner);
                             if (($incrementalTurns[$ownerKey]['active'] ?? null) === $turnId) {
                                 unset($incrementalTurns[$ownerKey]);
@@ -800,17 +816,21 @@ final class ServeLivePipelineCommand extends Command
                 );
             }
 
-            $conversationHandler->join(
-                $connection,
-                $code,
-                $token,
-                function (Connection $to, array $data) use ($incrementalStt): void {
-                    if ($data['type'] === 'conversation_joined') {
-                        $data['incremental_stt_enabled'] = $incrementalStt;
-                    }
-                    $this->sendJson($to, $data);
-                },
-            );
+            try {
+                $conversationHandler->join(
+                    $connection,
+                    $code,
+                    $token,
+                    function (Connection $to, array $data) use ($incrementalStt): void {
+                        if ($data['type'] === 'conversation_joined') {
+                            $data['incremental_stt_enabled'] = $incrementalStt;
+                        }
+                        $this->sendJson($to, $data);
+                    },
+                );
+            } catch (InvalidArgumentException) {
+                $this->sendJson($connection, ['type' => 'conversation_session_invalid']);
+            }
 
             return;
         }
@@ -820,6 +840,15 @@ final class ServeLivePipelineCommand extends Command
                 throw new LogicException(
                     'Stale conversation connection.',
                 );
+            }
+
+            if ($type === 'conversation_latency_feedback') {
+                $this->latencyRelay?->feedback($connection, $payload, $conversationHandler,
+                    function (Connection $to, array $data): void {
+                        $this->sendJson($to, $data);
+                    });
+
+                return;
             }
 
             if ($type === 'conversation_start') {
@@ -903,6 +932,15 @@ final class ServeLivePipelineCommand extends Command
                     );
                 }
 
+                if ($audioEnabled && $this->latencyRelay !== null) {
+                    $peer = $conversationHandler->currentPeer($connection);
+                    if ($peer !== null) {
+                        $this->latencyRelay->stop($connection, $peer, $conversationHandler->turnId($connection),
+                            function (Connection $to, array $data): void {
+                                $this->sendJson($to, $data);
+                            });
+                    }
+                }
                 try {
                     if ($audioEnabled) {
                         $active = $sessions[spl_object_id($connection)] ?? null;
@@ -951,6 +989,7 @@ final class ServeLivePipelineCommand extends Command
                             ) {
                                 $workers->cancel($turnId);
                                 unset($this->conversationStopTimes[$turnId], $this->conversationFirstPcmLogged[$turnId]);
+                                $this->latencyRelay?->cancel($turnId);
                             }
 
                             $this->cancelSession(
@@ -1189,6 +1228,8 @@ final class ServeLivePipelineCommand extends Command
         $stopReceivedAt = hrtime(true);
         $sttStarted = $stopReceivedAt;
         $speechResult = $context['session']->finish();
+        $sttAt = hrtime(true);
+        $this->latencyRelay?->sttFinished($connection, $sttAt);
 
         $correlation = $conversationHandler->nextSegment($connection);
 
@@ -1225,7 +1266,9 @@ final class ServeLivePipelineCommand extends Command
             correlation: $correlation,
         );
 
-        $this->conversationStopTimes[$turnId] = hrtime(true);
+        $finalAt = $sttAt;
+        $this->conversationStopTimes[$turnId] = $finalAt;
+        $this->latencyRelay?->register($correlation, $connection, $peer, $finalAt);
 
         $this->logConversationLatency('segment_started', [
             ...$correlation,
@@ -1241,11 +1284,13 @@ final class ServeLivePipelineCommand extends Command
                 'source_language' => $sourceLanguage->value,
                 'target_language' => $targetLanguage->value,
                 'stream' => true,
-                'server_worker_requested_at' => microtime(true),
+                'server_worker_requested_ns' => hrtime(true),
+                'server_latency' => $this->latencyRelay?->metrics($turnId) ?? [],
             ]);
         } catch (Throwable $exception) {
             $pendingWorkers->remove($turnId);
             unset($this->conversationStopTimes[$turnId], $this->conversationFirstPcmLogged[$turnId]);
+            $this->latencyRelay?->cancel($turnId);
 
             throw $exception;
         }
@@ -1447,7 +1492,7 @@ final class ServeLivePipelineCommand extends Command
                     ->sourceLanguage();
         } else {
             if (
-                ! config(
+                ! app()->environment(['local', 'testing']) || ! config(
                     'live_pipeline.lab_enabled',
                     false,
                 )
@@ -2187,7 +2232,7 @@ final class ServeLivePipelineCommand extends Command
 
     /**
      * @param  array<string, mixed>  $event
-     * @return array<string, int|null>
+     * @return array<string, int|float|null>
      */
     private function workerLatency(array $event): array
     {
@@ -2196,21 +2241,13 @@ final class ServeLivePipelineCommand extends Command
             return [];
         }
 
-        $result = [];
-        foreach (['startup_ms', 'translation_ms', 'translation_to_first_pcm_ms', 'total_ms'] as $stage) {
-            $value = $latency[$stage] ?? null;
-            if ($value === null || (is_int($value) && $value >= 0)) {
-                $result[$stage] = $value;
-            }
-        }
-
-        return $result;
+        return ConversationTiming::durations($latency);
     }
 
     /** @param  array<string, mixed>  $metrics */
     private function logConversationLatency(string $stage, array $metrics): void
     {
-        if (config('conversation.latency_debug_enabled', false)) {
+        if (ConversationTiming::enabled()) {
             logger()->info('CONVERSATION_LATENCY '.$stage, $metrics);
         }
     }

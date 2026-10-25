@@ -31,7 +31,7 @@ final class ConversationWebSocketHandler
         string $token,
         Closure $send,
     ): void {
-        if (! config('conversation.enabled', false)) {
+        if (! app()->environment(['local', 'testing']) || ! config('conversation.enabled', false)) {
             throw new LogicException('Conversation mode is disabled.');
         }
 
@@ -90,7 +90,11 @@ final class ConversationWebSocketHandler
             && $previous->isConnected()
         ) {
             try {
-                $previous->disconnect();
+                try {
+                    $send($previous, ['type' => 'conversation_replaced']);
+                } finally {
+                    $previous->disconnect();
+                }
             } catch (Throwable $exception) {
                 report($exception);
             }
@@ -100,6 +104,7 @@ final class ConversationWebSocketHandler
             try {
                 $send($peer, [
                     'type' => 'conversation_peer_joined',
+                    'replaced' => $previous !== null && $previous !== $connection,
                 ]);
             } catch (Throwable $exception) {
                 report($exception);
@@ -293,6 +298,15 @@ final class ConversationWebSocketHandler
             ?? throw new LogicException('Conversation segment sequence unavailable.');
 
         return $sequence->next();
+    }
+
+    public function turnId(Connection $connection): string
+    {
+        if (! $this->ownsTurn($connection)) {
+            throw new LogicException('Connection does not own the conversation turn.');
+        }
+
+        return $this->segmentSequences[spl_object_id($connection)]->turnId();
     }
 
     public function currentPeer(Connection $connection): ?Connection

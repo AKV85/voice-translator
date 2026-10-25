@@ -29,6 +29,7 @@ config()->set('cache.stores.vt21_integration', [
 ]);
 
 config()->set('conversation.audio_enabled', true);
+config()->set('conversation.latency_debug_enabled', ($argv[4] ?? '') === 'timing');
 config()->set('conversation.async_worker_enabled', false);
 config()->set('conversation.incremental_stt_enabled', false);
 

@@ -29,7 +29,7 @@ final class ConversationWorkerManager
     /** @var array<string, string> */
     private array $streamPhase = [];
 
-    /** @var array<string, array<string, int|null>> */
+    /** @var array<string, array<string, int|float|null>> */
     private array $streamLatency = [];
 
     public function __construct(
@@ -364,12 +364,7 @@ final class ConversationWorkerManager
 
                 if ($type === 'completed' && is_array($event['worker_latency'] ?? null)) {
                     // Keep only duration fields, never arbitrary worker diagnostics.
-                    foreach (['startup_ms', 'translation_ms', 'translation_to_first_pcm_ms', 'total_ms'] as $metric) {
-                        $value = $event['worker_latency'][$metric] ?? null;
-                        if ($value === null || (is_int($value) && $value >= 0)) {
-                            $this->streamLatency[$turnId][$metric] = $value;
-                        }
-                    }
+                    $this->streamLatency[$turnId] = ConversationTiming::durations($event['worker_latency']);
                 }
 
                 $this->streamPhase[$turnId] = match ($type) {

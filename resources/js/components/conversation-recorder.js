@@ -1,3 +1,4 @@
+import { ConversationSession } from "./conversation-session.js";
 import { ConversationLatency } from "./conversation-latency.js";
 
 function defaultWebSocketUrl() {
@@ -14,6 +15,68 @@ export default (config = {}) => ({
     wsUrl: config.wsUrl || defaultWebSocketUrl(),
     createUrl: config.createUrl || "/conversation/create",
     joinUrl: config.joinUrl || "/conversation/join",
+
+    session: new ConversationSession(config.storage),
+    reconnectTimer: null,
+    joinTimer: null,
+    reconnectAttempt: 0,
+    reconnectAllowed: true,
+    destroyed: false,
+
+    init() {
+        this.latency.onStage = (event) => {
+            if (
+                this.socket?.readyState === WebSocket.OPEN &&
+                typeof this.socket?.send === "function"
+            ) {
+                this.socket.send(
+                    JSON.stringify({
+                        type: "conversation_latency_feedback",
+                        ...event,
+                    }),
+                );
+            }
+        };
+        const saved = this.session.load();
+        if (!saved) return;
+        this.code = saved.code;
+        this.token = saved.token;
+        this.status = "Restoring conversation";
+        this.reconnectAllowed = true;
+        void this.connect().catch(() => this.scheduleReconnect());
+    },
+
+    scheduleReconnect() {
+        if (
+            this.destroyed ||
+            !this.reconnectAllowed ||
+            !this.token ||
+            this.reconnectTimer
+        )
+            return;
+        this.status = "Connection lost. Reconnecting…";
+        const delay = Math.min(1000 * 2 ** this.reconnectAttempt++, 15000);
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (this.socket || !this.reconnectAllowed || this.destroyed) return;
+            void this.connect().catch(() => this.scheduleReconnect());
+        }, delay);
+    },
+
+    clearSession(message) {
+        this.reconnectAllowed = false;
+        this.session.clear();
+        this.disconnect(false);
+        this.code = "";
+        this.token = "";
+        this.role = null;
+        this.error = message;
+    },
+
+    destroy() {
+        this.destroyed = true;
+        this.disconnect(false);
+    },
 
     code: "",
     token: "",
@@ -53,6 +116,8 @@ export default (config = {}) => ({
     latency: new ConversationLatency({ enabled: config.latencyDebug === true }),
     playbackSources: new Set(),
     playbackGeneration: 0,
+    playbackStartTimers: new Set(),
+    latencySnapshot: {},
 
     get canSpeak() {
         return (
@@ -70,6 +135,14 @@ export default (config = {}) => ({
     },
 
     async joinRoom() {
+        const saved = this.session.load();
+        if (saved && saved.code === this.joinCode.trim().toUpperCase()) {
+            this.code = saved.code;
+            this.token = saved.token;
+            this.reconnectAllowed = true;
+            await this.connect().catch(() => this.scheduleReconnect());
+            return;
+        }
         await this.openRoom(this.joinUrl, {
             code: this.joinCode.trim().toUpperCase(),
         });
@@ -107,7 +180,8 @@ export default (config = {}) => ({
 
             this.code = result.code;
             this.token = result.token;
-
+            this.reconnectAllowed = true;
+            this.session.save(this.code, this.token);
             await this.connect();
         } catch (error) {
             this.error = error.message;
@@ -118,12 +192,16 @@ export default (config = {}) => ({
     },
 
     connect() {
+        if (this.socket || this.destroyed) return Promise.resolve();
         return new Promise((resolve, reject) => {
             const socket = new WebSocket(this.wsUrl);
             socket.binaryType = "arraybuffer";
             this.socket = socket;
 
             let settled = false;
+            const joinTimeout = (this.joinTimer = setTimeout(() => {
+                if (this.socket === socket && !settled) socket.close();
+            }, 10000));
 
             socket.onopen = () => {
                 if (this.socket !== socket) return;
@@ -163,6 +241,9 @@ export default (config = {}) => ({
 
                 switch (message.type) {
                     case "conversation_joined":
+                        clearTimeout(joinTimeout);
+                        this.reconnectAttempt = 0;
+                        this.session.save(this.code, this.token);
                         this.connected = true;
                         this.role = message.role;
                         this.incrementalSttEnabled =
@@ -176,12 +257,43 @@ export default (config = {}) => ({
                         resolve();
                         break;
 
+                    case "conversation_stop_received":
+                        this.latency.stopReceived(message);
+                        break;
+                    case "conversation_playback_ack":
+                        this.latency.acknowledge(message);
+                        break;
+
+                    case "conversation_session_invalid":
+                    case "conversation_replaced":
+                        clearTimeout(joinTimeout);
+                        this.clearSession(
+                            message.type === "conversation_replaced"
+                                ? "This participant connected in another page."
+                                : "Conversation expired or credentials are invalid. Create or join a room again.",
+                        );
+                        if (!settled) {
+                            settled = true;
+                            reject(
+                                new Error("Conversation session unavailable."),
+                            );
+                        }
+                        return;
+
                     case "conversation_peer_joined":
+                        if (message.replaced) {
+                            this.recordingCancelled = true;
+                            this.cancelPlayback();
+                            this.releaseMicrophone();
+                            this.turnBusy = false;
+                            this.isStopping = false;
+                        }
                         this.peerConnected = true;
                         this.status = "Connected to peer";
                         break;
 
                     case "conversation_peer_left":
+                        this.recordingCancelled = true;
                         this.cancelPlayback();
                         this.turnBusy = false;
                         this.isStopping = false;
@@ -295,6 +407,7 @@ export default (config = {}) => ({
             };
 
             socket.onerror = () => {
+                if (this.socket !== socket) return;
                 if (!settled) {
                     settled = true;
                     reject(new Error("WebSocket connection failed."));
@@ -303,6 +416,8 @@ export default (config = {}) => ({
 
             socket.onclose = () => {
                 if (this.socket !== socket) return;
+                clearTimeout(joinTimeout);
+                this.recordingCancelled = true;
                 this.cancelPlayback();
                 this.connected = false;
                 this.peerConnected = false;
@@ -316,6 +431,7 @@ export default (config = {}) => ({
                     settled = true;
                     reject(new Error("WebSocket closed before joining."));
                 }
+                this.scheduleReconnect();
             };
         });
     },
@@ -326,6 +442,7 @@ export default (config = {}) => ({
         this.error = null;
         this.recordingCancelled = false;
         this.busy = true;
+        const recordingSocket = this.socket;
 
         try {
             if (
@@ -350,6 +467,10 @@ export default (config = {}) => ({
                 audio: true,
             });
 
+            if (this.socket !== recordingSocket) {
+                stream.getTracks().forEach((track) => track.stop());
+                return;
+            }
             if (!this.connected || !this.peerConnected || this.turnBusy) {
                 stream.getTracks().forEach((track) => track.stop());
                 throw new Error("Conversation is no longer ready.");
@@ -444,6 +565,7 @@ export default (config = {}) => ({
 
     async stopSpeaking() {
         if (!this.isRecording || this.isStopping) return;
+        this.latency.markStop();
         if (this.incrementalSttEnabled) {
             this.isStopping = true;
             this.status = "Finishing recording";
@@ -452,6 +574,7 @@ export default (config = {}) => ({
                 if (this.socket?.readyState !== WebSocket.OPEN) {
                     throw new Error("WebSocket disconnected before stop.");
                 }
+                this.latency.controlSent();
                 this.stopSentAt = performance.now();
                 this.firstAudioLogged = false;
                 this.socket.send(JSON.stringify({ type: "conversation_stop" }));
@@ -494,6 +617,7 @@ export default (config = {}) => ({
                 throw new Error("WebSocket disconnected before stop.");
             }
 
+            this.latency.controlSent();
             this.stopSentAt = performance.now();
             this.firstAudioLogged = false;
 
@@ -684,11 +808,37 @@ export default (config = {}) => ({
         };
 
         source.start(startTime);
+        if (ticket?.first && this.latency.enabled) {
+            const checkDeadline = performance.now() + 60000;
+            const checkStarted = () => {
+                if (performance.now() > checkDeadline) return;
+                if (generation !== this.playbackGeneration) return;
+                if (context.state !== "running") return;
+                if (context.currentTime >= startTime) {
+                    this.latency.started(ticket);
+                    return;
+                }
+                scheduleStartCheck(5);
+            };
+            const scheduleStartCheck = (delay) => {
+                const timer = setTimeout(() => {
+                    this.playbackStartTimers.delete(timer);
+                    checkStarted();
+                }, delay);
+                timer.unref?.();
+                this.playbackStartTimers.add(timer);
+            };
+            scheduleStartCheck(
+                Math.max(0, (startTime - context.currentTime) * 1000),
+            );
+        }
         this.audioStatus = "Playing translation";
     },
 
     cancelPlayback() {
         this.playbackGeneration++;
+        for (const timer of this.playbackStartTimers) clearTimeout(timer);
+        this.playbackStartTimers.clear();
         this.receivingAudio = false;
         for (const source of this.playbackSources) {
             source.onended = null;
@@ -723,6 +873,7 @@ export default (config = {}) => ({
         this.pcmStopResolve?.();
         this.pcmStopResolve = null;
         this.pcmSource?.disconnect();
+        if (this.pcmWorklet) this.pcmWorklet.port.onmessage = null;
         this.pcmWorklet?.disconnect();
         this.pcmSink?.disconnect();
         this.pcmWorklet = null;
@@ -749,13 +900,26 @@ export default (config = {}) => ({
         this.isRecording = false;
     },
 
-    disconnect() {
+    disconnect(forget = true) {
+        this.reconnectAllowed = false;
+        clearTimeout(this.joinTimer);
+        this.joinTimer = null;
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+        if (forget) {
+            this.session.clear();
+            this.code = "";
+            this.token = "";
+            this.role = null;
+        }
+        this.recordingCancelled = true;
         this.cancelPlayback();
         this.releaseMicrophone();
         this.turnBusy = false;
         this.isStopping = false;
-        this.socket?.close();
+        const oldSocket = this.socket;
         this.socket = null;
+        oldSocket?.close();
         this.connected = false;
         this.peerConnected = false;
         this.status = "Disconnected";

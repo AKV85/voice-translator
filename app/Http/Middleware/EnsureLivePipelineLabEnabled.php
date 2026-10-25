@@ -13,7 +13,8 @@ final class EnsureLivePipelineLabEnabled
         Closure $next,
     ): Response {
         if (
-            ! (bool) config(
+            ! app()->environment(['local', 'testing'])
+            || ! (bool) config(
                 'live_pipeline.lab_enabled',
                 false,
             )

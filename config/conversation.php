@@ -1,6 +1,8 @@
 <?php
 
 return [
+    // A/B evaluation only; preserve the 80 ms baseline until physical-PC acceptance.
+    'initial_pcm_bytes' => (int) env('CONVERSATION_INITIAL_PCM_BYTES', 3840),
     'latency_debug_enabled' => env('CONVERSATION_LATENCY_DEBUG_ENABLED', false),
     'audio_enabled' => env('CONVERSATION_AUDIO_ENABLED', false),
     'enabled' => env('CONVERSATION_ENABLED', false),

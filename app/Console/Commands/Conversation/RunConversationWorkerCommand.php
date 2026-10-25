@@ -5,7 +5,10 @@ namespace App\Console\Commands\Conversation;
 use App\Contracts\StreamingTextToSpeechProvider;
 use App\Contracts\TranslationProvider;
 use App\Enums\Language;
+use App\Services\Conversation\ConversationPcmBuffer;
 use App\Services\Conversation\ConversationPipelineProcessor;
+use App\Services\Conversation\ConversationTiming;
+use App\Services\Speech\OpenAIStreamingTextToSpeechProvider;
 use Illuminate\Console\Command;
 use RuntimeException;
 use Throwable;
@@ -131,6 +134,12 @@ final class RunConversationWorkerCommand extends Command
                 );
             }
 
+            $ttsTimes = [];
+            if ($ttsProvider instanceof OpenAIStreamingTextToSpeechProvider) {
+                $ttsProvider = $ttsProvider->withTimingObserver(static function (string $stage, int $at) use (&$ttsTimes): void {
+                    $ttsTimes[$stage] = $at;
+                });
+            }
             $processor = new ConversationPipelineProcessor(
                 translation: $translationProvider,
                 textToSpeech: $ttsProvider,
@@ -138,13 +147,12 @@ final class RunConversationWorkerCommand extends Command
 
             if (($job['stream'] ?? false) === true) {
                 $workerStarted = hrtime(true);
-                $workerStartedAt = microtime(true);
 
-                $requestedAt = $job['server_worker_requested_at'] ?? null;
+                $requestedAt = $job['server_worker_requested_ns'] ?? null;
 
                 $startupMs = is_numeric($requestedAt)
                     ? (int) round(
-                        ($workerStartedAt - (float) $requestedAt) * 1000,
+                        ($workerStarted - (float) $requestedAt) / 1_000_000,
                     )
                     : null;
 
@@ -164,8 +172,9 @@ final class RunConversationWorkerCommand extends Command
                     fflush(STDOUT);
                 };
 
-                $buffer = '';
+                $buffer = new ConversationPcmBuffer((int) config('conversation.initial_pcm_bytes', 3840));
                 $audioBytes = 0;
+                $firstEmittedAt = null;
 
                 $processed = $processor->processStreaming(
                     sourceText: $job['source_text'],
@@ -198,6 +207,7 @@ final class RunConversationWorkerCommand extends Command
                         &$buffer,
                         &$audioBytes,
                         &$firstAudioAt,
+                        &$firstEmittedAt,
                     ): void {
                         if ($chunk === '') {
                             return;
@@ -215,13 +225,8 @@ final class RunConversationWorkerCommand extends Command
                             );
                         }
 
-                        $buffer .= $chunk;
-
-                        // 80 ms PCM16 mono at 24 kHz.
-                        while (strlen($buffer) >= 3840) {
-                            $part = substr($buffer, 0, 3840);
-                            $buffer = substr($buffer, 3840);
-
+                        foreach ($buffer->push($chunk) as $part) {
+                            $firstEmittedAt ??= hrtime(true);
                             $emit([
                                 'type' => 'audio_chunk',
                                 'audio_base64' => base64_encode($part),
@@ -241,10 +246,12 @@ final class RunConversationWorkerCommand extends Command
                     );
                 }
 
-                if ($buffer !== '') {
+                $tail = $buffer->finish();
+                if ($tail !== '') {
+                    $firstEmittedAt ??= hrtime(true);
                     $emit([
                         'type' => 'audio_chunk',
-                        'audio_base64' => base64_encode($buffer),
+                        'audio_base64' => base64_encode($tail),
                     ]);
                 }
 
@@ -252,6 +259,7 @@ final class RunConversationWorkerCommand extends Command
                     'type' => 'completed',
                     'audio_bytes' => $audioBytes,
                     'worker_latency' => [
+                        ...ConversationTiming::durations($job['server_latency'] ?? []),
                         'startup_ms' => $startupMs,
                         'translation_ms' => (int) round(
                             (($translationAt ?? hrtime(true)) - $workerStarted) / 1_000_000,
@@ -259,6 +267,11 @@ final class RunConversationWorkerCommand extends Command
                         'translation_to_first_pcm_ms' => $firstAudioAt === null
                             ? null
                             : (int) round(($firstAudioAt - $translationAt) / 1_000_000),
+                        'tts_request_ms' => isset($ttsTimes['request']) ? round(($ttsTimes['request'] - $workerStarted) / 1_000_000, 3) : null,
+                        'tts_request_to_headers_ms' => isset($ttsTimes['headers'], $ttsTimes['request']) ? round(($ttsTimes['headers'] - $ttsTimes['request']) / 1_000_000, 3) : null,
+                        'tts_request_to_first_audio_ms' => isset($ttsTimes['first_audio'], $ttsTimes['request']) ? round(($ttsTimes['first_audio'] - $ttsTimes['request']) / 1_000_000, 3) : null,
+                        'first_pcm_emitted_ms' => $firstEmittedAt === null ? null : round(($firstEmittedAt - $workerStarted) / 1_000_000, 3),
+                        'first_audio_to_pcm_emit_ms' => $firstEmittedAt === null || $firstAudioAt === null ? null : round(($firstEmittedAt - $firstAudioAt) / 1_000_000, 3),
                         'total_ms' => (int) round(
                             (hrtime(true) - $workerStarted) / 1_000_000,
                         ),
