@@ -3,6 +3,7 @@
 use App\Enums\Language;
 use App\Exceptions\SpeechSynthesisException;
 use App\Services\Speech\OpenAIStreamingTextToSpeechProvider;
+use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -93,4 +94,40 @@ test('it rejects empty synthesis text', function () {
     );
 
     Http::assertNothingSent();
+});
+
+test('it observes request, headers and first audio in order without changing PCM', function (): void {
+    $audio = str_repeat("\x01\x02", 600);
+    Http::fake(['api.openai.test/*' => Http::response($audio)]);
+    $events = [];
+    $provider = new OpenAIStreamingTextToSpeechProvider(app(Factory::class), 'test-key', 'test-model', 'https://api.openai.test/speech', 'marin');
+    $provider = $provider->withTimingObserver(function (string $stage, int $at) use (&$events): void {
+        $events[$stage] = $at;
+    });
+    $parts = [];
+    $result = $provider->synthesize('Hello', Language::English, function (string $chunk) use (&$parts): void {
+        $parts[] = $chunk;
+    });
+    expect(array_keys($events))->toBe(['request', 'headers', 'first_audio'])
+        ->and($events['headers'])->toBeGreaterThanOrEqual($events['request'])
+        ->and($events['first_audio'])->toBeGreaterThanOrEqual($events['headers'])
+        ->and(implode('', $parts))->toBe($audio)
+        ->and($result->audio)->toBe($audio);
+});
+
+test('it closes the streaming body when downstream delivery is cancelled', function (): void {
+    $stream = Utils::streamFor(str_repeat("\x01\x02", 600));
+    Http::fake(fn () => Http::response($stream));
+    $provider = new OpenAIStreamingTextToSpeechProvider(app(Factory::class), 'test-key', 'test-model', 'https://api.openai.test/speech', 'marin');
+    $chunks = 0;
+    try {
+        $provider->synthesize('Hello', Language::English, function () use (&$chunks): void {
+            $chunks++;
+            throw new RuntimeException('Cancelled');
+        });
+        $this->fail('Expected cancellation');
+    } catch (SpeechSynthesisException $exception) {
+        expect($exception->getPrevious()?->getMessage())->toBe('Cancelled');
+    }
+    expect($chunks)->toBe(1)->and($stream->isReadable())->toBeFalse();
 });

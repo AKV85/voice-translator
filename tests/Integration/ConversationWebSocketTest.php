@@ -423,7 +423,7 @@ it('connects two participants through the real WebSocket server', function (): v
 
         $error = $receive($invalidClient);
 
-        expect($error['type'])->toBe('error');
+        expect($error['type'])->toBe('conversation_session_invalid');
 
         $invalidClient->disconnect();
         $guestClient->disconnect();

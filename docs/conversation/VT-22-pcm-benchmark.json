@@ -1,0 +1,66 @@
+{
+    "paced_480_bytes_every_10_ms": {
+        "3840": {
+            "first_emit_ms": {
+                "count": 30,
+                "median": 80.617,
+                "p95": 80.678,
+                "max": 80.793
+            },
+            "frames_per_stream": {
+                "count": 30,
+                "median": 2,
+                "p95": 2,
+                "max": 2
+            },
+            "pcm_sha256": "aa2b5ef5fd91d00ef0e1c554eef60056df5b9cc4ba2b0157cda0a1655ebfc660"
+        },
+        "1920": {
+            "first_emit_ms": {
+                "count": 30,
+                "median": 40.297,
+                "p95": 40.357,
+                "max": 40.36
+            },
+            "frames_per_stream": {
+                "count": 30,
+                "median": 3,
+                "p95": 3,
+                "max": 3
+            },
+            "pcm_sha256": "aa2b5ef5fd91d00ef0e1c554eef60056df5b9cc4ba2b0157cda0a1655ebfc660"
+        }
+    },
+    "burst_7680_bytes": {
+        "3840": {
+            "first_emit_ms": {
+                "count": 30,
+                "median": 0,
+                "p95": 0.001,
+                "max": 0.005
+            },
+            "frames_per_stream": {
+                "count": 30,
+                "median": 2,
+                "p95": 2,
+                "max": 2
+            },
+            "pcm_sha256": "aa2b5ef5fd91d00ef0e1c554eef60056df5b9cc4ba2b0157cda0a1655ebfc660"
+        },
+        "1920": {
+            "first_emit_ms": {
+                "count": 30,
+                "median": 0,
+                "p95": 0.001,
+                "max": 0.001
+            },
+            "frames_per_stream": {
+                "count": 30,
+                "median": 3,
+                "p95": 3,
+                "max": 3
+            },
+            "pcm_sha256": "aa2b5ef5fd91d00ef0e1c554eef60056df5b9cc4ba2b0157cda0a1655ebfc660"
+        }
+    }
+}

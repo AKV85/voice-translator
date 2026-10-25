@@ -46,10 +46,20 @@
 
         <section
             x-data="conversationRecorder({
+                latencyDebug: @js(\App\Services\Conversation\ConversationTiming::enabled()),
                 createUrl: @js(route('conversation.create')),
                 joinUrl: @js(route('conversation.join')),
             })"
             class="rounded-2xl border border-gray-800 bg-gray-900 p-6 sm:p-8">
+
+            <template x-if="latency.enabled">
+                <details class="mb-6 rounded border border-gray-700 p-4">
+                    <summary>Local latency diagnostics</summary>
+                    <button type="button" class="my-3 underline" @click="latencySnapshot = latencySummary()">Refresh timing summary</button>
+                    <p class="text-sm text-gray-400">Rolling count, median, P95 and maximum in milliseconds. Playback ACK timings include the return network path; observed start refers to the WebAudio timeline.</p>
+                    <pre class="mt-3 overflow-auto text-xs" x-text="JSON.stringify(latencySnapshot, null, 2)"></pre>
+                </details>
+            </template>
 
             <div
                 x-show="!code"

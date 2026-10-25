@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "test:conversation": "node --test --test-isolation=none tests/Frontend/*.test.mjs",
         "dev": "vite"
     },
     "devDependencies": {

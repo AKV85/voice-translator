@@ -14,11 +14,13 @@ final class ConversationPendingWorkerRegistry
      *     peer: Connection,
      *     source_text: string,
      *     source_language: Language,
+     *     correlation: array<string, mixed>,
      *     target_language: Language
      * }>
      */
     private array $jobs = [];
 
+    /** @param  array<string, mixed>  $correlation */
     public function add(
         string $turnId,
         Connection $owner,
@@ -26,6 +28,7 @@ final class ConversationPendingWorkerRegistry
         string $sourceText,
         Language $sourceLanguage,
         Language $targetLanguage,
+        array $correlation = [],
     ): void {
         if ($turnId === '' || isset($this->jobs[$turnId])) {
             throw new LogicException(
@@ -47,6 +50,7 @@ final class ConversationPendingWorkerRegistry
             'source_text' => $sourceText,
             'source_language' => $sourceLanguage,
             'target_language' => $targetLanguage,
+            'correlation' => $correlation,
         ];
     }
 
@@ -88,6 +92,7 @@ final class ConversationPendingWorkerRegistry
      *     peer: Connection,
      *     source_text: string,
      *     source_language: Language,
+     *     correlation: array<string, mixed>,
      *     target_language: Language
      * }>
      */

@@ -74,10 +74,19 @@ jobs:
         run: npm ci
 
       - name: Build frontend
-        run: npm run build
+        run: |
+          npm run test:conversation
+          npm run build
+
+      - name: Run frontend quality checks
+        run: |
+          npx eslint resources/js
+          npx prettier resources/js --check
 
       - name: Run tests
-        run: ./vendor/bin/pest
+        run: |
+          ./vendor/bin/pest
+          ./vendor/bin/pest tests/Integration
 
       - name: Check code style
         run: ./vendor/bin/pint --test

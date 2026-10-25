@@ -28,7 +28,14 @@ final readonly class OpenAIStreamingTextToSpeechProvider implements StreamingTex
         private string $model,
         private string $endpoint,
         private string $voice,
+        private ?Closure $onTiming = null,
     ) {}
+
+    /** @param Closure(string, int): void $observer */
+    public function withTimingObserver(Closure $observer): self
+    {
+        return new self($this->http, $this->apiKey, $this->model, $this->endpoint, $this->voice, $observer);
+    }
 
     public function synthesize(
         string $text,
@@ -44,6 +51,7 @@ final readonly class OpenAIStreamingTextToSpeechProvider implements StreamingTex
         $audio = '';
 
         try {
+            $this->onTiming?->__invoke('request', hrtime(true));
             $response = $this->http
                 ->withToken($this->apiKey)
                 ->accept('application/octet-stream')
@@ -72,12 +80,14 @@ final readonly class OpenAIStreamingTextToSpeechProvider implements StreamingTex
                     ],
                 );
 
+            $this->onTiming?->__invoke('headers', hrtime(true));
             $response->throw();
 
             $stream = $response
                 ->toPsrResponse()
                 ->getBody();
 
+            $first = true;
             try {
                 while (! $stream->eof()) {
                     $chunk = $stream->read(
@@ -88,6 +98,10 @@ final readonly class OpenAIStreamingTextToSpeechProvider implements StreamingTex
                         break;
                     }
 
+                    if ($first) {
+                        $first = false;
+                        $this->onTiming?->__invoke('first_audio', hrtime(true));
+                    }
                     $onAudioChunk($chunk);
 
                     $audio .= $chunk;

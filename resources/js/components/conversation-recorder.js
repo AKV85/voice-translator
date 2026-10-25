@@ -1,3 +1,6 @@
+import { ConversationSession } from "./conversation-session.js";
+import { ConversationLatency } from "./conversation-latency.js";
+
 function defaultWebSocketUrl() {
     const scheme = window.location.protocol === "https:" ? "wss" : "ws";
 
@@ -12,6 +15,68 @@ export default (config = {}) => ({
     wsUrl: config.wsUrl || defaultWebSocketUrl(),
     createUrl: config.createUrl || "/conversation/create",
     joinUrl: config.joinUrl || "/conversation/join",
+
+    session: new ConversationSession(config.storage),
+    reconnectTimer: null,
+    joinTimer: null,
+    reconnectAttempt: 0,
+    reconnectAllowed: true,
+    destroyed: false,
+
+    init() {
+        this.latency.onStage = (event) => {
+            if (
+                this.socket?.readyState === WebSocket.OPEN &&
+                typeof this.socket?.send === "function"
+            ) {
+                this.socket.send(
+                    JSON.stringify({
+                        type: "conversation_latency_feedback",
+                        ...event,
+                    }),
+                );
+            }
+        };
+        const saved = this.session.load();
+        if (!saved) return;
+        this.code = saved.code;
+        this.token = saved.token;
+        this.status = "Restoring conversation";
+        this.reconnectAllowed = true;
+        void this.connect().catch(() => this.scheduleReconnect());
+    },
+
+    scheduleReconnect() {
+        if (
+            this.destroyed ||
+            !this.reconnectAllowed ||
+            !this.token ||
+            this.reconnectTimer
+        )
+            return;
+        this.status = "Connection lost. Reconnecting…";
+        const delay = Math.min(1000 * 2 ** this.reconnectAttempt++, 15000);
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (this.socket || !this.reconnectAllowed || this.destroyed) return;
+            void this.connect().catch(() => this.scheduleReconnect());
+        }, delay);
+    },
+
+    clearSession(message) {
+        this.reconnectAllowed = false;
+        this.session.clear();
+        this.disconnect(false);
+        this.code = "";
+        this.token = "";
+        this.role = null;
+        this.error = message;
+    },
+
+    destroy() {
+        this.destroyed = true;
+        this.disconnect(false);
+    },
 
     code: "",
     token: "",
@@ -41,19 +106,28 @@ export default (config = {}) => ({
     audioStatus: "No audio received",
     audioChunks: [],
     receivingAudio: false,
+    listeningTurn: true,
     audioContext: null,
     audioEnabled: false,
     lastAudioBytes: 0,
     playbackNextTime: 0,
     playbackPending: 0,
     stopSentAt: null,
-    firstAudioLogged: false,
-
+    latency: new ConversationLatency({ enabled: config.latencyDebug === true }),
+    playbackSources: new Set(),
+    playbackGeneration: 0,
+    playbackStartTimers: new Set(),
+    latencySnapshot: {},
 
     get canSpeak() {
-        return this.connected && this.peerConnected
-            && !this.busy && !this.turnBusy
-            && !this.isRecording && !this.isStopping;
+        return (
+            this.connected &&
+            this.peerConnected &&
+            !this.busy &&
+            !this.turnBusy &&
+            !this.isRecording &&
+            !this.isStopping
+        );
     },
 
     async createRoom() {
@@ -61,6 +135,14 @@ export default (config = {}) => ({
     },
 
     async joinRoom() {
+        const saved = this.session.load();
+        if (saved && saved.code === this.joinCode.trim().toUpperCase()) {
+            this.code = saved.code;
+            this.token = saved.token;
+            this.reconnectAllowed = true;
+            await this.connect().catch(() => this.scheduleReconnect());
+            return;
+        }
         await this.openRoom(this.joinUrl, {
             code: this.joinCode.trim().toUpperCase(),
         });
@@ -73,14 +155,16 @@ export default (config = {}) => ({
         this.error = null;
 
         try {
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            const csrf = document.querySelector(
+                'meta[name="csrf-token"]',
+            )?.content;
 
             const response = await fetch(url, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json",
+                    Accept: "application/json",
                     "X-CSRF-TOKEN": csrf || "",
                 },
                 body: JSON.stringify(data),
@@ -89,12 +173,15 @@ export default (config = {}) => ({
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || "Could not open conversation.");
+                throw new Error(
+                    result.message || "Could not open conversation.",
+                );
             }
 
             this.code = result.code;
             this.token = result.token;
-
+            this.reconnectAllowed = true;
+            this.session.save(this.code, this.token);
             await this.connect();
         } catch (error) {
             this.error = error.message;
@@ -105,22 +192,30 @@ export default (config = {}) => ({
     },
 
     connect() {
+        if (this.socket || this.destroyed) return Promise.resolve();
         return new Promise((resolve, reject) => {
             const socket = new WebSocket(this.wsUrl);
             socket.binaryType = "arraybuffer";
             this.socket = socket;
 
             let settled = false;
+            const joinTimeout = (this.joinTimer = setTimeout(() => {
+                if (this.socket === socket && !settled) socket.close();
+            }, 10000));
 
             socket.onopen = () => {
-                socket.send(JSON.stringify({
-                    type: "conversation_join",
-                    code: this.code,
-                    token: this.token,
-                }));
+                if (this.socket !== socket) return;
+                socket.send(
+                    JSON.stringify({
+                        type: "conversation_join",
+                        code: this.code,
+                        token: this.token,
+                    }),
+                );
             };
 
             socket.onmessage = (event) => {
+                if (this.socket !== socket) return;
                 if (typeof event.data !== "string") {
                     this.receiveAudio(event.data);
                     return;
@@ -134,11 +229,25 @@ export default (config = {}) => ({
                     return;
                 }
 
+                if (
+                    [
+                        "conversation_translation_completed",
+                        "conversation_tts_started",
+                        "conversation_completed",
+                    ].includes(message.type) &&
+                    !this.latency.accept(message, !this.listeningTurn)
+                )
+                    return;
+
                 switch (message.type) {
                     case "conversation_joined":
+                        clearTimeout(joinTimeout);
+                        this.reconnectAttempt = 0;
+                        this.session.save(this.code, this.token);
                         this.connected = true;
                         this.role = message.role;
-                        this.incrementalSttEnabled = !!message.incremental_stt_enabled;
+                        this.incrementalSttEnabled =
+                            !!message.incremental_stt_enabled;
                         this.peerConnected = !!message.peer_connected;
                         this.status = this.peerConnected
                             ? "Connected to peer"
@@ -148,12 +257,44 @@ export default (config = {}) => ({
                         resolve();
                         break;
 
+                    case "conversation_stop_received":
+                        this.latency.stopReceived(message);
+                        break;
+                    case "conversation_playback_ack":
+                        this.latency.acknowledge(message);
+                        break;
+
+                    case "conversation_session_invalid":
+                    case "conversation_replaced":
+                        clearTimeout(joinTimeout);
+                        this.clearSession(
+                            message.type === "conversation_replaced"
+                                ? "This participant connected in another page."
+                                : "Conversation expired or credentials are invalid. Create or join a room again.",
+                        );
+                        if (!settled) {
+                            settled = true;
+                            reject(
+                                new Error("Conversation session unavailable."),
+                            );
+                        }
+                        return;
+
                     case "conversation_peer_joined":
+                        if (message.replaced) {
+                            this.recordingCancelled = true;
+                            this.cancelPlayback();
+                            this.releaseMicrophone();
+                            this.turnBusy = false;
+                            this.isStopping = false;
+                        }
                         this.peerConnected = true;
                         this.status = "Connected to peer";
                         break;
 
                     case "conversation_peer_left":
+                        this.recordingCancelled = true;
+                        this.cancelPlayback();
                         this.turnBusy = false;
                         this.isStopping = false;
                         this.releaseMicrophone();
@@ -162,6 +303,8 @@ export default (config = {}) => ({
                         break;
 
                     case "conversation_turn_started":
+                        this.listeningTurn = false;
+                        this.latency.begin(message.conversation_turn_id);
                         this.transcription = "";
                         this.translatedText = "";
                         this.turnBusy = true;
@@ -169,6 +312,8 @@ export default (config = {}) => ({
                         break;
 
                     case "conversation_peer_started":
+                        this.listeningTurn = true;
+                        this.latency.begin(message.conversation_turn_id);
                         this.transcription = "";
                         this.translatedText = "";
                         this.turnBusy = true;
@@ -183,7 +328,9 @@ export default (config = {}) => ({
                     case "conversation_transcript":
                     case "conversation_recognition_completed":
                         this.transcription = message.text || "";
-                        this.status = this.isRecording ? "Recording" : "Processing translation";
+                        this.status = this.isRecording
+                            ? "Recording"
+                            : "Processing translation";
                         break;
 
                     case "conversation_translation_completed":
@@ -191,18 +338,22 @@ export default (config = {}) => ({
                             this.transcription = message.text || "";
                             this.translatedText = message.translated_text || "";
                         } else {
-                            this.translatedText = [this.translatedText, message.translated_text]
-                                .filter(Boolean).join(" ");
+                            this.translatedText = [
+                                this.translatedText,
+                                message.translated_text,
+                            ]
+                                .filter(Boolean)
+                                .join(" ");
                         }
                         this.status = "Translation received";
                         break;
 
                     case "conversation_tts_started":
                         if (
-                            message.format !== "pcm16"
-                            || message.sample_rate_hz !== 24000
-                            || message.channels !== 1
-                            || message.bytes_per_sample !== 2
+                            message.format !== "pcm16" ||
+                            message.sample_rate_hz !== 24000 ||
+                            message.channels !== 1 ||
+                            message.bytes_per_sample !== 2
                         ) {
                             this.error = "Unsupported translated audio format.";
                             this.receivingAudio = false;
@@ -211,10 +362,7 @@ export default (config = {}) => ({
 
                         this.audioChunks = [];
                         this.lastAudioBytes = 0;
-                        // Consecutive segment streams must share one playback timeline.
-                        if (!this.incrementalSttEnabled) {
-                            this.playbackNextTime = 0;
-                        }
+                        // Share the timeline across segments and turns while audio drains.
                         this.receivingAudio = true;
                         this.audioStatus = "Receiving translated audio";
                         break;
@@ -226,6 +374,8 @@ export default (config = {}) => ({
 
                     case "conversation_turn_stopped":
                     case "conversation_peer_stopped":
+                        if (message.aborted) this.cancelPlayback();
+                        else this.latency.begin(null);
                         this.turnBusy = false;
                         this.isStopping = false;
                         this.releaseMicrophone();
@@ -233,9 +383,14 @@ export default (config = {}) => ({
                         break;
 
                     case "error":
+                        this.cancelPlayback();
                         this.error = message.message || "WebSocket error";
 
-                        if (this.turnBusy || this.isRecording || this.isStopping) {
+                        if (
+                            this.turnBusy ||
+                            this.isRecording ||
+                            this.isStopping
+                        ) {
                             this.recordingCancelled = true;
                             this.turnBusy = false;
                             this.isStopping = false;
@@ -252,6 +407,7 @@ export default (config = {}) => ({
             };
 
             socket.onerror = () => {
+                if (this.socket !== socket) return;
                 if (!settled) {
                     settled = true;
                     reject(new Error("WebSocket connection failed."));
@@ -259,6 +415,10 @@ export default (config = {}) => ({
             };
 
             socket.onclose = () => {
+                if (this.socket !== socket) return;
+                clearTimeout(joinTimeout);
+                this.recordingCancelled = true;
+                this.cancelPlayback();
                 this.connected = false;
                 this.peerConnected = false;
                 this.turnBusy = false;
@@ -271,6 +431,7 @@ export default (config = {}) => ({
                     settled = true;
                     reject(new Error("WebSocket closed before joining."));
                 }
+                this.scheduleReconnect();
             };
         });
     },
@@ -281,17 +442,22 @@ export default (config = {}) => ({
         this.error = null;
         this.recordingCancelled = false;
         this.busy = true;
+        const recordingSocket = this.socket;
 
         try {
-            if (!navigator.mediaDevices?.getUserMedia
-                || (!this.incrementalSttEnabled && typeof MediaRecorder === "undefined")) {
+            if (
+                !navigator.mediaDevices?.getUserMedia ||
+                (!this.incrementalSttEnabled &&
+                    typeof MediaRecorder === "undefined")
+            ) {
                 throw new Error("Microphone recording is unavailable.");
             }
 
             const mimeType = this.incrementalSttEnabled
                 ? "audio/pcm;rate=24000"
-                : ["audio/webm;codecs=opus", "audio/webm"]
-                    .find((type) => MediaRecorder.isTypeSupported(type));
+                : ["audio/webm;codecs=opus", "audio/webm"].find((type) =>
+                      MediaRecorder.isTypeSupported(type),
+                  );
 
             if (!mimeType) {
                 throw new Error("WebM/Opus recording is unsupported.");
@@ -301,6 +467,10 @@ export default (config = {}) => ({
                 audio: true,
             });
 
+            if (this.socket !== recordingSocket) {
+                stream.getTracks().forEach((track) => track.stop());
+                return;
+            }
             if (!this.connected || !this.peerConnected || this.turnBusy) {
                 stream.getTracks().forEach((track) => track.stop());
                 throw new Error("Conversation is no longer ready.");
@@ -313,10 +483,12 @@ export default (config = {}) => ({
             this.turnBusy = true;
             this.status = "Waiting for recording confirmation";
 
-            this.socket.send(JSON.stringify({
-                type: "conversation_start",
-                mime_type: mimeType,
-            }));
+            this.socket.send(
+                JSON.stringify({
+                    type: "conversation_start",
+                    mime_type: mimeType,
+                }),
+            );
         } catch (error) {
             this.error = error.message;
             this.turnBusy = false;
@@ -352,24 +524,28 @@ export default (config = {}) => ({
 
             const socket = this.socket;
 
-            this.sendQueue = this.sendQueue.then(async () => {
-                if (this.recordingCancelled) return;
+            this.sendQueue = this.sendQueue
+                .then(async () => {
+                    if (this.recordingCancelled) return;
 
-                const bytes = await event.data.arrayBuffer();
+                    const bytes = await event.data.arrayBuffer();
 
-                if (this.recordingCancelled) return;
+                    if (this.recordingCancelled) return;
 
-                if (socket?.readyState !== WebSocket.OPEN) {
-                    throw new Error("WebSocket disconnected during recording.");
-                }
+                    if (socket?.readyState !== WebSocket.OPEN) {
+                        throw new Error(
+                            "WebSocket disconnected during recording.",
+                        );
+                    }
 
-                socket.send(bytes);
-            }).catch((error) => {
-                this.recordingCancelled = true;
-                this.error = error.message;
-                this.status = "Audio upload failed";
-                this.socket?.close();
-            });
+                    socket.send(bytes);
+                })
+                .catch((error) => {
+                    this.recordingCancelled = true;
+                    this.error = error.message;
+                    this.status = "Audio upload failed";
+                    this.socket?.close();
+                });
         };
 
         recorder.onerror = () => {
@@ -389,6 +565,7 @@ export default (config = {}) => ({
 
     async stopSpeaking() {
         if (!this.isRecording || this.isStopping) return;
+        this.latency.markStop();
         if (this.incrementalSttEnabled) {
             this.isStopping = true;
             this.status = "Finishing recording";
@@ -397,6 +574,7 @@ export default (config = {}) => ({
                 if (this.socket?.readyState !== WebSocket.OPEN) {
                     throw new Error("WebSocket disconnected before stop.");
                 }
+                this.latency.controlSent();
                 this.stopSentAt = performance.now();
                 this.firstAudioLogged = false;
                 this.socket.send(JSON.stringify({ type: "conversation_stop" }));
@@ -439,12 +617,15 @@ export default (config = {}) => ({
                 throw new Error("WebSocket disconnected before stop.");
             }
 
+            this.latency.controlSent();
             this.stopSentAt = performance.now();
             this.firstAudioLogged = false;
 
-            this.socket.send(JSON.stringify({
-                type: "conversation_stop",
-            }));
+            this.socket.send(
+                JSON.stringify({
+                    type: "conversation_stop",
+                }),
+            );
 
             this.status = "Recognizing and translating";
         } catch (error) {
@@ -458,18 +639,25 @@ export default (config = {}) => ({
 
     async beginPcmRecording() {
         if (!window.AudioWorkletNode) {
-            throw new Error("AudioWorklet is unavailable (HTTPS or localhost required).");
+            throw new Error(
+                "AudioWorklet is unavailable (HTTPS or localhost required).",
+            );
         }
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const AudioContextClass =
+            window.AudioContext || window.webkitAudioContext;
         if (!AudioContextClass) throw new Error("Web Audio API unavailable.");
         const context = new AudioContextClass();
         this.pcmContext = context;
         await context.audioWorklet.addModule(
             new URL("./conversation-pcm-worklet.js", import.meta.url),
         );
-        if (this.recordingCancelled || !this.turnBusy || !this.mediaStream) return;
+        if (this.recordingCancelled || !this.turnBusy || !this.mediaStream)
+            return;
         const source = context.createMediaStreamSource(this.mediaStream);
-        const node = new AudioWorkletNode(context, "conversation-pcm-processor");
+        const node = new AudioWorkletNode(
+            context,
+            "conversation-pcm-processor",
+        );
         const sink = context.createGain();
         sink.gain.value = 0;
         source.connect(node);
@@ -485,8 +673,10 @@ export default (config = {}) => ({
                 return;
             }
             if (event.data?.type !== "audio" || this.recordingCancelled) return;
-            if (this.socket?.readyState !== WebSocket.OPEN
-                || this.socket.bufferedAmount > 1024 * 1024) {
+            if (
+                this.socket?.readyState !== WebSocket.OPEN ||
+                this.socket.bufferedAmount > 1024 * 1024
+            ) {
                 this.recordingCancelled = true;
                 this.error = "Microphone stream is blocked or disconnected.";
                 this.socket?.close();
@@ -508,10 +698,14 @@ export default (config = {}) => ({
                 this.pcmStopResolve = null;
                 reject(new Error("AudioWorklet stop timeout."));
             }, 2000);
-            this.pcmStopResolve = () => { clearTimeout(timeout); resolve(); };
+            this.pcmStopResolve = () => {
+                clearTimeout(timeout);
+                resolve();
+            };
             node.port.postMessage({ type: "stop" });
         });
-        if (this.recordingCancelled) throw new Error("PCM upload was cancelled.");
+        if (this.recordingCancelled)
+            throw new Error("PCM upload was cancelled.");
     },
 
     async enablePlayback() {
@@ -562,12 +756,7 @@ export default (config = {}) => ({
 
         this.lastAudioBytes = total;
 
-        if (!this.firstAudioLogged) {
-            this.firstAudioLogged = true;
-            console.info("[Conversation latency] first PCM received", {
-                timestamp: performance.now(),
-            });
-        }
+        const ticket = data.byteLength > 0 ? this.latency.receipt() : null;
 
         if (!this.audioEnabled || !this.audioContext) {
             this.audioStatus = "Enable speaker to hear translation";
@@ -584,11 +773,7 @@ export default (config = {}) => ({
         }
 
         const view = new DataView(data);
-        const buffer = context.createBuffer(
-            1,
-            data.byteLength / 2,
-            24000,
-        );
+        const buffer = context.createBuffer(1, data.byteLength / 2, 24000);
         const samples = buffer.getChannelData(0);
 
         for (let i = 0; i < samples.length; i++) {
@@ -606,10 +791,16 @@ export default (config = {}) => ({
 
         this.playbackNextTime = startTime + buffer.duration;
         this.playbackPending++;
+        this.playbackSources.add(source);
+        const generation = this.playbackGeneration;
+        this.latency.queued(ticket, context.currentTime, startTime);
 
         source.onended = () => {
             source.disconnect();
+            if (generation !== this.playbackGeneration) return;
+            this.playbackSources.delete(source);
             this.playbackPending--;
+            this.latency.ended(ticket);
 
             if (this.playbackPending === 0 && !this.receivingAudio) {
                 this.audioStatus = "Playback finished";
@@ -617,15 +808,64 @@ export default (config = {}) => ({
         };
 
         source.start(startTime);
+        if (ticket?.first && this.latency.enabled) {
+            const checkDeadline = performance.now() + 60000;
+            const checkStarted = () => {
+                if (performance.now() > checkDeadline) return;
+                if (generation !== this.playbackGeneration) return;
+                if (context.state !== "running") return;
+                if (context.currentTime >= startTime) {
+                    this.latency.started(ticket);
+                    return;
+                }
+                scheduleStartCheck(5);
+            };
+            const scheduleStartCheck = (delay) => {
+                const timer = setTimeout(() => {
+                    this.playbackStartTimers.delete(timer);
+                    checkStarted();
+                }, delay);
+                timer.unref?.();
+                this.playbackStartTimers.add(timer);
+            };
+            scheduleStartCheck(
+                Math.max(0, (startTime - context.currentTime) * 1000),
+            );
+        }
         this.audioStatus = "Playing translation";
+    },
+
+    cancelPlayback() {
+        this.playbackGeneration++;
+        for (const timer of this.playbackStartTimers) clearTimeout(timer);
+        this.playbackStartTimers.clear();
+        this.receivingAudio = false;
+        for (const source of this.playbackSources) {
+            source.onended = null;
+            try {
+                source.stop();
+            } catch {
+                /* Source may already have ended. */
+            }
+            source.disconnect();
+        }
+        this.playbackSources.clear();
+        this.playbackPending = 0;
+        this.playbackNextTime = 0;
+        this.latency.reset();
+    },
+
+    latencySummary() {
+        return this.latency.summary();
     },
 
     playReceivedAudio() {
         // Chunks are already scheduled when received.
         if (this.playbackPending === 0) {
-            this.audioStatus = this.lastAudioBytes > 0
-                ? "Playback finished"
-                : "No translated audio received";
+            this.audioStatus =
+                this.lastAudioBytes > 0
+                    ? "Playback finished"
+                    : "No translated audio received";
         }
     },
 
@@ -633,6 +873,7 @@ export default (config = {}) => ({
         this.pcmStopResolve?.();
         this.pcmStopResolve = null;
         this.pcmSource?.disconnect();
+        if (this.pcmWorklet) this.pcmWorklet.port.onmessage = null;
         this.pcmWorklet?.disconnect();
         this.pcmSink?.disconnect();
         this.pcmWorklet = null;
@@ -659,12 +900,26 @@ export default (config = {}) => ({
         this.isRecording = false;
     },
 
-    disconnect() {
+    disconnect(forget = true) {
+        this.reconnectAllowed = false;
+        clearTimeout(this.joinTimer);
+        this.joinTimer = null;
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+        if (forget) {
+            this.session.clear();
+            this.code = "";
+            this.token = "";
+            this.role = null;
+        }
+        this.recordingCancelled = true;
+        this.cancelPlayback();
         this.releaseMicrophone();
         this.turnBusy = false;
         this.isStopping = false;
-        this.socket?.close();
+        const oldSocket = this.socket;
         this.socket = null;
+        oldSocket?.close();
         this.connected = false;
         this.peerConnected = false;
         this.status = "Disconnected";

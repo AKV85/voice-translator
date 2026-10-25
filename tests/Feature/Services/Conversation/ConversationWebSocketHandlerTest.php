@@ -656,3 +656,69 @@ it('releases a failed conversation turn so the peer can speak', function (): voi
         ->and($guestEvents)
         ->toContain('conversation_turn_started');
 });
+
+it('releases a failed turn even when peer notification fails and ignores repeated aborts', function (): void {
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+    $guest = $store->join($host['code']);
+    $turns = new ConversationTurnManager;
+    $handler = new ConversationWebSocketHandler(
+        $store,
+        new ConversationConnectionRegistry,
+        $turns,
+    );
+    $owner = Mockery::mock(Connection::class);
+    $peer = Mockery::mock(Connection::class);
+    $owner->shouldReceive('isConnected')->andReturn(true);
+    $peer->shouldReceive('isConnected')->andReturn(true);
+    $send = fn () => null;
+
+    $handler->join($owner, $host['code'], $host['token'], $send);
+    $handler->join($peer, $guest['code'], $guest['token'], $send);
+    $handler->startTurn($owner, $send);
+
+    $handler->abortTurn($owner, function (): void {
+        throw new RuntimeException('Peer delivery failed.');
+    });
+
+    expect($turns->isOwner($host['code'], $owner))->toBeFalse();
+
+    $handler->startTurn($peer, $send);
+    $handler->abortTurn($owner, $send);
+
+    expect($turns->isOwner($host['code'], $peer))->toBeTrue();
+
+    $handler->abortTurn($peer, $send);
+    $handler->startTurn($owner, $send);
+
+    expect($turns->isOwner($host['code'], $owner))->toBeTrue();
+});
+
+it('correlates final segments within a turn and resets correlation after abort and disconnect', function (): void {
+    $store = app(ConversationStore::class);
+    $host = $store->create();
+    $turns = new ConversationTurnManager;
+    $handler = new ConversationWebSocketHandler($store, new ConversationConnectionRegistry, $turns);
+    $connection = Mockery::mock(Connection::class);
+    $send = fn () => null;
+
+    $handler->join($connection, $host['code'], $host['token'], $send);
+    $handler->startTurn($connection, $send);
+    $first = $handler->nextSegment($connection);
+    $second = $handler->nextSegment($connection);
+
+    expect($second['conversation_turn_id'])->toBe($first['conversation_turn_id'])
+        ->and($second['segment_id'])->not->toBe($first['segment_id'])
+        ->and($second['segment_index'])->toBe(2);
+
+    $handler->abortTurn($connection, $send);
+    expect(fn () => $handler->nextSegment($connection))->toThrow(LogicException::class);
+
+    $handler->startTurn($connection, $send);
+    $new = $handler->nextSegment($connection);
+    expect($new['conversation_turn_id'])->not->toBe($first['conversation_turn_id'])
+        ->and($new['segment_index'])->toBe(1);
+
+    $handler->disconnect($connection, $send);
+    expect(fn () => $handler->nextSegment($connection))->toThrow(LogicException::class);
+});
